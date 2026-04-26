@@ -1,9 +1,0 @@
-
-RESEND_API_KEY=re_your_api_key_here
-RESEND_FROM_EMAIL=noreply@yourdomain.com
-RESEND_FROM_NAME=Barangay Panungyanan
-
-# Optional: Barangay Information
-BARANGAY_NAME=Barangay Panungyanan
-BARANGAY_ADDRESS=Your Barangay Address
-BARANGAY_PHONE=Your Contact Number
