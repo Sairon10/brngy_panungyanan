@@ -237,6 +237,20 @@ a {
   transition: all 0.2s;
 }
 
+.hero-btn {
+  min-width: 200px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 575.98px) {
+  .hero-btn {
+    width: 100%;
+    min-width: unset;
+  }
+}
+
 .btn-primary {
   background-color: var(--primary);
   border-color: var(--primary);

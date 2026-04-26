@@ -45,10 +45,10 @@ require_once __DIR__ . '/partials/header.php';
 					Streamlined public services for a connected community. Request documents, report concerns, and stay
 					updated—all in one secure platform.
 				</p>
-				<div class="d-flex gap-3 flex-wrap">
+				<div class="d-flex flex-column flex-sm-row gap-3">
 					<?php if (!is_logged_in()): ?>
-						<a href="register.php" class="btn btn-primary btn-lg px-5 shadow-lg">Get Started</a>
-						<a href="login.php" class="btn btn-outline-primary btn-lg px-5">Sign In</a>
+						<a href="register.php" class="btn btn-primary btn-lg px-5 shadow-lg hero-btn">Get Started</a>
+						<a href="login.php" class="btn btn-outline-primary btn-lg px-5 hero-btn">Sign In</a>
 					<?php endif; ?>
 				</div>
 
