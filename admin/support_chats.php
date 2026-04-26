@@ -47,7 +47,7 @@ require_once __DIR__ . '/header.php';
 						<h5 class="mb-0 text-truncate" id="chatTitle">Select a chat to start</h5>
 						<small class="text-muted d-block text-truncate" id="chatSubtitle">Choose a chat from the list</small>
 					</div>
-					<div id="chatActions" style="display: none;" class="d-flex gap-2 flex-shrink-0">
+					<div id="chatActions" class="d-none gap-2 flex-shrink-0">
 						<button class="btn btn-sm btn-outline-info" id="viewInfoBtn" title="View user information">
 							<i class="fas fa-info-circle d-none d-md-inline"></i> <span class="d-none d-md-inline">Info</span><span class="d-md-none"><i class="fas fa-info-circle"></i></span>
 						</button>
@@ -91,7 +91,7 @@ let currentFilter = 'all';
 
 // Load chat list
 async function loadChatList(filter = 'all') {
-	const response = await fetch(`../api/support_chat.php?action=get_chats&status=${filter}`);
+	const response = await fetch(`/api/support_chat?action=get_chats&status=${filter}`);
 	const data = await response.json();
 	
 	if (data.success) {
@@ -160,7 +160,7 @@ async function selectChat(chatId) {
 	});
 	
 	// Get chat details
-	const response = await fetch(`../api/support_chat.php?action=get_chats&status=all`);
+	const response = await fetch(`/api/support_chat?action=get_chats&status=all`);
 	const data = await response.json();
 	
 	if (data.success) {
@@ -180,7 +180,8 @@ async function selectChat(chatId) {
 		}
 	}
 	
-	document.getElementById('chatActions').style.display = 'block';
+	document.getElementById('chatActions').classList.remove('d-none');
+	document.getElementById('chatActions').classList.add('d-flex');
 	
 	// Mobile: Show chat window, hide chat list
 	if (window.innerWidth < 992) {
@@ -197,7 +198,7 @@ async function selectChat(chatId) {
 async function loadMessages() {
 	if (!currentChatId) return;
 	
-	const response = await fetch(`../api/support_chat.php?action=get_messages&chat_id=${currentChatId}&last_message_id=${lastMessageId}`);
+	const response = await fetch(`/api/support_chat?action=get_messages&chat_id=${currentChatId}&last_message_id=${lastMessageId}`);
 	const data = await response.json();
 	
 	if (data.success) {
@@ -274,7 +275,7 @@ async function sendMessage() {
         formData.append('chat_id', currentChatId);
         formData.append('message', message);
         
-        const response = await fetch('../api/support_chat.php', {
+        const response = await fetch('/api/support_chat', {
             method: 'POST',
             body: formData
         });
@@ -348,7 +349,7 @@ async function closeChat() {
 		formData.append('action', 'close_chat');
 		formData.append('chat_id', currentChatId);
 		
-		const response = await fetch('../api/support_chat.php', {
+		const response = await fetch('/api/support_chat', {
 			method: 'POST',
 			body: formData
 		});
@@ -407,7 +408,7 @@ async function deleteChat() {
 		formData.append('action', 'delete_chat');
 		formData.append('chat_id', currentChatId);
 		
-		const response = await fetch('../api/support_chat.php', {
+		const response = await fetch('/api/support_chat', {
 			method: 'POST',
 			body: formData
 		});
@@ -438,7 +439,7 @@ async function showUserInfo() {
     modal.show();
     
     try {
-        const response = await fetch(`../api/support_chat.php?action=get_chats&status=all`);
+        const response = await fetch(`/api/support_chat?action=get_chats&status=all`);
         const data = await response.json();
         
         if (data.success) {
@@ -491,7 +492,8 @@ function closeChatView() {
 		</div>
 	`;
 	document.getElementById('chatInputContainer').style.display = 'none';
-	document.getElementById('chatActions').style.display = 'none';
+	document.getElementById('chatActions').classList.remove('d-flex');
+	document.getElementById('chatActions').classList.add('d-none');
 	document.getElementById('chatTitle').textContent = 'Select a chat to start';
 	document.getElementById('chatSubtitle').textContent = 'Choose a chat from the list';
 	
@@ -508,7 +510,7 @@ function closeChatView() {
 
 // Update admin activity
 async function updateActivity() {
-	await fetch('../api/support_chat.php?action=update_activity', { method: 'POST' });
+	await fetch('/api/support_chat?action=update_activity', { method: 'POST' });
 }
 
 // Utility functions

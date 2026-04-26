@@ -519,7 +519,7 @@
 				formData.append('guest_contact', guestContact);
 			}
 			
-			const response = await fetch('api/support_chat.php', {
+			const response = await fetch('/api/support_chat', {
 				method: 'POST',
 				body: formData
 			});
@@ -562,6 +562,8 @@
 				// Show form if info is required
 				showGuestForm();
 				addMessage('Please provide your information to continue.', true);
+			} else if (data.error) {
+				addMessage('Error connecting to support: ' + data.error, true);
 			}
 		} catch (error) {
 			console.error('Error initializing support chat:', error);
@@ -574,7 +576,7 @@
 		if (!currentChatId) return;
 		
 		try {
-			let url = `api/support_chat.php?action=get_messages&chat_id=${currentChatId}&last_message_id=${lastMessageId}`;
+			let url = `/api/support_chat?action=get_messages&chat_id=${currentChatId}&last_message_id=${lastMessageId}`;
 			
 			// Add guest contact if not logged in
 			if (!isUserLoggedIn() && guestInfo) {
@@ -601,7 +603,7 @@
 			
 			// Check chat status
 			try {
-				let statusUrl = `api/support_chat.php?action=get_chat_status&chat_id=${currentChatId}`;
+				let statusUrl = `/api/support_chat?action=get_chat_status&chat_id=${currentChatId}`;
 				if (!isUserLoggedIn() && guestInfo) {
 					statusUrl += `&guest_contact=${encodeURIComponent(guestInfo.contact)}`;
 				}
@@ -813,7 +815,7 @@
 					formData.append('guest_contact', guestInfo.contact);
 				}
 				
-				const response = await fetch('api/support_chat.php', {
+				const response = await fetch('/api/support_chat', {
 					method: 'POST',
 					body: formData
 				});

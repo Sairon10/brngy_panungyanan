@@ -106,11 +106,11 @@ switch ($type) {
         // Fetch all verified residents (Heads) and all family members (Members)
         // We fetch all so we can print complete households, but we will filter in buildTable to show only Heads
         $stmt = $pdo->query("
-            SELECT 'Head' as role, r.user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, r.address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status
+            SELECT 'Head' as role, r.user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, r.address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status, r.citizenship
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE r.verification_status = 'verified' AND u.role = 'resident'
             UNION ALL
-            SELECT 'Member' as role, fm.user_id, fm.first_name, fm.middle_name, fm.last_name, fm.suffix, fm.full_name, '' as email, fm.birthdate, fm.sex, fm.civil_status, r2.address, r2.purok, r2.phone, fm.birth_place, fm.occupation, fm.classification, fm.religion, fm.educational_attainment, fm.educational_status
+            SELECT 'Member' as role, fm.user_id, fm.first_name, fm.middle_name, fm.last_name, fm.suffix, fm.full_name, '' as email, fm.birthdate, fm.sex, fm.civil_status, r2.address, r2.purok, r2.phone, fm.birth_place, fm.occupation, fm.classification, fm.religion, fm.educational_attainment, fm.educational_status, fm.citizenship
             FROM family_members fm
             JOIN residents r2 ON fm.user_id = r2.user_id
             JOIN users u2 ON r2.user_id = u2.id
@@ -173,14 +173,21 @@ switch ($type) {
             }
 
             // Sectors & Status
-            $occ = strtolower($p['occupation'] ?? '');
-            if ($occ && $occ !== 'n/a' && $occ !== 'none' && $occ !== 'unemployed') $stats['sectors']['Employed'][$sex]++;
-            if ($occ === 'unemployed' || $occ === 'none') $stats['sectors']['Unemployed'][$sex]++;
+            $occ = strtolower(trim($p['occupation'] ?? ''));
+            $class = strtolower($p['classification'] ?? '');
+            
+            $is_unemployed = ($occ === 'unemployed' || $occ === 'none' || $occ === 'n/a' || $occ === 'student' || strpos($class, 'unemployed') !== false);
+            $is_employed = (!$is_unemployed && $occ !== '') || strpos($class, 'employed') !== false || strpos($class, 'labor') !== false;
+
+            if ($is_employed && !$is_unemployed) {
+                $stats['sectors']['Employed'][$sex]++;
+            } elseif ($is_unemployed) {
+                $stats['sectors']['Unemployed'][$sex]++;
+            }
             
             if (!empty($p['is_pwd'])) $stats['sectors']['PWD'][$sex]++;
             if (!empty($p['is_solo_parent'])) $stats['sectors']['Solo Parent'][$sex]++;
             
-            $class = strtolower($p['classification'] ?? '');
             if (strpos($class, 'ofw') !== false) $stats['sectors']['OFW'][$sex]++;
             if (strpos($class, 'osy') !== false) $stats['sectors']['OSY'][$sex]++;
             if (strpos($class, 'osc') !== false) $stats['sectors']['OSC'][$sex]++;
