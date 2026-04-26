@@ -884,7 +884,8 @@
 
 	// Event listeners
 	toggle.addEventListener('click', () => {
-		panel.classList.toggle('active');
+		panel.classList.add('active');
+		toggle.style.display = 'none';
 		badge.style.display = 'none';
 		if (panel.classList.contains('active')) {
 			input.focus();
@@ -893,6 +894,7 @@
 
 	closeBtn.addEventListener('click', () => {
 		panel.classList.remove('active');
+		toggle.style.display = 'flex';
 		stopPolling();
 	});
 
@@ -919,6 +921,7 @@
 			!panel.contains(e.target) && 
 			!toggle.contains(e.target)) {
 			panel.classList.remove('active');
+			toggle.style.display = 'flex';
 			stopPolling();
 		}
 	});

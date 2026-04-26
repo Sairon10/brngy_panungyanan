@@ -139,6 +139,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = 'Error: Selected family member is inactive or unauthorized.';
                     goto skip_request;
                 }
+
+                if (stripos($doc_type, 'Resident ID') !== false) {
+                    $message = 'Error: Resident IDs can only be requested for the account owner. Family members must create their own accounts.';
+                    goto skip_request;
+                }
             }
 
             if ($requires_special_handling) {
@@ -785,13 +790,32 @@ function handleRequestForChange(select) {
     
     const hiddenType = document.getElementById('requestor_type_hidden');
     const hiddenFmId = document.getElementById('family_member_id_hidden');
-    if (select.value === 'self') {
+    const docTypeSelect = document.getElementById('doc_type');
+    const isSelf = select.value === 'self';
+
+    if (isSelf) {
         hiddenType.value = 'self';
         hiddenFmId.value = '';
     } else {
         hiddenType.value = 'family_member';
         hiddenFmId.value = select.value;
     }
+
+    // Disable Resident ID for family members
+    Array.from(docTypeSelect.options).forEach(option => {
+        if (option.value === 'Resident ID') {
+            option.disabled = !isSelf;
+            if (!isSelf && docTypeSelect.value === 'Resident ID') {
+                docTypeSelect.value = '';
+                docTypeSelect.dispatchEvent(new Event('change'));
+                Swal.fire({
+                    title: 'Not Allowed',
+                    text: 'Resident IDs can only be requested for the account owner. For a family member to get a Resident ID, they must create their own verified account.',
+                    icon: 'warning'
+                });
+            }
+        }
+    });
 }
 
 // Form validation for purpose selection
@@ -865,18 +889,38 @@ document.getElementById('doc_type').addEventListener('change', function() {
     <?php 
     $display_msg = $message ?: ($_SESSION['info'] ?? '');
     $is_cancel = $was_cancel || ($_SESSION['was_cancel'] ?? false);
+    $is_error = stripos($display_msg, 'Error') !== false;
     if (isset($_SESSION['was_cancel'])) unset($_SESSION['was_cancel']);
     if (isset($_SESSION['info'])) unset($_SESSION['info']);
 
     if ($display_msg): ?>
-        // Create and show success modal
+        // Create and show success/error modal
         var successModal = document.createElement('div');
         successModal.className = 'modal fade';
         successModal.id = 'successModal';
         successModal.setAttribute('tabindex', '-1');
         successModal.setAttribute('data-bs-backdrop', 'static');
         successModal.setAttribute('data-bs-keyboard', 'false');
-        <?php if ($is_cancel): ?>
+        <?php if ($is_error): ?>
+        successModal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <div class="modal-body text-center p-5">
+                        <div class="mb-4">
+                            <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
+                                <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                            </div>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-3">Request Failed</h4>
+                        <p class="text-secondary mb-4"><?php echo htmlspecialchars(str_replace('Error: ', '', $display_msg)); ?></p>
+                        <button type="button" class="btn btn-danger btn-lg rounded-pill px-5" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i>Close
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        <?php elseif ($is_cancel): ?>
         successModal.innerHTML = `
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content border-0 shadow-lg rounded-4">

@@ -521,20 +521,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<div class="row g-3">
 											<div class="col-md-12">
 												<label class="form-label fw-semibold text-secondary small text-uppercase">Password</label>
-												<div class="input-group">
-													<input type="password" name="password" id="password" class="form-control form-control-lg border-end-0" placeholder="••••••••" required minlength="8">
-													<button class="btn btn-outline-secondary border-start-0 bg-white" type="button" id="togglePassword">
+												<div class="input-group input-group-lg">
+													<input type="password" name="password" id="password" class="form-control border-end-0" placeholder="••••••••" required minlength="8">
+													<span class="input-group-text bg-white border-start-0" id="togglePassword" style="cursor: pointer;">
 														<i class="fas fa-eye text-muted" id="toggleIcon"></i>
-													</button>
+													</span>
 												</div>
 											</div>
 											<div class="col-md-12">
 												<label class="form-label fw-semibold text-secondary small text-uppercase">Confirm Password</label>
-												<div class="input-group">
-													<input type="password" name="confirm_password" id="confirmPassword" class="form-control form-control-lg border-end-0" placeholder="••••••••" required>
-													<button class="btn btn-outline-secondary border-start-0 bg-white" type="button" id="toggleConfirmPassword">
+												<div class="input-group input-group-lg">
+													<input type="password" name="confirm_password" id="confirmPassword" class="form-control border-end-0" placeholder="••••••••" required>
+													<span class="input-group-text bg-white border-start-0" id="toggleConfirmPassword" style="cursor: pointer;">
 														<i class="fas fa-eye text-muted" id="toggleConfirmIcon"></i>
-													</button>
+													</span>
 												</div>
 											</div>
 											<div class="col-12">

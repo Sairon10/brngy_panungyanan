@@ -317,6 +317,19 @@ a {
   overflow: hidden;
 }
 
+/* Fix for password toggle input group focus state */
+.input-group:focus-within .input-group-text {
+  border-color: #86b7fe;
+}
+.input-group:focus-within .form-control {
+  border-color: #86b7fe;
+  box-shadow: none;
+}
+.input-group:focus-within {
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-radius: 0.5rem;
+}
+
 .login-logo-section::after {
   content: '';
   position: absolute;

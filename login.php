@@ -142,14 +142,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 												class="text-decoration-none small text-primary fw-semibold">Forgot
 												password?</a>
 										</div>
-										<div class="input-group">
+										<div class="input-group input-group-lg">
 											<input type="password" name="password" id="password"
-												class="form-control form-control-lg border-end-0" placeholder="••••••••"
+												class="form-control border-end-0" placeholder="••••••••"
 												required>
-											<button class="btn btn-outline-secondary border-start-0 bg-white"
-												type="button" id="togglePassword">
+											<span class="input-group-text bg-white border-start-0"
+												id="togglePassword" style="cursor: pointer;">
 												<i class="fas fa-eye text-muted" id="toggleIcon"></i>
-											</button>
+											</span>
 										</div>
 									</div>
 									<div class="d-grid mb-3">
