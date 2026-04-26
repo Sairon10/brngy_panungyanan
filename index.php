@@ -38,8 +38,8 @@ require_once __DIR__ . '/partials/header.php';
 					<small class="fw-bold text-success text-uppercase tracking-wider">Official Barangay Portal</small>
 				</div>
 				<h1 class="display-4 fw-extrabold mb-4 lh-tight text-dark">
-					Barangay <span class="text-primary">Panungyanan</span><br>
-					<span class="fw-light text-secondary">Digital Services</span>
+					Barangay <span class="text-success">Panungyanan</span><br>
+					Digital Services
 				</h1>
 				<p class="lead mb-5 text-secondary pe-lg-5">
 					Streamlined public services for a connected community. Request documents, report concerns, and stay
@@ -276,7 +276,8 @@ require_once __DIR__ . '/partials/header.php';
 				</div>
 				<div class="col-lg-4 text-center text-lg-end animate__animated animate__fadeInRight">
 					<a href="register.php"
-						class="btn btn-light text-primary btn-lg px-5 shadow-lg fw-bold rounded-pill hover-lift">Register Now</a>
+						class="btn btn-light text-success btn-lg px-5 shadow-lg fw-bold rounded-pill hover-lift">Register
+						Now</a>
 				</div>
 			</div>
 		</div>
@@ -295,17 +296,7 @@ require_once __DIR__ . '/partials/header.php';
 				</div>
 				<p class="text-white-50 mb-4">Dedicated to serving our community with transparency, efficiency, and
 					modern digital solutions for a better tomorrow.</p>
-				<div class="d-flex gap-3">
-					<a href="#"
-						class="btn btn-sm btn-outline-light rounded-circle width-12 height-12 d-flex align-items-center justify-content-center p-0"><i
-							class="fab fa-facebook-f"></i></a>
-					<a href="#"
-						class="btn btn-sm btn-outline-light rounded-circle width-12 height-12 d-flex align-items-center justify-content-center p-0"><i
-							class="fab fa-twitter"></i></a>
-					<a href="#"
-						class="btn btn-sm btn-outline-light rounded-circle width-12 height-12 d-flex align-items-center justify-content-center p-0"><i
-							class="fab fa-instagram"></i></a>
-				</div>
+
 			</div>
 			<div class="col-lg-2 col-6">
 				<h6 class="text-white fw-bold mb-4">Quick Links</h6>
@@ -337,19 +328,19 @@ require_once __DIR__ . '/partials/header.php';
 				<h6 class="text-white fw-bold mb-4">Contact Info</h6>
 				<ul class="list-unstyled text-white-50 mb-0 d-flex flex-column gap-3">
 					<li class="d-flex gap-3">
-						<i class="fas fa-map-marker-alt mt-1 text-primary"></i>
+						<i class="fas fa-map-marker-alt mt-1 text-success"></i>
 						<span>General Trias, Cavite</span>
 					</li>
 					<li class="d-flex gap-3">
-						<i class="fas fa-phone mt-1 text-primary"></i>
+						<i class="fas fa-phone mt-1 text-success"></i>
 						<span>(046) 123-4567</span>
 					</li>
 					<li class="d-flex gap-3">
-						<i class="fas fa-envelope mt-1 text-primary"></i>
+						<i class="fas fa-envelope mt-1 text-success"></i>
 						<span>info@panungyanan.gov.ph</span>
 					</li>
 					<li class="d-flex gap-3">
-						<i class="fas fa-clock mt-1 text-primary"></i>
+						<i class="fas fa-clock mt-1 text-success"></i>
 						<span>Mon-Fri: 8:00 AM - 5:00 PM</span>
 					</li>
 				</ul>

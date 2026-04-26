@@ -250,7 +250,7 @@
 						<i class="fas fa-robot"></i>
 					</div>
 					<div>
-						<h6 class="mb-0 fw-bold">Barangay Assistant</h6>
+						<h6 class="mb-0 fw-bold text-white">Barangay Assistant</h6>
 						<small class="text-muted">Online • Ready to help</small>
 					</div>
 				</div>

@@ -1,11 +1,17 @@
 :root {
-  --primary: #0f766e; /* Teal 700 */
+  --primary: #0f766e;
+  /* Teal 700 */
   --primary-dark: #0d5c56;
-  --secondary: #14b8a6; /* Teal 500 */
-  --accent: #f59e0b; /* Amber 500 */
-  --dark: #1e293b; /* Slate 800 */
-  --text: #475569; /* Slate 600 */
-  --light: #f8fafc; /* Slate 50 */
+  --secondary: #14b8a6;
+  /* Teal 500 */
+  --accent: #f59e0b;
+  /* Amber 500 */
+  --dark: #1e293b;
+  /* Slate 800 */
+  --text: #475569;
+  /* Slate 600 */
+  --light: #f8fafc;
+  /* Slate 50 */
   --white: #ffffff;
   --success: #10b981;
   --font-sans: 'Manrope', sans-serif;
@@ -18,8 +24,12 @@ body {
   line-height: 1.6;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  color: var(--dark);
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-weight: 700;
   letter-spacing: -0.025em;
 }
@@ -63,7 +73,7 @@ a {
   transform: scale(1.25);
   border-radius: 50%;
   border: 2px solid var(--light);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .navbar-nav .nav-link {
@@ -94,6 +104,7 @@ a {
   padding: 0.5rem;
   background: transparent;
 }
+
 .hamburger-icon {
   width: 24px;
   height: 18px;
@@ -101,6 +112,7 @@ a {
   display: inline-block;
   vertical-align: middle;
 }
+
 .hamburger-icon span {
   display: block;
   position: absolute;
@@ -113,26 +125,38 @@ a {
   transform: rotate(0deg);
   transition: .25s ease-in-out;
 }
-.hamburger-icon span:nth-child(1) { top: 0px; }
-.hamburger-icon span:nth-child(2) { top: 8px; }
-.hamburger-icon span:nth-child(3) { top: 16px; }
+
+.hamburger-icon span:nth-child(1) {
+  top: 0px;
+}
+
+.hamburger-icon span:nth-child(2) {
+  top: 8px;
+}
+
+.hamburger-icon span:nth-child(3) {
+  top: 16px;
+}
 
 /* When menu is open, Bootstrap adds .collapsed inversely, but we can also use aria-expanded state */
 .navbar-toggler[aria-expanded="true"] .hamburger-icon span:nth-child(1) {
   top: 8px;
   transform: rotate(135deg);
 }
+
 .navbar-toggler[aria-expanded="true"] .hamburger-icon span:nth-child(2) {
   opacity: 0;
   left: -20px;
 }
+
 .navbar-toggler[aria-expanded="true"] .hamburger-icon span:nth-child(3) {
   top: 8px;
   transform: rotate(-135deg);
 }
+
 .user-pill:hover {
   border-color: var(--primary);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .avatar-circle {
@@ -180,14 +204,22 @@ a {
 }
 
 /* Cards */
-.card, .stat-card, .feature-card, .service-item, .testimonial-card {
+.card,
+.stat-card,
+.feature-card,
+.service-item,
+.testimonial-card {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 1rem;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.card:hover, .stat-card:hover, .feature-card:hover, .service-item:hover, .testimonial-card:hover {
+.card:hover,
+.stat-card:hover,
+.feature-card:hover,
+.service-item:hover,
+.testimonial-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
   border-color: var(--secondary);
@@ -268,8 +300,10 @@ a {
 }
 
 .btn-outline-primary:hover {
-  background-color: var(--primary);
+  background-color: var(--primary-dark);
+  border-color: var(--primary-dark);
   color: white;
+  transform: translateY(-1px);
 }
 
 /* Login/Auth Pages */
@@ -327,8 +361,13 @@ a {
 }
 
 /* New Modern Utilities */
-.width-12 { width: 3rem; }
-.height-12 { height: 3rem; }
+.width-12 {
+  width: 3rem;
+}
+
+.height-12 {
+  height: 3rem;
+}
 
 .text-truncate-2 {
   display: -webkit-box;
@@ -338,17 +377,37 @@ a {
 }
 
 /* Colors */
-.bg-teal-50 { background-color: #f0fdfa; }
-.text-teal-600 { color: #0d9488; }
+.bg-teal-50 {
+  background-color: #f0fdfa;
+}
 
-.bg-rose-50 { background-color: #fff1f2; }
-.text-rose-600 { color: #e11d48; }
+.text-teal-600 {
+  color: #0d9488;
+}
 
-.bg-blue-50 { background-color: #eff6ff; }
-.text-blue-600 { color: #2563eb; }
+.bg-rose-50 {
+  background-color: #fff1f2;
+}
 
-.bg-amber-50 { background-color: #fffbeb; }
-.text-amber-600 { color: #d97706; }
+.text-rose-600 {
+  color: #e11d48;
+}
+
+.bg-blue-50 {
+  background-color: #eff6ff;
+}
+
+.text-blue-600 {
+  color: #2563eb;
+}
+
+.bg-amber-50 {
+  background-color: #fffbeb;
+}
+
+.text-amber-600 {
+  color: #d97706;
+}
 
 /* Mobile Tweaks */
 @media (max-width: 991.98px) {
@@ -356,7 +415,7 @@ a {
     max-width: 250px;
     margin-top: 2rem;
   }
-  
+
   .navbar-nav {
     padding: 1rem 0;
   }
@@ -447,6 +506,7 @@ a {
   .chatbot-toggle {
     display: none !important;
   }
+
   .chatbot-panel {
     display: none !important;
   }
@@ -578,6 +638,7 @@ a {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -680,10 +741,14 @@ a {
 }
 
 @keyframes typing {
-  0%, 60%, 100% {
+
+  0%,
+  60%,
+  100% {
     transform: translateY(0);
     opacity: 0.7;
   }
+
   30% {
     transform: translateY(-10px);
     opacity: 1;
@@ -859,7 +924,7 @@ a {
     height: 38px;
     margin-right: -5px;
   }
-  
+
   .chatbot-toggle .fa-comments {
     font-size: 1rem;
   }
