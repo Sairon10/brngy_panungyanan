@@ -1,0 +1,14 @@
+{
+    "name": "barangay-system/email-service",
+    "description": "Barangay System with Resend Email Integration",
+    "type": "project",
+    "require": {
+        "php": ">=8.0",
+        "resend/resend-php": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    }
+}

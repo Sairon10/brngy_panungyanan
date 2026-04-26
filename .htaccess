@@ -1,0 +1,38 @@
+# Prevent directory listing
+Options -Indexes
+
+# Set default index file
+DirectoryIndex index.php
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Redirect to HTTPS if available (Exclude localhost)
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1)
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTPS} off
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # Protect sensitive files
+    RewriteRule ^\.env$ - [F,L]
+    RewriteRule ^.*\.sql$ - [F,L]
+    RewriteRule ^vercel\.json$ - [F,L]
+    RewriteRule ^composer\.(json|lock)$ - [F,L]
+
+    # Clean URLs: Map /login to login.php
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}.php -f
+    RewriteRule ^(.*)$ $1.php [L]
+
+    # For folders: /admin should load /admin/index.php
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteCond %{REQUEST_FILENAME}/index.php -f
+    RewriteRule ^(.*)$ $1/index.php [L]
+
+</IfModule>
+
+# Custom Error Pages
+ErrorDocument 404 /404.php
+ErrorDocument 403 /404.php

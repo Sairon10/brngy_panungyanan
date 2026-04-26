@@ -1,0 +1,19 @@
+
+[ req ]
+default_bits            = 2048
+default_md              = sha256
+distinguished_name      = req_distinguished_name
+
+[ req_distinguished_name ]
+countryName                     = Country Name (2 letter code)
+countryName_default             = PH
+stateOrProvinceName             = State or Province Name (full name)
+stateOrProvinceName_default     = Cavite
+localityName                    = Locality Name (eg, city)
+localityName_default            = Trece Martires 
+organizationName                = Organization Name (eg, company)
+organizationName_default        = Cavite State University 
+commonName                      = Common Name (e.g. server FQDN or YOUR name)
+commonName_max                  = localhosy
+emailAddress                    = Email Address
+emailAddress_default            = tmc.erica.nosenas@cvsu.edu.PH
