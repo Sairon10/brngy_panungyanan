@@ -14,48 +14,54 @@
  * @param string $message SMS message text
  * @return array Result with 'success' and 'message' keys
  */
+/**
+ * Send SMS using sms-gate.app API (Compatible with Local & Cloud)
+ */
 function send_sms($phoneNumbers, $message) {
     $username = getenv('SMS_USERNAME') ?: $_ENV['SMS_USERNAME'] ?? '';
     $password = getenv('SMS_PASSWORD') ?: $_ENV['SMS_PASSWORD'] ?? '';
-    $deviceIp = getenv('SMS_DEVICE_IP') ?: $_ENV['SMS_DEVICE_IP'] ?? '';
+    // For cloud, this should be set to: https://api.sms-gate.app
+    $deviceIp = getenv('SMS_DEVICE_IP') ?: $_ENV['SMS_DEVICE_IP'] ?? ''; 
     
     if (empty($username) || empty($password)) {
-        return [
-            'success' => false,
-            'message' => 'SMS credentials are not configured. Please set SMS_USERNAME and SMS_PASSWORD in your .env file.'
-        ];
+        return ['success' => false, 'message' => 'SMS credentials are not configured.'];
     }
     
     if (empty($deviceIp)) {
-        return [
-            'success' => false,
-            'message' => 'SMS device IP is not configured. Please set SMS_DEVICE_IP in your .env file.'
-        ];
+        return ['success' => false, 'message' => 'SMS API address is not configured.'];
     }
     
     // Normalize phone numbers to array
     if (!is_array($phoneNumbers)) {
         $phoneNumbers = [$phoneNumbers];
     }
+
+    $formattedNumbers = [];
+    foreach ($phoneNumbers as $number) {
+        // 1. Remove all spaces, dashes, parentheses, and letters
+        $cleanNumber = preg_replace('/[^0-9+]/', '', $number);
+        
+        // 2. Convert standard Philippine format (09xx) to International (+639xx)
+        if (preg_match('/^0(9\d{9})$/', $cleanNumber, $matches)) {
+            $cleanNumber = '+63' . $matches[1];
+        } 
+        // 3. If it already starts with 639 but is missing the '+', add it
+        else if (preg_match('/^63(9\d{9})$/', $cleanNumber, $matches)) {
+            $cleanNumber = '+' . $cleanNumber;
+        }
+
+        if (!empty($cleanNumber)) {
+            $formattedNumbers[] = $cleanNumber;
+        }
+    }
     
-    // Filter out empty phone numbers
-    $phoneNumbers = array_filter(array_map('trim', $phoneNumbers));
+    $phoneNumbers = $formattedNumbers;
     
     if (empty($phoneNumbers)) {
-        return [
-            'success' => false,
-            'message' => 'At least one phone number is required.'
-        ];
+        return ['success' => false, 'message' => 'At least one phone number is required.'];
     }
     
-    if (empty($message)) {
-        return [
-            'success' => false,
-            'message' => 'SMS message is required.'
-        ];
-    }
-    
-    // Prepare SMS payload
+    // sms-gate.app standard payload (Same for Local and Cloud)
     $payload = [
         'textMessage' => [
             'text' => $message
@@ -63,21 +69,22 @@ function send_sms($phoneNumbers, $message) {
         'phoneNumbers' => array_values($phoneNumbers)
     ];
     
-    // Build API URL - check if protocol is already included
-    $apiUrl = '';
-    if (strpos($deviceIp, 'http://') === 0 || strpos($deviceIp, 'https://') === 0) {
-        $apiUrl = $deviceIp;
-    } else {
-        $apiUrl = 'http://' . $deviceIp;
+    // Build API URL
+    $apiUrl = $deviceIp;
+    if (strpos($apiUrl, 'http://') !== 0 && strpos($apiUrl, 'https://') !== 0) {
+        $apiUrl = 'http://' . $apiUrl;
     }
     
-    // Only add default port 8080 if it's a numeric IP or localhost and no port is specified
-    if (strpos($deviceIp, ':') === false && (preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/', $deviceIp) || $deviceIp === 'localhost' || $deviceIp === '127.0.0.1')) {
+    // Add default port for local IPs if missing
+    if (strpos($apiUrl, ':') === false && (preg_match('/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/', $apiUrl) || $apiUrl === 'localhost' || $apiUrl === '127.0.0.1')) {
         $apiUrl .= ':8080';
     }
     
-    // Ensure we don't have double slashes if the user included a trailing slash
-    $apiUrl = rtrim($apiUrl, '/') . '/message';
+    // Fix: Use the correct sms-gate.app endpoint
+    $apiUrl = rtrim($apiUrl, '/');
+    if (strpos($apiUrl, '/3rdparty/v1/messages') === false) {
+        $apiUrl .= '/3rdparty/v1/messages';
+    }
     
     // Send via cURL
     $ch = curl_init($apiUrl);
@@ -87,8 +94,11 @@ function send_sms($phoneNumbers, $message) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json'
     ]);
+    
+    // FIX: ALWAYS use Basic Auth for sms-gate.app, regardless of cloud/local
     curl_setopt($ch, CURLOPT_USERPWD, $username . ':' . $password);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 10); // 10 second timeout
+    
+    curl_setopt($ch, CURLOPT_TIMEOUT, 15);
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -96,10 +106,7 @@ function send_sms($phoneNumbers, $message) {
     curl_close($ch);
     
     if ($error) {
-        return [
-            'success' => false,
-            'message' => 'CURL Error: ' . $error
-        ];
+        return ['success' => false, 'message' => 'CURL Error: ' . $error];
     }
     
     $responseData = json_decode($response, true);
@@ -111,11 +118,11 @@ function send_sms($phoneNumbers, $message) {
             'data' => $responseData
         ];
     } else {
-        $errorMsg = $responseData['message'] ?? 'Unknown error occurred';
+        $errorMsg = $responseData['message'] ?? $responseData['error'] ?? 'Server Response: ' . substr(strip_tags($response), 0, 100);
         return [
             'success' => false,
-            'message' => 'SMS API Error: ' . $errorMsg . ' (HTTP ' . $httpCode . ')',
-            'data' => $responseData
+            'message' => 'SMS API Error (HTTP ' . $httpCode . '): ' . $errorMsg,
+            'raw_response' => $response
         ];
     }
 }
