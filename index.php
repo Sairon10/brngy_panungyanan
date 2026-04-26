@@ -38,7 +38,7 @@ require_once __DIR__ . '/partials/header.php';
 					<small class="fw-bold text-success text-uppercase tracking-wider">Official Barangay Portal</small>
 				</div>
 				<h1 class="display-4 fw-extrabold mb-4 lh-tight text-dark">
-					Barangay <span class="text-primary">CABUCO</span><br>
+					Barangay <span class="text-primary">Panungyanan</span><br>
 					<span class="fw-light text-secondary">Digital Services</span>
 				</h1>
 				<p class="lead mb-5 text-secondary pe-lg-5">
