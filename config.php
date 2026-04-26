@@ -12,10 +12,10 @@ if ($is_local) {
 } else {
     // Production (InfinityFree / Vercel / Cloud)
     // For Vercel, it uses getenv. For InfinityFree, you can hardcode here or use standard env.
-    $db_host = getenv('DB_HOST') ?: 'sqlXXX.infinityfree.com'; // CHANGE THIS
-    $db_name = getenv('DB_NAME') ?: 'epiz_XXX_barangay_system'; // CHANGE THIS
-    $db_user = getenv('DB_USER') ?: 'epiz_XXX'; // CHANGE THIS
-    $db_pass = getenv('DB_PASSWORD') ?: 'YOUR_PASSWORD'; // CHANGE THIS
+    $db_host = getenv('DB_HOST') ?: 'localhost';
+    $db_name = getenv('DB_NAME') ?: 'u113173814_db_Rxl9chEO';
+    $db_user = getenv('DB_USER') ?: 'u113173814_usr_Rxl9chEO';
+    $db_pass = getenv('DB_PASSWORD') ?: '^d/i2H!Kod2L';
 }
 $db_charset = 'utf8mb4';
 
