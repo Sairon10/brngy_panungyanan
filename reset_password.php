@@ -63,90 +63,100 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link href="public/css/styles.css" rel="stylesheet">
 	<link rel="icon" href="public/img/favicon.png">
 </head>
-<body class="login-page">
+<body class="login-page d-flex align-items-center justify-content-center min-vh-100">
+	<div class="container" style="max-width: 960px;">
+		<div class="row justify-content-center">
+			<div class="col-lg-10">
+				<div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+					<div class="row g-0">
+						<!-- Left: Brand / Illustration -->
+						<div class="col-md-5 d-none d-md-flex align-items-center justify-content-center bg-light border-end">
+							<div class="text-center px-4 py-5">
+								<img src="public/img/barangaylogo.png" alt="Barangay Logo"
+									class="mb-4 rounded-circle shadow-sm bg-white p-2"
+									style="width: 110px; height: 110px; object-fit: cover;">
+								<h2 class="h4 fw-bold mb-2">Barangay Panungyanan</h2>
+								<p class="text-muted small mb-3">Digital Information System</p>
+								<ul class="list-unstyled text-start text-muted small mb-0">
+									<li class="mb-2"><i class="fas fa-lock text-success me-2"></i>Secure password reset</li>
+									<li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Create a new password</li>
+									<li><i class="fas fa-shield-alt text-success me-2"></i>Protect your account</li>
+								</ul>
+							</div>
+						</div>
 
-<div class="container-fluid min-vh-100 d-flex align-items-center">
-	<div class="row w-100">
-		<!-- Logo Section - Left Side -->
-		<div class="col-lg-6 d-flex align-items-center justify-content-center login-logo-section text-white">
-			<div class="text-center position-relative z-1">
-				<img src="public/img/barangaylogo.png" alt="Barangay Logo" class="mb-4 login-logo rounded-circle shadow-lg border border-3 border-white p-1 bg-white" style="width: 180px; height: 180px; object-fit: cover;">
-				<h1 class="display-5 fw-extrabold text-white mb-2">Barangay Panungyanan</h1>
-				<p class="lead text-white-50 mb-0">Digital Information System</p>
-			</div>
-		</div>
-		
-		<!-- Reset Password Form Section - Right Side -->
-		<div class="col-lg-6 d-flex align-items-center justify-content-center login-form-section">
-			<div class="w-100 p-4" style="max-width: 500px;">
-				<div class="card shadow-lg border-0">
-					<div class="card-body p-5">
-						<h2 class="text-center fw-bold mb-4">Reset Password</h2>
-						<?php if ($reset_success): ?>
-							<div class="text-center">
-								<div class="alert alert-success border-0 bg-success bg-opacity-10 text-success mb-4">
-									<i class="fas fa-check-circle fa-2x mb-3 d-block"></i>
-									<h4 class="h5 fw-bold">Password Reset Successful!</h4>
-									<p class="mb-0 small">Your password has been updated. You may now login with your new password.</p>
+						<!-- Right: Form -->
+						<div class="col-md-7 bg-white">
+							<div class="p-4 p-md-5">
+								<div class="mb-4 text-center text-md-start">
+									<h1 class="h3 fw-bold mb-1">Reset Password</h1>
+									<p class="text-muted small mb-0">Enter your new password below.</p>
 								</div>
-								<div class="d-grid mb-3">
-									<a href="login.php" class="btn btn-primary btn-lg"><i class="fas fa-sign-in-alt me-2"></i>Go to Login</a>
-								</div>
-							</div>
-						<?php elseif ($message && !$valid): ?>
-							<div class="alert alert-<?php echo strpos($message, 'Error') !== false || strpos($message, 'match') !== false || strpos($message, 'must') !== false ? 'danger' : 'info'; ?> border-0 mb-4"
-							><?php echo htmlspecialchars($message); ?></div>
-						<?php endif; ?>
-						<?php if ($valid): ?>
-							<form method="post" novalidate>
-								<?php echo csrf_field(); ?>
-								<div class="mb-3">
-									<label class="form-label fw-semibold text-secondary small text-uppercase">New Password</label>
-									<div class="input-group">
-										<input type="password" name="password" id="password" class="form-control form-control-lg border-end-0" placeholder="••••••••" required minlength="8" pattern="(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).{8,}">
-										<button class="btn btn-outline-secondary border-start-0 bg-white" type="button" id="togglePassword">
-											<i class="fas fa-eye text-muted" id="toggleIcon"></i>
-										</button>
+								
+								<?php if ($reset_success): ?>
+									<div class="text-center">
+										<div class="alert alert-success border-0 bg-success bg-opacity-10 text-success mb-4 rounded-3 text-start small">
+											<i class="fas fa-check-circle me-2"></i> Password Reset Successful! Your password has been updated.
+										</div>
+										<div class="d-grid mb-3">
+											<a href="login.php" class="btn btn-primary rounded-pill"><i class="fas fa-sign-in-alt me-2"></i>Go to Login</a>
+										</div>
 									</div>
-									<div class="form-text small mt-2">Min 8 chars, uppercase, number, special char.</div>
-								</div>
-								<div class="mb-4">
-									<label class="form-label fw-semibold text-secondary small text-uppercase">Confirm Password</label>
-									<div class="input-group">
-										<input type="password" name="confirm_password" id="confirmPassword" class="form-control form-control-lg border-end-0" placeholder="••••••••" required>
-										<button class="btn btn-outline-secondary border-start-0 bg-white" type="button" id="toggleConfirmPassword">
-											<i class="fas fa-eye text-muted" id="toggleConfirmIcon"></i>
-										</button>
+								<?php elseif ($message && !$valid): ?>
+									<div class="alert alert-<?php echo strpos($message, 'Error') !== false || strpos($message, 'match') !== false || strpos($message, 'must') !== false ? 'danger' : 'info'; ?> border-0 bg-<?php echo strpos($message, 'Error') !== false || strpos($message, 'match') !== false || strpos($message, 'must') !== false ? 'danger' : 'info'; ?> bg-opacity-10 text-<?php echo strpos($message, 'Error') !== false || strpos($message, 'match') !== false || strpos($message, 'must') !== false ? 'danger' : 'info'; ?> small mb-4 rounded-3 text-start">
+										<i class="fas fa-<?php echo strpos($message, 'Error') !== false || strpos($message, 'match') !== false || strpos($message, 'must') !== false ? 'exclamation-circle' : 'info-circle'; ?> me-2"></i> <?php echo htmlspecialchars($message); ?>
 									</div>
-								</div>
-								<div class="d-grid mb-4">
-									<button type="submit" class="btn btn-primary btn-lg py-3">Reset Password</button>
-								</div>
-								<div class="text-center">
-									<a href="login.php" class="text-secondary small fw-bold text-decoration-none"><i class="fas fa-arrow-left me-1"></i> Back to Login</a>
-								</div>
-							</form>
-						<?php elseif (!$reset_success): ?>
-							<div class="text-center">
-								<div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning mb-4">
-									<i class="fas fa-exclamation-triangle fa-2x mb-3 d-block"></i>
-									<h4 class="h5 fw-bold">Invalid or Expired Token</h4>
-									<p class="mb-0 small">The password reset link is invalid or has expired. Please request a new password reset.</p>
-								</div>
-								<div class="d-grid mb-3">
-									<a href="forgot_password.php" class="btn btn-primary btn-lg">Request New Reset Link</a>
-								</div>
-								<div class="text-center">
-									<a href="login.php" class="text-secondary small fw-bold text-decoration-none">Back to Login</a>
-								</div>
+								<?php endif; ?>
+
+								<?php if ($valid): ?>
+									<form method="post" novalidate>
+										<?php echo csrf_field(); ?>
+										<div class="mb-3">
+											<label class="form-label fw-semibold text-secondary small text-uppercase">New Password</label>
+											<div class="input-group">
+												<input type="password" name="password" id="password" class="form-control form-control-lg border-end-0" placeholder="••••••••" required minlength="8" pattern="(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}">
+												<button class="btn border border-start-0 bg-white" type="button" id="togglePassword">
+													<i class="fas fa-eye text-muted" id="toggleIcon"></i>
+												</button>
+											</div>
+											<div class="form-text small mt-2" style="font-size: 0.78rem;">Min 8 chars, uppercase, number, special char.</div>
+										</div>
+										<div class="mb-4">
+											<label class="form-label fw-semibold text-secondary small text-uppercase">Confirm Password</label>
+											<div class="input-group">
+												<input type="password" name="confirm_password" id="confirmPassword" class="form-control form-control-lg border-end-0" placeholder="••••••••" required>
+												<button class="btn border border-start-0 bg-white" type="button" id="toggleConfirmPassword">
+													<i class="fas fa-eye text-muted" id="toggleConfirmIcon"></i>
+												</button>
+											</div>
+										</div>
+										<div class="d-flex justify-content-center mb-4 mt-2">
+											<button type="submit" class="btn btn-primary px-4 py-2 rounded-pill w-100">Reset Password</button>
+										</div>
+										<div class="text-center">
+											<a href="login.php" class="text-success small fw-semibold text-decoration-none"><i class="fas fa-arrow-left me-1"></i> Back to Login</a>
+										</div>
+									</form>
+								<?php elseif (!$reset_success): ?>
+									<div class="text-center">
+										<div class="alert alert-warning border-0 bg-warning bg-opacity-10 text-warning mb-4 rounded-3 text-start small">
+											<i class="fas fa-exclamation-triangle me-2"></i> The password reset link is invalid or has expired. Please request a new password reset.
+										</div>
+										<div class="d-grid mb-3">
+											<a href="forgot_password.php" class="btn btn-primary rounded-pill">Request New Reset Link</a>
+										</div>
+										<div class="text-center">
+											<a href="login.php" class="text-success small fw-semibold text-decoration-none"><i class="fas fa-arrow-left me-1"></i> Back to Login</a>
+										</div>
+									</div>
+								<?php endif; ?>
 							</div>
-						<?php endif; ?>
+						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-</div>
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	<script>
