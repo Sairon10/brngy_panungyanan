@@ -270,7 +270,8 @@ require_once __DIR__ . '/partials/header.php';
 		<div class="container position-relative z-1 py-4">
 			<div class="row align-items-center">
 				<div class="col-lg-8 mb-4 mb-lg-0 animate__animated animate__fadeInLeft text-center text-lg-start">
-					<h2 class="display-5 fw-extrabold mb-3 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Ready to Go Digital?</h2>
+					<h2 class="display-5 fw-extrabold mb-3 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Ready
+						to Go Digital?</h2>
 					<p class="lead mb-0 text-white fw-medium">Join thousands of residents who are already enjoying the
 						convenience of our digital platform.</p>
 				</div>
