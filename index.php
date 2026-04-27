@@ -43,7 +43,7 @@ require_once __DIR__ . '/partials/header.php';
 				</h1>
 				<p class="lead mb-5 text-secondary pe-lg-5">
 					Streamlined public services for a connected community. Request documents, report concerns, and stay
-					updated—all in one secure platform.
+					updated all in one secure platform.
 				</p>
 				<div class="mt-5 d-flex gap-4 text-muted small">
 					<div class="d-flex align-items-center gap-2">
@@ -102,7 +102,7 @@ require_once __DIR__ . '/partials/header.php';
 	<div class="container py-5">
 		<div class="row mb-5">
 			<div class="col-lg-6 mx-auto text-center animate__animated animate__fadeInUp">
-				<h2 class="h1 fw-bold mb-3">Essential Services</h2>
+				<h2 class="mb-3">Essential Services</h2>
 				<p class="lead text-secondary">Everything you need to interact with your barangay, simplified.</p>
 			</div>
 		</div>
@@ -164,7 +164,7 @@ require_once __DIR__ . '/partials/header.php';
 				<span
 					class="d-inline-block py-1 px-3 rounded-pill bg-primary bg-opacity-10 text-primary fw-bold text-uppercase small tracking-wide mb-3">About
 					Us</span>
-				<h2 class="display-5 fw-extrabold mb-3">Barangay Panungyanan</h2>
+				<h2 class=" fw-extrabold mb-3">Barangay Panungyanan</h2>
 				<p class="lead text-secondary">Our commitment to serving the community with excellence and integrity</p>
 			</div>
 		</div>
@@ -263,14 +263,14 @@ require_once __DIR__ . '/partials/header.php';
 		<div class="container position-relative z-1 py-4">
 			<div class="row align-items-center">
 				<div class="col-lg-8 mb-4 mb-lg-0 animate__animated animate__fadeInLeft text-center text-lg-start">
-					<h2 class="display-5 fw-extrabold mb-3 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Ready
+					<h2 class="display-6 fw-bold mb-3 text-white" style="text-shadow: 0 2px 4px rgba(0,0,0,0.1);">Ready
 						to Go Digital?</h2>
 					<p class="lead mb-0 text-white fw-medium">Join thousands of residents who are already enjoying the
 						convenience of our digital platform.</p>
 				</div>
 				<div class="col-lg-4 text-center text-lg-end animate__animated animate__fadeInRight">
 					<a href="register.php"
-						class="btn btn-light text-success btn-lg px-5 shadow-lg fw-bold rounded-pill hover-lift">Register
+						class="btn btn-light text-success btn-md px-5 shadow-lg fw-bold hover-lift">Register
 						Now</a>
 				</div>
 			</div>

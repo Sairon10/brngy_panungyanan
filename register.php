@@ -168,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link href="public/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 	<link href="public/css/styles.css" rel="stylesheet">
+	<link rel="icon" href="public/img/favicon.png">
 	<style>
 		.step-indicator {
 			display: flex;

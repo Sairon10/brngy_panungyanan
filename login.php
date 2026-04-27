@@ -86,6 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link href="public/bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 	<link href="public/css/styles.css" rel="stylesheet">
+	<link rel="icon" href="public/img/favicon.png">
 </head>
 
 <body class="login-page d-flex align-items-center justify-content-center min-vh-100">
@@ -117,6 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<div class="col-md-7 bg-white">
 							<div class="p-4 p-md-5">
 								<div class="mb-4 text-center text-md-start">
+									<!-- Back to Home Button -->
+									<a href="index.php" class="text-decoration-none small text-black fw-semibold">
+										<i class="fas fa-arrow-left me-1"></i>
+									</a>
 									<h1 class="h3 fw-bold mb-1">Welcome back</h1>
 									<p class="text-muted small mb-0">Sign in to continue.</p>
 								</div>
@@ -139,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 											<label
 												class="form-label fw-semibold text-secondary small text-uppercase mb-0">Password</label>
 											<a href="forgot_password.php"
-												class="text-decoration-none small text-primary fw-semibold">Forgot
+												class="text-decoration-none small text-success fw-semibold">Forgot
 												password?</a>
 										</div>
 										<div class="input-group input-group-lg">
@@ -153,12 +158,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										</div>
 									</div>
 									<div class="d-grid mb-3">
-										<button type="submit" class="btn btn-primary btn-lg py-3 rounded-pill">Sign
+										<button type="submit" class="btn btn-success btn-md">Sign
 											In</button>
 									</div>
 									<div class="text-center">
 										<p class="text-muted small mb-0">Don't have an account? <a href="register.php"
-												class="text-primary fw-semibold text-decoration-none">Create account</a>
+												class="text-success fw-semibold text-decoration-none">Create account</a>
 										</p>
 									</div>
 								</form>
