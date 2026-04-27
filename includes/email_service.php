@@ -373,7 +373,7 @@ function generate_password_reset_email_html($resetLink, $userName = 'User') {
                                 </p>
                                 
                                 <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
-                                    We received a request to reset your password for your account. Click the button below to create a new password:
+                                    We received a request to reset the password for your account. Please click the button below to securely create a new password:
                                 </p>
                                 
                                 <!-- Reset Button -->
@@ -444,7 +444,7 @@ function send_password_reset_email($email, $resetLink, $userName = 'User') {
     
     $subject = 'Reset Your Password - Barangay Panungyanan';
     $htmlContent = generate_password_reset_email_html($resetLink, $userName);
-    $textContent = "Dear {$userName},\n\nWe received a request to reset your password. Click the link below to create a new password:\n\n{$resetLink}\n\nThis link will expire in 1 hour.\n\nIf you did not request this, please ignore this email.";
+    $textContent = "Dear {$userName},\n\nWe received a request to reset the password for your account. Please click the link below to securely create a new password:\n\n{$resetLink}\n\nThis link will expire in 1 hour.\n\nIf you did not request this, please ignore this email.";
     
     return send_resend_email($email, $subject, $htmlContent, $textContent);
 }
