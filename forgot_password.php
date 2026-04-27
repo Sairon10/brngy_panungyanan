@@ -120,8 +120,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 	<link href="public/css/styles.css" rel="stylesheet">
 	<link rel="icon" href="public/img/favicon.png">
-<<<<<<< Updated upstream
-=======
+
 	<style>
 		.method-btn {
 			border: 2px solid #e2e8f0;
@@ -158,7 +157,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			color: #64748b;
 		}
 	</style>
->>>>>>> Stashed changes
 </head>
 
 <body class="login-page d-flex align-items-center justify-content-center min-vh-100">
