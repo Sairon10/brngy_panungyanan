@@ -451,11 +451,22 @@ require_once __DIR__ . '/header.php';
                 const badge = badgeMap[r.status] || 'bg-secondary';
                 let statusLabel = r.status ? r.status.replace('_', ' ').replace(/^./, c => c.toUpperCase()) : '';
                 if (r.status === 'submitted') statusLabel = 'Pending';
+                
+                let displayName = r.full_name;
+                let desc = r.description || '';
+                if (desc.startsWith('[Walk-in Reporter: ')) {
+                    let endBracket = desc.indexOf(']');
+                    if (endBracket !== -1) {
+                        displayName = desc.substring(19, endBracket).trim();
+                        desc = desc.substring(endBracket + 1).trim();
+                    }
+                }
+
                 rows += `<tr>
                 <td>${i + 1}</td>
                 <td class="small">${esc(r.created_at ? new Date(r.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—')}</td>
-                <td class="fw-bold">${esc(r.full_name)}</td>
-                <td class="small" style="max-width:280px;word-break:break-word;">${esc((r.description || '').substring(0, 120))}${(r.description || '').length > 120 ? '…' : ''}</td>
+                <td class="fw-bold">${esc(displayName)}</td>
+                <td class="small" style="max-width:280px;word-break:break-word;">${esc(desc.substring(0, 120))}${desc.length > 120 ? '…' : ''}</td>
                 <td><span class="badge ${badge}">${statusLabel}</span></td>
             </tr>`;
             });

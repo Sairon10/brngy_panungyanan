@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							redirect('rbi_form.php');
 						} else {
 							// Go to landing page after login
-							redirect('index.php');
+							redirect('dashboard');
 						}
 					} else {
 						// Admin or other roles: go directly to admin dashboard

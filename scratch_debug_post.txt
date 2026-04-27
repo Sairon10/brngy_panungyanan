@@ -1,0 +1,13 @@
+2026-04-28 00:22:14
+POST DATA:
+Array
+(
+    [walkin_action] => 1
+    [wi_requestor_name] => Web UI Tester
+    [wi_doc_type] => Barangay Indigency
+    [wi_purpose] => For Test UI
+    [csrf_token] => test_token
+)
+
+CSRF: OK
+-----------------

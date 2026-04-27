@@ -7,72 +7,74 @@ $pdo = get_db_connection();
 $info = $_SESSION['info'] ?? '';
 $error = $_SESSION['error'] ?? '';
 unset($_SESSION['info'], $_SESSION['error']);
-?>
 
-<style>
-    .action-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #f8f9fa;
-        color: #495057;
-        transition: all 0.2s ease;
-        text-decoration: none;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
-
-    .action-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        background-color: #ffffff;
-    }
-
-    .btn-view {
-        color: #0d9488 !important;
-    }
-
-    /* Teal/Green */
-    .btn-review {
-        color: #0284c7 !important;
-    }
-
-    /* Blue */
-    .btn-resolve {
-        color: #16a34a !important;
-    }
-
-    /* Green */
-    .btn-reject {
-        color: #dc2626 !important;
-    }
-
-    /* Red */
-    .btn-undo {
-        color: #f59e0b !important;
-    }
-
-    /* Amber/Orange */
-
-    .action-container form {
-        display: inline-block;
-        margin: 0;
-        padding: 0;
-    }
-
-    .bg-teal-gradient {
-        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-    }
-</style>
-
-<?php
 // 1. Process POST before any output
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (csrf_validate()) {
         $id = (int) ($_POST['id'] ?? 0);
         $action = $_POST['action'] ?? '';
+
+        // ── Walk-in Incident Report ────────────────────────────────────────────
+        if ($action === 'add_walkin_incident') {
+            $wi_reporter_name = trim($_POST['wi_reporter_name'] ?? '');
+            $wi_resident_id   = (int) ($_POST['wi_resident_id'] ?? 0);
+            $wi_description   = trim($_POST['wi_description'] ?? '');
+            $wi_lat           = $_POST['wi_latitude'] ?? '';
+            $wi_lng           = $_POST['wi_longitude'] ?? '';
+
+            // Validate all required fields
+            if (!$wi_reporter_name) {
+                $_SESSION['error'] = 'Please enter the resident\'s name.';
+            } elseif (!$wi_description) {
+                $_SESSION['error'] = 'Please describe the incident.';
+            } elseif (!is_numeric($wi_lat) || !is_numeric($wi_lng)) {
+                $_SESSION['error'] = 'Please pin the incident location on the map.';
+            } else {
+                // Determine user_id: try to match registered resident, fallback to admin
+                $wi_user_id = (int) $_SESSION['user_id'];
+                $res_row = null;
+                if ($wi_resident_id) {
+                    $res_stmt = $pdo->prepare('SELECT user_id FROM residents WHERE id = ? LIMIT 1');
+                    $res_stmt->execute([$wi_resident_id]);
+                    $res_row = $res_stmt->fetch(PDO::FETCH_ASSOC);
+                    if ($res_row) $wi_user_id = (int) $res_row['user_id'];
+                }
+
+                // Prefix walk-in reporter name in description if no account matched
+                $final_description = (!$res_row)
+                    ? '[Walk-in Reporter: ' . $wi_reporter_name . '] ' . $wi_description
+                    : $wi_description;
+
+                // Handle optional image upload
+                $imagePath = null;
+                if (isset($_FILES['wi_incident_image']) && $_FILES['wi_incident_image']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['wi_incident_image'];
+                    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                    if (in_array($file['type'], $allowedTypes) && $file['size'] <= 5 * 1024 * 1024) {
+                        $uploadDir = __DIR__ . '/../uploads/incidents/';
+                        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+                        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+                        $fname = 'incident_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                        if (move_uploaded_file($file['tmp_name'], $uploadDir . $fname)) {
+                            $imagePath = 'uploads/incidents/' . $fname;
+                        }
+                    }
+                }
+
+                try {
+                    $pdo->prepare('INSERT INTO incidents (user_id, description, latitude, longitude, image_path, status, created_at) VALUES (?, ?, ?, ?, ?, "submitted", NOW())')
+                        ->execute([$wi_user_id, $final_description, (string)$wi_lat, (string)$wi_lng, $imagePath]);
+                    $_SESSION['info'] = 'Submitted successfully.';
+                } catch (PDOException $e) {
+                    error_log('Walk-in incident insert error: ' . $e->getMessage());
+                    $_SESSION['error'] = 'Database error: ' . $e->getMessage();
+                }
+            }
+            header('Location: ' . $_SERVER['REQUEST_URI']);
+            exit;
+        }
+        // ── End Walk-in Incident ───────────────────────────────────────────────
+
 
         if ($action === 'update_status') {
             $status = $_POST['status'] ?? 'submitted';
@@ -274,6 +276,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
+    } else {
+        $_SESSION['error'] = 'Invalid form submission (CSRF token missing or expired). Please reload the page and try again.';
+        header('Location: ' . $_SERVER['REQUEST_URI']);
+        exit;
     }
 }
 
@@ -283,12 +289,91 @@ $breadcrumb = [['title' => 'Incidents']];
 
 // 3. Include Header (Starts Output)
 require_once __DIR__ . '/header.php';
+?>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    .action-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        color: #495057;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: #ffffff;
+    }
+
+    .btn-view {
+        color: #0d9488 !important;
+    }
+
+    /* Teal/Green */
+    .btn-review {
+        color: #0284c7 !important;
+    }
+
+    /* Blue */
+    .btn-resolve {
+        color: #16a34a !important;
+    }
+
+    /* Green */
+    .btn-reject {
+        color: #dc2626 !important;
+    }
+
+    /* Red */
+    .btn-undo {
+        color: #f59e0b !important;
+    }
+
+    /* Amber/Orange */
+
+    .action-container form {
+        display: inline-block;
+        margin: 0;
+        padding: 0;
+    }
+
+    .bg-teal-gradient {
+        background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+    }
+
+    /* Walk-in map location buttons */
+    .location-btn {
+        transition: all 0.2s ease;
+    }
+    .location-btn:hover {
+        background-color: #f0fdfa !important;
+        color: #0d9488 !important;
+        border-color: #0d9488 !important;
+    }
+    .active-location {
+        background-color: #0d9488 !important;
+        color: white !important;
+        border-color: #0d9488 !important;
+        box-shadow: 0 0.5rem 1rem rgba(13, 148, 136, 0.15) !important;
+    }
+</style>
+
+<?php
 $limit = 10;
 $current_page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
 $offset = ($current_page - 1) * $limit;
 
-$where_clause = " WHERE u.role != 'admin'";
+$where_clause = " WHERE 1=1";
 $params = [];
 if (isset($admin_inc_status_filter) && $admin_inc_status_filter !== '') {
     $where_clause .= ' AND i.status = ?';
@@ -307,6 +392,15 @@ $sql = 'SELECT i.*, u.full_name, u.email, u.created_at as user_created_at
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll();
+
+// Walk-in: fetch residents for modal
+$wi_residents_inc = $pdo->query("
+    SELECT r.id, u.full_name, r.address
+    FROM residents r
+    JOIN users u ON u.id = r.user_id
+    WHERE u.role = 'resident'
+    ORDER BY u.full_name ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <div class="container-fluid">
@@ -330,11 +424,14 @@ $rows = $stmt->fetchAll();
                             <p class="text-muted small mb-0">Manage and track barangay incident reports</p>
                         </div>
                     </div>
-                    <div class="input-group" style="max-width: 300px;">
-                        <span class="input-group-text bg-light border-end-0"><i
-                                class="fas fa-search text-muted opacity-50"></i></span>
-                        <input type="text" id="incidentsSearch" class="form-control border-start-0"
-                            placeholder="Search incidents...">
+                    <div class="d-flex align-items-center gap-2 flex-nowrap">
+                        <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#walkinIncidentModal">
+                            <i class="fas fa-plus me-1"></i> Report Incident
+                        </button>
+                        <div class="input-group" style="max-width: 260px; min-width: 160px;">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted opacity-50"></i></span>
+                            <input type="text" id="incidentsSearch" class="form-control border-start-0" placeholder="Search incidents...">
+                        </div>
                     </div>
                 </div>
 
@@ -441,10 +538,22 @@ $rows = $stmt->fetchAll();
                                             <span class="text-secondary fw-bold small"><?php echo $counter++; ?></span>
                                         </td>
                                         <td>
+                                            <?php
+                                            $displayName = $r['full_name'] ?? '';
+                                            $displayEmail = $r['email'] ?? '';
+                                            $desc = $r['description'] ?? '';
+                                            if (str_starts_with($desc, '[Walk-in Reporter: ')) {
+                                                $endBracket = strpos($desc, ']');
+                                                if ($endBracket !== false) {
+                                                    $displayName = trim(substr($desc, 19, $endBracket - 19));
+                                                    $displayEmail = 'Walk-in Report';
+                                                }
+                                            }
+                                            ?>
                                             <div class="fw-bold text-dark">
-                                                <?php echo htmlspecialchars($r['full_name'] ?? ''); ?>
+                                                <?php echo htmlspecialchars($displayName); ?>
                                             </div>
-                                            <div class="small text-muted"><?php echo htmlspecialchars($r['email'] ?? ''); ?>
+                                            <div class="small text-muted"><?php echo htmlspecialchars($displayEmail); ?>
                                             </div>
                                         </td>
                                         <td>
@@ -563,6 +672,82 @@ $rows = $stmt->fetchAll();
     <input type="hidden" name="rejection_notes" id="updateNotes">
 </form>
 
+<!-- Walk-in Incident Modal -->
+<div class="modal fade" id="walkinIncidentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="modal-title fw-bold">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>Report New Incident
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form method="post" enctype="multipart/form-data" id="walkinIncidentForm" action="">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="add_walkin_incident">
+
+                    <!-- 0. Resident Name (free text — no account required) -->
+                    <div class="mb-4 pb-3 border-bottom">
+                        <label class="form-label fw-semibold text-secondary small text-uppercase">Resident Name</label>
+                        <input type="text" name="wi_reporter_name" id="wiReporterName" class="form-control" placeholder="Enter resident's full name..." autocomplete="off">
+                        <div class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Type any name — account not required for walk-in reports.</div>
+                        <!-- Optional: live-search to link to a registered resident -->
+                        <input type="hidden" name="wi_resident_id" id="wiIncidentResidentId">
+                        <div id="wiIncidentResidentSuggestions" class="list-group mt-1 shadow-sm" style="display:none; max-height:150px; overflow-y:auto; position:absolute; z-index:9999; width:calc(100% - 3rem);"></div>
+                        <div id="wiIncidentResidentSelected" class="mt-1 small text-success fw-semibold" style="display:none;"></div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Left: Map -->
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold text-secondary small text-uppercase">1. Pin Location</label>
+                            <div class="bg-light p-3 rounded-3 mb-3">
+                                <div class="input-group mb-3 shadow-none border rounded-3 overflow-hidden">
+                                    <span class="input-group-text bg-white border-0"><i class="fas fa-search text-secondary"></i></span>
+                                    <input type="text" id="wiLocationSearch" class="form-control border-0 shadow-none px-0" style="font-size:0.9rem;" placeholder="Search street or landmark...">
+                                    <button class="btn btn-primary px-3 fw-semibold btn-sm" type="button" id="wiSearchLocationBtn">Search</button>
+                                </div>
+                                <div class="d-flex gap-2 mb-2">
+                                    <button type="button" class="btn btn-white btn-sm border shadow-sm flex-fill py-2 text-secondary fw-semibold" id="wiUseCurrentLocation">
+                                        <i class="fas fa-location-arrow me-1"></i>Current
+                                    </button>
+                                    <button type="button" class="btn btn-white btn-sm border shadow-sm flex-fill py-2 text-secondary fw-semibold" id="wiSelectOnMap">
+                                        <i class="fas fa-map-marker-alt me-1"></i>Pick Map
+                                    </button>
+                                </div>
+                                <div id="wiLocationStatus" class="text-secondary" style="font-size:0.75rem;">
+                                    <i class="fas fa-info-circle me-1"></i>Area: Barangay Panungyanan
+                                </div>
+                            </div>
+                            <div id="wiMap" style="height:250px;" class="rounded-3 border"></div>
+                            <input type="hidden" name="wi_latitude" id="wiLatitude">
+                            <input type="hidden" name="wi_longitude" id="wiLongitude">
+                        </div>
+
+                        <!-- Right: Description + Upload -->
+                        <div class="col-md-5">
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary small text-uppercase">2. Describe Incident</label>
+                                <textarea name="wi_description" id="wiIncidentDescription" class="form-control bg-light border-0" rows="5" style="font-size:0.9rem;" placeholder="What happened?"></textarea>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary small text-uppercase">3. Upload Proof (Optional)</label>
+                                <input type="file" name="wi_incident_image" id="wiIncidentImage" class="form-control form-control-sm bg-light border-0" accept="image/*">
+                            </div>
+                            <div class="d-grid pt-2">
+                                <button class="btn btn-danger btn-lg rounded-pill shadow-sm py-3" type="submit">
+                                    <i class="fas fa-paper-plane me-2"></i>Submit Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Search: Incidents table
@@ -588,7 +773,254 @@ $rows = $stmt->fetchAll();
                 checkboxes.forEach(cb => cb.checked = this.checked);
             });
         }
+
+        // ── Walk-in Incident: Resident Live-Search (optional — links to registered resident)
+        var wiResidents = <?php echo json_encode(array_values($wi_residents_inc)); ?>;
+
+        var wiReporterInput = document.getElementById('wiReporterName');
+        var wiSuggestions   = document.getElementById('wiIncidentResidentSuggestions');
+        var wiHiddenId      = document.getElementById('wiIncidentResidentId');
+        var wiSelected      = document.getElementById('wiIncidentResidentSelected');
+
+        if (wiReporterInput && wiSuggestions) {
+            wiReporterInput.addEventListener('input', function () {
+                var q = this.value.trim().toLowerCase();
+                if (wiHiddenId) wiHiddenId.value = '';
+                if (wiSelected) wiSelected.style.display = 'none';
+                if (!q || q.length < 2) { wiSuggestions.style.display = 'none'; return; }
+
+                var matches = wiResidents.filter(function (r) {
+                    return r.full_name.toLowerCase().includes(q);
+                }).slice(0, 8);
+
+                if (!matches.length) { wiSuggestions.style.display = 'none'; return; }
+
+                wiSuggestions.innerHTML = '';
+                matches.forEach(function (r) {
+                    var a = document.createElement('a');
+                    a.href = 'javascript:void(0)';
+                    a.className = 'list-group-item list-group-item-action py-2 px-3 small';
+                    a.innerHTML = '<strong>' + r.full_name + '</strong>' + (r.address ? '<span class="text-muted ms-2">' + r.address + '</span>' : '');
+                    a.addEventListener('click', function () {
+                        if (wiHiddenId) wiHiddenId.value = r.id;
+                        wiReporterInput.value = r.full_name;
+                        if (wiSelected) {
+                            wiSelected.textContent = '\u2713 Linked to registered resident: ' + r.full_name;
+                            wiSelected.style.display = '';
+                        }
+                        wiSuggestions.style.display = 'none';
+                    });
+                    wiSuggestions.appendChild(a);
+                });
+                wiSuggestions.style.display = '';
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('#walkinIncidentModal')) wiSuggestions.style.display = 'none';
+            });
+        }
+
+        // Walk-in Incident: Form Validation
+        var wiForm = document.getElementById('walkinIncidentForm');
+        if (wiForm) {
+            wiForm.addEventListener('submit', function (e) {
+                var nameField = document.getElementById('wiReporterName');
+                if (!nameField || !nameField.value.trim()) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'warning', title: 'Enter a Name', text: 'Please enter the resident\'s name.', confirmButtonColor: '#0d9488' });
+                    return;
+                }
+                if (!document.getElementById('wiLatitude').value) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'warning', title: 'Pin a Location', text: 'Please pin the incident location on the map.', confirmButtonColor: '#0d9488' });
+                    return;
+                }
+                if (!document.getElementById('wiIncidentDescription').value.trim()) {
+                    e.preventDefault();
+                    Swal.fire({ icon: 'warning', title: 'Add Description', text: 'Please describe the incident.', confirmButtonColor: '#0d9488' });
+                    return;
+                }
+            });
+        }
+
+        // ── Walk-in Incident: Leaflet Map (matches resident's form exactly) ───
+        var wiMap = null, wiMarker = null;
+        var wiModalEl = document.getElementById('walkinIncidentModal');
+        // Same bounds as resident's form
+        var wiBarangayBounds = L.latLngBounds(
+            [14.2242, 120.9095], // Southwest
+            [14.2471, 120.9305]  // Northeast
+        );
+        var wiPanungyananCenter = [14.2350, 120.9218];
+
+        // Active mode highlight — matches setActiveMode() in resident form
+        function wiSetActiveMode(btnId) {
+            document.querySelectorAll('#walkinIncidentModal .location-btn').forEach(function(btn) {
+                btn.style.backgroundColor = '';
+                btn.style.color = '';
+                btn.style.borderColor = '';
+                btn.classList.remove('active-location');
+                btn.classList.add('btn-white', 'text-secondary');
+            });
+            var activeBtn = btnId ? document.getElementById(btnId) : null;
+            if (activeBtn) {
+                activeBtn.classList.remove('btn-white', 'text-secondary');
+                activeBtn.style.backgroundColor = '#0d9488';
+                activeBtn.style.color = '#ffffff';
+                activeBtn.style.borderColor = '#0d9488';
+            }
+        }
+
+        // Update/place marker — with draggable support + boundary check
+        function updateWiMarker(latlng) {
+            var statusEl = document.getElementById('wiLocationStatus');
+            if (wiMarker) {
+                wiMarker.setLatLng(latlng);
+            } else {
+                wiMarker = L.marker(latlng, { draggable: true }).addTo(wiMap);
+                wiMarker.on('dragend', function() {
+                    var pos = wiMarker.getLatLng();
+                    if (wiBarangayBounds.contains(pos)) {
+                        document.getElementById('wiLatitude').value = pos.lat;
+                        document.getElementById('wiLongitude').value = pos.lng;
+                        statusEl.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Location pinned inside Panungyanan';
+                        statusEl.className = 'text-success small fw-semibold d-flex align-items-center';
+                    } else {
+                        wiMarker.setLatLng(latlng); // snap back
+                        statusEl.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Outside Barangay Panungyanan boundaries';
+                        statusEl.className = 'text-danger small fw-semibold d-flex align-items-center';
+                    }
+                });
+            }
+
+            if (wiBarangayBounds.contains(latlng)) {
+                document.getElementById('wiLatitude').value = latlng.lat;
+                document.getElementById('wiLongitude').value = latlng.lng;
+                statusEl.innerHTML = '<i class="fas fa-check-circle text-success me-1"></i> Location pinned inside Panungyanan';
+                statusEl.className = 'text-success small fw-semibold d-flex align-items-center';
+            } else {
+                statusEl.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Outside Barangay Panungyanan boundaries';
+                statusEl.className = 'text-danger small fw-semibold d-flex align-items-center';
+            }
+        }
+
+        if (wiModalEl) {
+            wiModalEl.addEventListener('shown.bs.modal', function () {
+                if (!wiMap) {
+                    wiMap = L.map('wiMap', {
+                        maxBounds: wiBarangayBounds,
+                        maxBoundsViscosity: 1.0
+                    }).setView(wiPanungyananCenter, 15);
+
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '© OpenStreetMap contributors',
+                        minZoom: 14,
+                        maxZoom: 18
+                    }).addTo(wiMap);
+
+                    wiMap.on('click', function(e) {
+                        updateWiMarker(e.latlng);
+                    });
+                } else {
+                    wiMap.invalidateSize();
+                }
+            });
+
+            wiModalEl.addEventListener('hidden.bs.modal', function () {
+                // Reset resident fields
+                if (wiHiddenId) wiHiddenId.value = '';
+                if (wiSelected) wiSelected.style.display = 'none';
+                if (wiReporterInput) wiReporterInput.value = '';
+                if (wiSuggestions) wiSuggestions.style.display = 'none';
+                // Reset location fields
+                document.getElementById('wiLatitude').value = '';
+                document.getElementById('wiLongitude').value = '';
+                var statusEl = document.getElementById('wiLocationStatus');
+                statusEl.innerHTML = '<i class="fas fa-info-circle me-1"></i>Area: Barangay Panungyanan';
+                statusEl.className = 'text-secondary';
+                // Reset description
+                document.getElementById('wiIncidentDescription').value = '';
+                // Reset map marker
+                if (wiMarker && wiMap) { wiMap.removeLayer(wiMarker); wiMarker = null; }
+                wiSetActiveMode(null);
+            });
+        }
+
+        // Current Location button
+        var wiCurBtn = document.getElementById('wiUseCurrentLocation');
+        if (wiCurBtn) {
+            wiCurBtn.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    alert('Geolocation is not supported by your browser.');
+                    return;
+                }
+                wiSetActiveMode('wiUseCurrentLocation');
+                var originalInner = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Locating...';
+                var self = this;
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    var latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+                    self.innerHTML = originalInner;
+                    if (wiBarangayBounds.contains(latlng)) {
+                        wiMap.setView(latlng, 18);
+                        updateWiMarker(latlng);
+                    } else {
+                        var statusEl = document.getElementById('wiLocationStatus');
+                        statusEl.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Your current location is outside Barangay Panungyanan';
+                        statusEl.className = 'text-danger small fw-semibold d-flex align-items-center';
+                        wiSetActiveMode(null);
+                    }
+                }, function(error) {
+                    self.innerHTML = originalInner;
+                    wiSetActiveMode(null);
+                    alert('Error getting your location: ' + error.message);
+                });
+            });
+        }
+
+        // Pick Map button
+        var wiPickBtn = document.getElementById('wiSelectOnMap');
+        if (wiPickBtn) {
+            wiPickBtn.addEventListener('click', function () {
+                wiSetActiveMode('wiSelectOnMap');
+                var statusEl = document.getElementById('wiLocationStatus');
+                statusEl.innerHTML = '<i class="fas fa-hand-pointer text-primary me-1"></i> Click or tap on the map to pick a location';
+                statusEl.className = 'text-primary small fw-semibold d-flex align-items-center';
+                if (wiMap) document.getElementById('wiMap').style.cursor = 'crosshair';
+            });
+        }
+
+        // Location Search button
+        var wiSearchBtn = document.getElementById('wiSearchLocationBtn');
+        if (wiSearchBtn) {
+            wiSearchBtn.addEventListener('click', function () {
+                var q = document.getElementById('wiLocationSearch').value.trim();
+                if (!q) return;
+                wiSetActiveMode(null);
+                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(q + ', Panungyanan, General Trias, Cavite'))
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data && data.length > 0) {
+                            var latlng = L.latLng(data[0].lat, data[0].lon);
+                            if (wiBarangayBounds.contains(latlng)) {
+                                wiMap.setView(latlng, 17);
+                                updateWiMarker(latlng);
+                            } else {
+                                var statusEl = document.getElementById('wiLocationStatus');
+                                statusEl.innerHTML = '<i class="fas fa-times-circle text-danger me-1"></i> Result is outside Barangay Panungyanan boundaries';
+                                statusEl.className = 'text-danger small fw-semibold d-flex align-items-center';
+                            }
+                        } else {
+                            alert('Location not found. Please be more specific.');
+                        }
+                    })
+                    .catch(function() { alert('Error searching for location.'); });
+            });
+        }
+
+
     });
+
 
     function openBulkActionMenu() {
         const selected = document.querySelectorAll('.row-checkbox:checked');
@@ -781,5 +1213,15 @@ $rows = $stmt->fetchAll();
         });
     }
 </script>
+<?php if (isset($_GET['report']) && $_GET['report'] == '1'): ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var myModal = new bootstrap.Modal(document.getElementById('walkinIncidentModal'));
+        myModal.show();
+        // Remove parameter to prevent re-opening on manual refresh
+        window.history.replaceState({}, document.title, "incidents");
+    });
+</script>
+<?php endif; ?>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

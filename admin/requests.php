@@ -178,6 +178,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if (csrf_validate()) {
 		$admin_uid = (int) ($_SESSION['user_id'] ?? 0);
 
+		// ── Walk-in Request ──────────────────────────────────────────
+		if (!empty($_POST['walkin_action'])) {
+			$wi_resident_id = (int) ($_POST['wi_resident_id'] ?? 0);
+			$wi_requestor_name = trim($_POST['wi_requestor_name'] ?? '');
+			$wi_doc_type    = trim($_POST['wi_doc_type'] ?? '');
+			$wi_purpose     = trim($_POST['wi_purpose'] ?? '');
+
+			if ($wi_doc_type && ($wi_resident_id || $wi_requestor_name)) {
+				$wi_user_id = $admin_uid; // default to admin
+				$final_purpose = $wi_purpose;
+
+				if ($wi_resident_id) {
+					// Get resident's user_id
+					$res_stmt = $pdo->prepare('SELECT user_id FROM residents WHERE id = ? LIMIT 1');
+					$res_stmt->execute([$wi_resident_id]);
+					$res_row = $res_stmt->fetch(PDO::FETCH_ASSOC);
+					if ($res_row) {
+						$wi_user_id = (int) $res_row['user_id'];
+					}
+				} else {
+					// Unregistered walk-in requestor
+					$final_purpose = '[Walk-in Requestor: ' . $wi_requestor_name . '] ' . $wi_purpose;
+				}
+
+				if ($wi_doc_type === 'Barangay Clearance') {
+					$cn = 'BC-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6));
+					$pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, status, created_at) VALUES (?, ?, ?, "pending", NOW())')
+						->execute([$wi_user_id, $cn, $final_purpose]);
+				} else {
+					$pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, status, created_at) VALUES (?, ?, ?, "pending", NOW())')
+						->execute([$wi_user_id, $wi_doc_type, $final_purpose]);
+				}
+				$_SESSION['action_success'] = [
+					'title' => 'Walk-in Request Added',
+					'text'  => $wi_doc_type . ' request for ' . ($wi_requestor_name ? $wi_requestor_name : 'the selected resident') . ' has been created and is now pending.',
+				];
+				redirect('requests.php');
+			} else {
+				$_SESSION['action_error'] = [
+					'title' => 'Incomplete Form',
+					'text'  => 'Please provide a Requestor Name and select a Document Type.'
+				];
+				redirect('requests.php');
+			}
+		}
+		// ── End Walk-in ───────────────────────────────────────────────
+
 		if (!empty($_POST['bulk_action']) && isset($_POST['selected']) && is_array($_POST['selected'])) {
 			$bulk_action = $_POST['bulk_action'];
 			$selected = $_POST['selected'];
@@ -326,6 +373,17 @@ $documents = $pdo->query('
     ORDER BY dr.id DESC
 ')->fetchAll();
 
+// Walk-in: fetch all active residents + document types for the modal
+$wi_residents = $pdo->query("
+    SELECT r.id, r.user_id, u.full_name, r.address
+    FROM residents r
+    JOIN users u ON u.id = r.user_id
+    WHERE u.role = 'resident'
+    ORDER BY u.full_name ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$wi_doc_types = $pdo->query('SELECT name FROM document_types ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
+
 // Define available purposes for Indigency certificates
 $indigency_purposes_list = [
     'Financial/Medical Assistance',
@@ -411,18 +469,23 @@ require_once __DIR__ . '/header.php';
 </style>
 
 <div class="admin-table">
-	<div class="p-3 border-bottom d-flex justify-content-between align-items-start flex-wrap gap-2">
+	<div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
 		<div>
 			<h5 class="mb-0"><i class="fas fa-file-alt me-2"></i><?php echo htmlspecialchars($rv_meta['heading']); ?></h5>
 			<p class="text-muted mb-0"><?php echo htmlspecialchars($rv_meta['sub']); ?></p>
 		</div>
-		<form action="" method="GET" class="input-group" style="max-width: 300px;">
-			<?php if (isset($_GET['status_filter'])): ?>
-				<input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($_GET['status_filter']); ?>">
-			<?php endif; ?>
-			<span class="input-group-text"><i class="fas fa-search"></i></span>
-			<input type="text" name="search" class="form-control" placeholder="Search requests..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
-		</form>
+		<div class="d-flex align-items-center gap-2 flex-nowrap">
+			<button type="button" class="btn btn-primary btn-sm rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#walkinRequestModal">
+				<i class="fas fa-plus me-1"></i> Walk-in Request
+			</button>
+			<form action="" method="GET" class="input-group" style="max-width: 260px; min-width: 180px;">
+				<?php if (isset($_GET['status_filter'])): ?>
+					<input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($_GET['status_filter']); ?>">
+				<?php endif; ?>
+				<span class="input-group-text"><i class="fas fa-search"></i></span>
+				<input type="text" name="search" class="form-control" placeholder="Search requests..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+			</form>
+		</div>
 	</div>
 	
 	<?php $show_request_checkboxes = ($admin_requests_page_status !== 'canceled'); ?>
@@ -697,6 +760,22 @@ require_once __DIR__ . '/header.php';
 
 							$is_fm = !empty($req['fm_name']);
 							$requesterName = $req['resident'] ?? '';
+							$purposeText = $req['details'] ?? 'N/A';
+
+							$tagStart = strpos($purposeText, '[Walk-in Requestor: ');
+							if ($tagStart !== false) {
+								$endBracket = strpos($purposeText, ']', $tagStart);
+								if ($endBracket !== false) {
+									$requesterName = trim(substr($purposeText, $tagStart + 20, $endBracket - ($tagStart + 20)));
+									$purposeText = trim(substr_replace($purposeText, '', $tagStart, $endBracket - $tagStart + 1));
+									
+									// Clean up any double colons or spaces left over
+									$purposeText = trim(str_replace(':  ', ': ', $purposeText));
+									if (str_ends_with($purposeText, ':')) {
+										$purposeText = trim(substr($purposeText, 0, -1));
+									}
+								}
+							}
 							?>
 							<tr>
 								<?php if ($show_request_checkboxes): ?>
@@ -722,7 +801,7 @@ require_once __DIR__ . '/header.php';
 										data-requester="<?php echo $is_fm ? htmlspecialchars($req['fm_name'], ENT_QUOTES) : htmlspecialchars($requesterName, ENT_QUOTES); ?>"
 										data-requester-type="<?php echo $is_fm ? 'Family Member' : 'Owner'; ?>"
 										data-family="<?php echo $is_fm ? htmlspecialchars($requesterName, ENT_QUOTES) : ''; ?>"
-										data-purpose="<?php echo htmlspecialchars($req['details'] ?? 'N/A', ENT_QUOTES); ?>"
+										data-purpose="<?php echo htmlspecialchars($purposeText, ENT_QUOTES); ?>"
 										data-status-label="<?php echo htmlspecialchars($statusLabel, ENT_QUOTES); ?>"
 										data-status-class="<?php echo htmlspecialchars($statusClass, ENT_QUOTES); ?>"
 										data-icon="<?php echo htmlspecialchars($statusIcon, ENT_QUOTES); ?>"
@@ -874,6 +953,69 @@ require_once __DIR__ . '/header.php';
 			</nav>
 		</div>
 		<?php endif; ?>
+	</div>
+</div>
+
+<!-- Walk-in Request Modal -->
+<div class="modal fade" id="walkinRequestModal" tabindex="-1" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered modal-md">
+		<div class="modal-content border-0 shadow-lg rounded-4">
+			<div class="modal-header border-0 pb-0 px-4 pt-4">
+				<div class="d-flex align-items-center gap-3">
+					<div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+						<i class="fas fa-walking fa-lg"></i>
+					</div>
+					<div>
+						<h5 class="fw-bold mb-0">Walk-in Request</h5>
+						<p class="text-muted small mb-0">Add a request for a walk-in resident</p>
+					</div>
+				</div>
+				<button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="modal-body px-4 py-3">
+				<form method="post" id="walkinForm" action="">
+					<?php echo csrf_field(); ?>
+					<input type="hidden" name="walkin_action" value="1">
+
+					<!-- Resident Search -->
+					<div class="mb-3">
+						<label class="form-label fw-semibold small text-uppercase text-secondary">Requestor Name</label>
+						<input type="text" id="wiResidentSearch" name="wi_requestor_name" class="form-control" placeholder="Search resident or enter full name..." autocomplete="off">
+						<div id="wiResidentDropdown" class="list-group mt-1 shadow-sm" style="display:none; max-height:180px; overflow-y:auto; position:absolute; z-index:9999; width:calc(100% - 3rem);"></div>
+						<input type="hidden" name="wi_resident_id" id="wiResidentId">
+						<div id="wiResidentSelected" class="mt-2 small text-success fw-semibold" style="display:none;"></div>
+					</div>
+
+					<!-- Document Type -->
+					<div class="mb-3">
+						<label class="form-label fw-semibold small text-uppercase text-secondary">Document Type</label>
+						<select name="wi_doc_type" id="wiDocType" class="form-select" onchange="wiUpdatePurpose()">
+							<option value="">-- Select document --</option>
+							<option value="Barangay Clearance">Barangay Clearance</option>
+							<?php foreach ($wi_doc_types as $dt): ?>
+							<option value="<?php echo htmlspecialchars($dt); ?>"><?php echo htmlspecialchars($dt); ?></option>
+							<?php endforeach; ?>
+						</select>
+					</div>
+
+					<!-- Purpose -->
+					<div class="mb-3" id="wiPurposeWrap">
+						<label class="form-label fw-semibold small text-uppercase text-secondary">Purpose</label>
+						<select name="wi_purpose" id="wiPurposeSelect" class="form-select" style="display:none;">
+							<option value="">-- Select purpose --</option>
+						</select>
+						<input type="text" name="wi_purpose_text" id="wiPurposeText" class="form-control" placeholder="State purpose...">
+					</div>
+
+					<div class="d-flex gap-2 justify-content-end pt-2">
+						<button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+						<button type="submit" class="btn btn-primary rounded-pill px-4">
+							<i class="fas fa-plus me-1"></i> Add Request
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
 	</div>
 </div>
 
@@ -1162,6 +1304,84 @@ document.getElementById('adminRejectForm').addEventListener('submit', function(e
         document.getElementById('rejectReasonInput').focus();
     }
 });
+
+// ── Walk-in Request Modal JS ──────────────────────────────────────────────
+(function() {
+    var residents = <?php echo json_encode(array_values($wi_residents)); ?>;
+
+    var purposeMap = {
+        'Barangay Clearance': ['Local Employment','Postal ID Application','Medical/Financial Assistance','Bank Requirements','Scholarship Program','Water/Electric Connection','Educational Assistance','Other\'s'],
+        'Barangay Indigency Certificate': ['Financial/Medical Assistance','Burial Assistance','Senior Citizen Social Pension','Vaccination Requirements','Educational Assistance','Other\'s'],
+        'Certificate of Indigency': ['Financial/Medical Assistance','Burial Assistance','Senior Citizen Social Pension','Vaccination Requirements','Educational Assistance','Other\'s']
+    };
+
+    // Resident search
+    var searchInput = document.getElementById('wiResidentSearch');
+    var dropdown    = document.getElementById('wiResidentDropdown');
+    var hiddenId    = document.getElementById('wiResidentId');
+    var selected    = document.getElementById('wiResidentSelected');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var q = this.value.trim().toLowerCase();
+            hiddenId.value = '';
+            selected.style.display = 'none';
+            if (!q) { dropdown.style.display = 'none'; return; }
+
+            var matches = residents.filter(function(r) {
+                return r.full_name.toLowerCase().includes(q);
+            }).slice(0, 8);
+
+            if (!matches.length) { dropdown.style.display = 'none'; return; }
+
+            dropdown.innerHTML = '';
+            matches.forEach(function(r) {
+                var a = document.createElement('a');
+                a.href = 'javascript:void(0)';
+                a.className = 'list-group-item list-group-item-action py-2 px-3 small';
+                a.innerHTML = '<strong>' + r.full_name + '</strong>' + (r.address ? '<span class="text-muted ms-2">' + r.address + '</span>' : '');
+                a.addEventListener('click', function() {
+                    hiddenId.value = r.id;
+                    searchInput.value = r.full_name;
+                    selected.textContent = '\u2713 ' + r.full_name + ' selected';
+                    selected.style.display = '';
+                    dropdown.style.display = 'none';
+                });
+                dropdown.appendChild(a);
+            });
+            dropdown.style.display = '';
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#walkinRequestModal')) dropdown.style.display = 'none';
+        });
+    }
+
+    // Purpose switcher
+    window.wiUpdatePurpose = function() {
+        var docType = document.getElementById('wiDocType').value;
+        var sel     = document.getElementById('wiPurposeSelect');
+        var txt     = document.getElementById('wiPurposeText');
+
+        if (purposeMap[docType]) {
+            sel.innerHTML = '<option value="">-- Select purpose --</option>';
+            purposeMap[docType].forEach(function(p) {
+                var o = document.createElement('option');
+                o.value = p; o.textContent = p;
+                sel.appendChild(o);
+            });
+            sel.style.display = '';
+            txt.style.display = 'none';
+            sel.name = 'wi_purpose';
+            txt.name = '';
+        } else {
+            sel.style.display = 'none';
+            txt.style.display = '';
+            sel.name = '';
+            txt.name = 'wi_purpose';
+        }
+    };
+})();
 </script>
 
 <?php if (isset($_SESSION['bulk_result'])): ?>
@@ -1231,6 +1451,23 @@ document.getElementById('adminRejectForm').addEventListener('submit', function(e
 })();
 </script>
 <?php unset($_SESSION['action_success']); ?>
+<?php endif; ?>
+
+<?php if (isset($_SESSION['action_error'])): ?>
+<script>
+(function() {
+    var title = <?php echo json_encode($_SESSION['action_error']['title']); ?>;
+    var text = <?php echo json_encode($_SESSION['action_error']['text']); ?>;
+    
+    Swal.fire({
+        title: title,
+        text: text,
+        icon: 'error',
+        confirmButtonColor: '#e11d48'
+    });
+})();
+</script>
+<?php unset($_SESSION['action_error']); ?>
 <?php endif; ?>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

@@ -90,16 +90,39 @@ switch ($type) {
 
     case 'doc_requests':
         $stmt = $pdo->prepare("
-            SELECT dr.*, COALESCE(fm.full_name, u.full_name) as display_name,
+            SELECT dr.id, dr.user_id, dr.family_member_id, dr.doc_type, dr.purpose, dr.status, dr.created_at,
+                   COALESCE(fm.full_name, u.full_name) as display_name,
                    u.full_name as requester_name
             FROM document_requests dr
             JOIN users u ON dr.user_id = u.id
             LEFT JOIN family_members fm ON dr.family_member_id = fm.id
             WHERE dr.created_at BETWEEN ? AND ?
-            ORDER BY dr.created_at DESC
+            
+            UNION ALL
+            
+            SELECT bc.id, bc.user_id, NULL as family_member_id, 'Barangay Clearance' as doc_type, bc.purpose, bc.status, bc.created_at,
+                   u.full_name as display_name,
+                   u.full_name as requester_name
+            FROM barangay_clearances bc
+            JOIN users u ON bc.user_id = u.id
+            WHERE bc.created_at BETWEEN ? AND ?
+            
+            ORDER BY created_at DESC
         ");
-        $stmt->execute([$start, $end]);
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        $stmt->execute([$start, $end, $start, $end]);
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($results as &$row) {
+            if (!empty($row['purpose']) && preg_match('/\[Walk-in Requestor: (.*?)\]/', $row['purpose'], $m)) {
+                $row['display_name'] = trim($m[1]);
+                $row['requester_name'] = trim($m[1]);
+                $row['requestor_type'] = 'walkin';
+                // Strip the tag from the purpose for cleaner display if needed
+                $row['purpose'] = trim(str_replace($m[0], '', $row['purpose']));
+            }
+        }
+        
+        echo json_encode($results);
         break;
 
     case 'households':

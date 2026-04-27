@@ -43,11 +43,11 @@ $rejected_clear = (int)($pdo->query("SELECT COUNT(*) as c FROM barangay_clearanc
 $total_rejected = $rejected_docs + $rejected_clear;
 
 // --- Incidents Stats ---
-$incidents_submitted = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='submitted' AND u.role != 'admin' $date_where")->fetch()['c'] ?? 0);
-$incidents_review    = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='in_review' AND u.role != 'admin' $date_where")->fetch()['c'] ?? 0);
-$incidents_resolved  = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='resolved' AND u.role != 'admin' $date_where")->fetch()['c'] ?? 0);
-$incidents_rejected  = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='closed' AND u.role != 'admin' $date_where")->fetch()['c'] ?? 0);
-$incidents_canceled  = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='canceled' AND u.role != 'admin' $date_where")->fetch()['c'] ?? 0);
+$incidents_submitted = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='submitted' $date_where")->fetch()['c'] ?? 0);
+$incidents_review    = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='in_review' $date_where")->fetch()['c'] ?? 0);
+$incidents_resolved  = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='resolved' $date_where")->fetch()['c'] ?? 0);
+$incidents_rejected  = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='closed' $date_where")->fetch()['c'] ?? 0);
+$incidents_canceled  = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='canceled' $date_where")->fetch()['c'] ?? 0);
 
 // --- General Stats (Population Overview) ---
 $pop_date_query = !empty($date_where) ? " WHERE " . substr($date_where, 5) : "";

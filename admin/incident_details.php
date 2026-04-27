@@ -210,7 +210,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
         </script>
     <?php endif; ?>
 	
-	<?php if (isset($incident) && $incident): ?>
+	<?php if (isset($incident) && $incident): 
+		$displayResidentName = $incident['resident_name'] ?? 'N/A';
+		$displayResidentEmail = !empty($incident['resident_email']) ? $incident['resident_email'] : 'N/A';
+		$displayDescription = $incident['description'] ?? '';
+		
+		if (str_starts_with($displayDescription, '[Walk-in Reporter: ')) {
+			$endBracket = strpos($displayDescription, ']');
+			if ($endBracket !== false) {
+				$displayResidentName = trim(substr($displayDescription, 19, $endBracket - 19));
+				$displayResidentEmail = 'Walk-in Report';
+				// Remove the tag from the description
+				$displayDescription = trim(substr($displayDescription, $endBracket + 1));
+			}
+		}
+	?>
 		<div class="row">
 			<div class="col-md-8">
 				<div class="admin-table">
@@ -271,7 +285,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
 							<div class="mb-3">
 								<strong>Description:</strong>
 								<div class="mt-2 p-3 bg-light rounded">
-									<?php echo nl2br(htmlspecialchars($incident['description'])); ?>
+									<?php echo nl2br(htmlspecialchars($displayDescription)); ?>
 								</div>
 							</div>
 							
@@ -295,11 +309,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
 							<div class="row">
 								<div class="col-md-6 mb-2">
 									<strong>Name:</strong>
-									<span class="text-muted ms-2"><?php echo htmlspecialchars($incident['resident_name'] ?? ''); ?></span>
+									<span class="text-muted ms-2"><?php echo htmlspecialchars($displayResidentName); ?></span>
 								</div>
 								<div class="col-md-6 mb-2">
 									<strong>Email:</strong>
-									<span class="text-muted ms-2"><?php echo !empty($incident['resident_email']) ? htmlspecialchars($incident['resident_email']) : 'N/A'; ?></span>
+									<span class="text-muted ms-2"><?php echo htmlspecialchars($displayResidentEmail); ?></span>
 								</div>
 								<?php if (!empty($incident['resident_phone'])): ?>
 								<div class="col-md-6 mb-2">
@@ -532,7 +546,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
 			marker.bindPopup(`
 				<div>
 					<h6>Incident #<?php echo (int)$incident['id']; ?></h6>
-					<p><strong>Description:</strong><br><?php echo htmlspecialchars($incident['description'], ENT_QUOTES); ?></p>
+					<p><strong>Description:</strong><br><?php echo htmlspecialchars($displayDescription, ENT_QUOTES); ?></p>
 					<p><strong>Location:</strong><br><?php echo htmlspecialchars($incident['latitude']); ?>, <?php echo htmlspecialchars($incident['longitude']); ?></p>
 				</div>
 			`).openPopup();
