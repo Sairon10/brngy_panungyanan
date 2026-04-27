@@ -45,13 +45,6 @@ require_once __DIR__ . '/partials/header.php';
 					Streamlined public services for a connected community. Request documents, report concerns, and stay
 					updated—all in one secure platform.
 				</p>
-				<div class="d-flex flex-column flex-sm-row gap-3">
-					<?php if (!is_logged_in()): ?>
-						<a href="register.php" class="btn btn-primary btn-lg px-5 shadow-lg hero-btn">Get Started</a>
-						<a href="login.php" class="btn btn-outline-primary btn-lg px-5 hero-btn">Sign In</a>
-					<?php endif; ?>
-				</div>
-
 				<div class="mt-5 d-flex gap-4 text-muted small">
 					<div class="d-flex align-items-center gap-2">
 						<i class="fas fa-check-circle text-success"></i> Fast Processing
@@ -116,7 +109,7 @@ require_once __DIR__ . '/partials/header.php';
 		<div class="row g-4">
 			<div class="col-md-6 col-lg-4 animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
 				<div class="feature-card">
-					<div class="feature-icon">
+					<div class="feature-icon text-success bg-success-subtle">
 						<i class="fas fa-file-contract"></i>
 					</div>
 					<h4>Document Processing</h4>
@@ -304,12 +297,10 @@ require_once __DIR__ . '/partials/header.php';
 				<ul class="list-unstyled text-white-50 mb-0 d-flex flex-column gap-2">
 					<li><a href="index.php"
 							class="text-white-50 text-decoration-none hover-white transition-colors">Home</a></li>
-					<li><a href="#" class="text-white-50 text-decoration-none hover-white transition-colors">About
+					<li><a href="index.php#about" class="text-white-50 text-decoration-none hover-white transition-colors">About
 							Us</a></li>
-					<li><a href="#"
+					<li><a href="index.php#services"
 							class="text-white-50 text-decoration-none hover-white transition-colors">Services</a></li>
-					<li><a href="#" class="text-white-50 text-decoration-none hover-white transition-colors">Contact</a>
-					</li>
 				</ul>
 			</div>
 			<div class="col-lg-2 col-6">

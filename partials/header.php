@@ -102,7 +102,7 @@ if (is_logged_in()) {
 					<a href="index.php" class="d-flex align-items-center gap-2 text-decoration-none">
 						<img src="public/img/barangaylogo.png" alt="Logo" class="navbar-logo"
 							style="width: 40px; height: 40px;">
-						<h5 class="offcanvas-title fw-bold text-primary mb-0" id="navbarNavLabel"
+						<h5 class="offcanvas-title fw-bold text-primary mb-0 text-success" id="navbarNavLabel"
 							style="font-size: 1.15rem;">Brgy. Panungyanan</h5>
 					</a>
 					<button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#navbarNav"
@@ -141,7 +141,7 @@ if (is_logged_in()) {
 								<a class="nav-link fw-semibold" href="login.php">Log In</a>
 							</li>
 							<li class="nav-item mt-2 mt-lg-0">
-								<a class="btn btn-primary rounded-pill px-4" href="register.php">Get Started</a>
+								<a class="btn btn-primary px-4" href="register.php">Get Started</a>
 							</li>
 						<?php else: ?>
 							<!-- Access Portal Button -->
