@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-if (!is_admin())
+if (!is_admin() || $_SESSION['user_id'] != 1)
     redirect('../index.php');
 $page_title = 'All resident';
 
@@ -558,7 +558,7 @@ $display_records = array_slice($unified_records, $offset, $limit);
                         </td>
                         <td class="text-center">
                             <div class="d-flex justify-content-center align-items-center gap-3">
-                                <a href="resident_record_view.php?id=<?php echo $row['id']; ?>&user_id=<?php echo $row['user_id'] ?? 0; ?>"
+                                <a href="resident_record_view.php?id=<?php echo $row['id']; ?>&user_id=<?php echo $row['user_id'] ?? 0; ?><?php echo $row['resident_type'] === 'MEMBER' ? '&fm_id=' . $row['fm_id'] : ''; ?>"
                                     class="action-btn text-primary" title="View Profile">
                                     <i class="fas fa-eye"></i>
                                 </a>

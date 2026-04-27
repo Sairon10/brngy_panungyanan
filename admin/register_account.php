@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-if (!is_admin()) redirect('../index.php');
+if (!is_admin() || $_SESSION['user_id'] != 1) redirect('../index.php');
 
 $pdo = get_db_connection();
 $info = '';

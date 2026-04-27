@@ -161,6 +161,14 @@ if (!$record) {
     redirect('resident_records.php');
 }
 
+$fm_id = (int)($_GET['fm_id'] ?? 0);
+$view_fm = null;
+if ($fm_id > 0) {
+    $stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ?');
+    $stmt->execute([$fm_id]);
+    $view_fm = $stmt->fetch();
+}
+
 // Parse full_name into parts if individual name fields are empty
 // This helps display name parts even if they weren't stored separately
 if ((empty($record['first_name']) || empty($record['last_name'])) && !empty($record['full_name'])) {
@@ -346,100 +354,110 @@ document.addEventListener('DOMContentLoaded', function () {
 <div class="row justify-content-center">
     <div class="col-lg-10">
         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <?php
+            $display_data = $edit_data;
+            $is_family_member = false;
+            if ($view_fm) {
+                $display_data = $view_fm;
+                $is_family_member = true;
+            }
+            ?>
             <!-- Profile Header/Cover -->
             <div class="bg-gradient-primary p-5 text-center position-relative"
                 style="background: linear-gradient(135deg, var(--primary), var(--secondary));">
                 <div class="position-absolute top-0 start-0 w-100 h-100 bg-pattern opacity-10"></div>
 
-                <?php if ($avatar && file_exists(__DIR__ . '/../' . $avatar)): ?>
+                <?php if (!$is_family_member && $avatar && file_exists(__DIR__ . '/../' . $avatar)): ?>
                     <img src="/<?php echo htmlspecialchars($avatar); ?>" alt="Profile Picture"
                         class="rounded-circle mx-auto mb-3 shadow-lg"
                         style="width: 120px; height: 120px; object-fit: cover; border: 4px solid white;">
                 <?php else: ?>
                     <div class="avatar-circle bg-white text-primary fw-bold mx-auto mb-3 shadow-lg fs-2 d-flex align-items-center justify-content-center"
                         style="width: 120px; height: 120px; border-radius: 50%;">
-                        <?php echo strtoupper(substr($record['full_name'] ?? 'U', 0, 1)); ?>
+                        <?php echo strtoupper(substr($display_data['full_name'] ?? 'U', 0, 1)); ?>
                     </div>
                 <?php endif; ?>
 
                 <h3 class="text-white fw-bold mb-1 position-relative z-1">
-                    <?php echo htmlspecialchars($record['full_name']); ?></h3>
+                    <?php echo htmlspecialchars($display_data['full_name']); ?></h3>
                 <p class="text-white-50 mb-0 position-relative z-1">
-                    <span class="badge <?php echo $record['is_active'] ? 'bg-success' : 'bg-secondary'; ?>">
-                        <?php echo $record['is_active'] ? 'Active' : 'Inactive'; ?>
+                    <span class="badge <?php echo (!$is_family_member && !$record['is_active']) ? 'bg-secondary' : 'bg-success'; ?>">
+                        <?php echo (!$is_family_member && !$record['is_active']) ? 'Inactive' : 'Active'; ?>
                     </span>
                 </p>
             </div>
 
             <div class="card-body p-5">
                 <div class="row g-4">
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12">Personal Information</h6>
+                    <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12">
+                        Personal Information <?php echo $is_family_member ? '<span class="badge bg-secondary ms-2">Family Member</span>' : ''; ?>
+                    </h6>
 
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">First Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['first_name']) ? '-' : $edit_data['first_name']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['first_name']) ? '-' : $display_data['first_name']); ?></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Last Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['last_name']) ? '-' : $edit_data['last_name']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['last_name']) ? '-' : $display_data['last_name']); ?></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Middle Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['middle_name']) ? '-' : $edit_data['middle_name']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['middle_name']) ? '-' : $display_data['middle_name']); ?></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Suffix</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['suffix']) ? '-' : $edit_data['suffix']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['suffix']) ? '-' : $display_data['suffix']); ?></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Full Name</label>
                         <div class="form-control-plaintext border-bottom pb-2 fw-bold">
-                            <?php echo htmlspecialchars($edit_data['full_name'] ?? '-'); ?></div>
+                            <?php echo htmlspecialchars($display_data['full_name'] ?? '-'); ?></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Email Address</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['email']) ? '-' : $edit_data['email']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['email']) ? '-' : $display_data['email']); ?></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Phone Number</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['phone']) ? '-' : $edit_data['phone']); ?>
+                            <?php echo htmlspecialchars(empty($display_data['phone']) ? '-' : $display_data['phone']); ?>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">Birth Date</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo empty($edit_data['birthdate']) ? '-' : date('F j, Y', strtotime($edit_data['birthdate'])); ?>
+                            <?php echo empty($display_data['birthdate']) ? '-' : date('F j, Y', strtotime($display_data['birthdate'])); ?>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">Gender</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['sex']) ? '-' : $edit_data['sex']); ?>
+                            <?php echo htmlspecialchars(empty($display_data['sex']) ? '-' : $display_data['sex']); ?>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">Citizenship</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['citizenship']) ? '-' : $edit_data['citizenship']); ?>
+                            <?php echo htmlspecialchars(empty($display_data['citizenship']) ? '-' : $display_data['citizenship']); ?>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Civil Status</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($edit_data['civil_status']) ? '-' : $edit_data['civil_status']); ?>
+                            <?php echo htmlspecialchars(empty($display_data['civil_status']) ? '-' : $display_data['civil_status']); ?>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-secondary small">Religion</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
-                            $religion = !empty($edit_data['religion']) ? $edit_data['religion'] : ($linked_resident['religion'] ?? null);
+                            $religion = !empty($display_data['religion']) ? $display_data['religion'] : ($is_family_member ? null : ($linked_resident['religion'] ?? null));
                             echo $religion ? htmlspecialchars($religion) : '-';
                             ?>
                         </div>
@@ -448,7 +466,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <label class="form-label fw-semibold text-secondary small">Profession / Occupation</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
-                            $occupation = !empty($edit_data['occupation']) ? $edit_data['occupation'] : ($linked_resident['occupation'] ?? null);
+                            $occupation = !empty($display_data['occupation']) ? $display_data['occupation'] : ($is_family_member ? null : ($linked_resident['occupation'] ?? null));
                             echo $occupation ? htmlspecialchars($occupation) : '-';
                             ?>
                         </div>
@@ -457,7 +475,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <label class="form-label fw-semibold text-secondary small">Educational Attainment</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
-                            $edu = !empty($edit_data['educational_attainment']) ? $edit_data['educational_attainment'] : ($linked_resident['educational_attainment'] ?? null);
+                            $edu = !empty($display_data['educational_attainment']) ? $display_data['educational_attainment'] : ($is_family_member ? null : ($linked_resident['educational_attainment'] ?? null));
                             echo $edu ? htmlspecialchars($edu) : '-';
                             ?>
                         </div>
@@ -466,7 +484,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <label class="form-label fw-semibold text-secondary small">PhilSys Card No.</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
-                            $philsys = !empty($edit_data['philsys_card_no']) ? $edit_data['philsys_card_no'] : ($linked_resident['philsys_card_no'] ?? null);
+                            $philsys = !empty($display_data['philsys_card_no']) ? $display_data['philsys_card_no'] : ($is_family_member ? null : ($linked_resident['philsys_card_no'] ?? null));
                             echo $philsys ? htmlspecialchars($philsys) : '-';
                             ?>
                         </div>
@@ -477,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             // Try JSON classification first
-                            $cls_json = !empty($edit_data['classification']) ? $edit_data['classification'] : ($linked_resident['classification'] ?? null);
+                            $cls_json = !empty($display_data['classification']) ? $display_data['classification'] : ($is_family_member ? null : ($linked_resident['classification'] ?? null));
                             $classes = [];
                             if ($cls_json) {
                                 $decoded = json_decode($cls_json, true);
@@ -485,9 +503,9 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                             // Fallback to legacy columns
                             if (empty($classes)) {
-                                if ($record['is_solo_parent']) $classes[] = 'Solo Parent';
-                                if ($record['is_pwd']) $classes[] = 'PWD';
-                                if ($record['is_senior']) $classes[] = 'Senior Citizen';
+                                if (!empty($display_data['is_solo_parent'])) $classes[] = 'Solo Parent';
+                                if (!empty($display_data['is_pwd'])) $classes[] = 'PWD';
+                                if (!empty($display_data['is_senior'])) $classes[] = 'Senior Citizen';
                             }
                             $badge_colors = [
                                 'PWD' => 'bg-primary', 'Solo Parent' => 'bg-info',
@@ -677,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 </div>
 
-                <?php if ($linked_user): ?>
+                <?php if ($linked_user && !$is_family_member): ?>
                     <!-- Related Information Section -->
                     <div class="row g-4 mt-2">
                         <?php if (!empty($all_requests)): ?>
@@ -836,14 +854,54 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 <?php endif; ?>
 
+                <?php if ($is_family_member): ?>
+                <div class="mt-4 pt-4 border-top">
+                    <h6 class="text-uppercase text-secondary fw-bold small mb-3">
+                        <i class="fas fa-home me-2"></i>Household Head Information
+                    </h6>
+                    <div class="bg-light p-4 rounded-3 border">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Full Name</label>
+                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($edit_data['full_name'] ?? '-'); ?></div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Phone Number</label>
+                                <div class="text-dark"><?php echo htmlspecialchars(empty($edit_data['phone']) ? '-' : $edit_data['phone']); ?></div>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-center">
+                                <a href="resident_record_view.php?id=<?php echo $record_id; ?>&user_id=<?php echo $user_id; ?>" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>View Household Profile
+                                </a>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Complete Address</label>
+                                <div class="text-dark">
+                                    <?php 
+                                    $head_address = !empty($linked_resident['address']) ? $linked_resident['address'] : ($record['address'] ?? null);
+                                    echo htmlspecialchars($head_address ?? '-'); 
+                                    ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+
                 <div class="d-flex justify-content-between mt-5 pt-4 border-top">
                     <a href="<?php echo $back_url; ?>" class="btn btn-secondary">
                         <i class="fas fa-arrow-left me-2"></i> Back to <?php echo $back_label; ?>
                     </a>
-                    <button class="btn btn-primary"
-                        onclick='editRecord(<?php echo htmlspecialchars(json_encode($edit_data)); ?>)'>
-                        <i class="fas fa-edit me-2"></i> Edit Record
-                    </button>
+                    <?php if ($is_family_member): ?>
+                        <button class="btn btn-primary" onclick='editFamilyMember(<?php echo htmlspecialchars(json_encode($view_fm), ENT_QUOTES, "UTF-8"); ?>)'>
+                            <i class="fas fa-user-edit me-2"></i> Edit Family Member
+                        </button>
+                    <?php else: ?>
+                        <button class="btn btn-primary"
+                            onclick='editRecord(<?php echo htmlspecialchars(json_encode($edit_data), ENT_QUOTES, "UTF-8"); ?>)'>
+                            <i class="fas fa-edit me-2"></i> Edit Record
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

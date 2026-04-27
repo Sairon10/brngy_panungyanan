@@ -1,6 +1,6 @@
 <?php 
 require_once __DIR__ . '/../config.php';
-if (!is_admin()) redirect('../index.php');
+if (!is_admin() || $_SESSION['user_id'] != 1) redirect('../index.php');
 
 $admin_id = (int)($_GET['id'] ?? 0);
 if ($admin_id <= 0) redirect('sub_admin_management.php');

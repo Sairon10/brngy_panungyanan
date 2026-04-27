@@ -655,6 +655,7 @@ require_once __DIR__ . '/../config.php';
 							<span>Dashboard</span>
 						</a>
 
+						<?php if ($_SESSION['user_id'] == 1): ?>
 						<?php
 						$is_acc_mgmt_section = (in_array($admin_req_basename, ['register_account.php', 'resident_records.php', 'account_management.php', 'admin_info.php', 'sub_admin_management.php', 'admin_info_view.php']));
 						$is_admin_acc_section = (in_array($admin_req_basename, ['admin_info.php', 'sub_admin_management.php', 'admin_info_view.php']));
@@ -693,6 +694,7 @@ require_once __DIR__ . '/../config.php';
 									admin</a>
 							</div>
 						</div>
+						<?php endif; ?>
 						<a class="nav-link <?php echo $admin_req_in_docreq_section ? 'active' : ''; ?>"
 							href="javascript:void(0)" onclick="manualSidebarCollapse('requestsSubmenu')"
 							style="cursor:pointer;" title="Document Requests">
@@ -760,11 +762,11 @@ require_once __DIR__ . '/../config.php';
 							<i class="fas fa-bullhorn"></i>
 							<span>Announcements</span>
 						</a>
-							<a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>"
-								href="reports.php" title="Reports">
-								<i class="fas fa-chart-bar"></i>
-								<span>Reports</span>
-							</a>
+						<a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>"
+							href="reports.php" title="Reports">
+							<i class="fas fa-chart-bar"></i>
+							<span>Reports</span>
+						</a>
 					</nav>
 
 					<div class="mt-auto border-top border-light border-opacity-10 w-100">
