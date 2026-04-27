@@ -247,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 								</div>
 									<div class="text-center">
 										<p class="text-muted small mb-0">
-											<a href="login.php" class="text-primary fw-semibold text-decoration-none">
+											<a href="login.php" class="text-success fw-semibold text-decoration-none">
 												<i class="fas fa-arrow-left me-1"></i>Back to Login
 											</a>
 										</p>
