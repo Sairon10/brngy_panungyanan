@@ -132,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                             <span class="text-secondary d-block">Status:</span>
                                             <?php
                                             $status = $incident['status'] ?? 'submitted';
-                                            $statusLabel = $status === 'submitted' ? 'Pending' : ucfirst($status);
+                                            $statusLabel = $status === 'submitted' ? 'Pending' : ($status === 'closed' ? 'Rejected' : ucfirst($status));
                                             $statusClass = match($status) {
                                                 'submitted' => 'status-pending',
                                                 'in_review' => 'status-review',
@@ -320,8 +320,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                 .status-pending { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
                 .status-review { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
                 .status-resolved { background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-                .status-canceled { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
-                .status-closed { background-color: #f9fafb; color: #4b5563; border: 1px solid #e5e7eb; }
+                .status-canceled { background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+                .status-closed { background-color: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
                 .btn-teal { background-color: #0d9488; border-color: #0d9488; }
                 .btn-teal:hover { background-color: #0f766e; border-color: #0f766e; }
