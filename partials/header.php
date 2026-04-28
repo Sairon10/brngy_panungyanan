@@ -82,6 +82,26 @@ if (is_logged_in()) {
 				<?php endif; ?>
 
 				<!-- Chatbot Icon (Main Navbar) -->
+				<style>
+					@media (max-width: 768px) {
+						.chatbot-panel {
+							left: 10px !important;
+							right: 10px !important;
+							width: auto !important;
+							max-width: none !important;
+							height: calc(100vh - 85px) !important;
+							top: 75px !important;
+						}
+						.chatbot-header, .chatbot-input-container, .chatbot-suggestions {
+							flex-shrink: 0 !important;
+							z-index: 10 !important;
+						}
+						.chatbot-messages {
+							flex: 1 1 auto !important;
+							overflow-y: auto !important;
+						}
+					}
+				</style>
 				<div id="chatbot-root" data-user-logged-in="<?php echo is_logged_in() ? 'true' : 'false'; ?>"></div>
 
 				<!-- Mobile Toggle Button -->

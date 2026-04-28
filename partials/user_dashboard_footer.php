@@ -5,8 +5,28 @@
 
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<style>
+		@media (max-width: 768px) {
+			.chatbot-panel {
+				left: 10px !important;
+				right: 10px !important;
+				width: auto !important;
+				max-width: none !important;
+				height: calc(100vh - 85px) !important;
+				top: 75px !important;
+			}
+			.chatbot-header, .chatbot-input-container, .chatbot-suggestions {
+				flex-shrink: 0 !important;
+				z-index: 10 !important;
+			}
+			.chatbot-messages {
+				flex: 1 1 auto !important;
+				overflow-y: auto !important;
+			}
+		}
+	</style>
 	<div id="chatbot-root" data-user-logged-in="true"></div>
-	<script src="public/js/chatbot.js?v=2"></script>
+	<script src="public/js/chatbot.js?v=3"></script>
 	<script>
 		// Global Notifications (Topbar) for Residents
 		let pollingTimer = null;
