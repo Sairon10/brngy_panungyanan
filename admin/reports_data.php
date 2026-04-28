@@ -19,9 +19,10 @@ switch ($type) {
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE r.sex = 'Male' AND r.verification_status = 'verified'
             UNION ALL
-            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, '' as address, '' as phone, u2.full_name as owner_name
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
+            LEFT JOIN residents ro ON ro.user_id = fm.user_id
             WHERE fm.sex = 'Male'
             ORDER BY full_name
         ");
@@ -34,9 +35,10 @@ switch ($type) {
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE r.sex = 'Female' AND r.verification_status = 'verified'
             UNION ALL
-            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, '' as address, '' as phone, u2.full_name as owner_name
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
+            LEFT JOIN residents ro ON ro.user_id = fm.user_id
             WHERE fm.sex = 'Female'
             ORDER BY full_name
         ");
@@ -49,9 +51,10 @@ switch ($type) {
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE r.is_senior = 1 AND r.verification_status = 'verified'
             UNION ALL
-            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, '' as address, '' as phone, u2.full_name as owner_name
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
+            LEFT JOIN residents ro ON ro.user_id = fm.user_id
             WHERE fm.is_senior = 1
             ORDER BY full_name
         ");
@@ -64,9 +67,10 @@ switch ($type) {
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE r.is_pwd = 1 AND r.verification_status = 'verified'
             UNION ALL
-            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, '' as address, '' as phone, u2.full_name as owner_name
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
+            LEFT JOIN residents ro ON ro.user_id = fm.user_id
             WHERE fm.is_pwd = 1
             ORDER BY full_name
         ");
@@ -75,16 +79,32 @@ switch ($type) {
 
     case 'solo_parents':
         $stmt = $pdo->query("
-            SELECT u.full_name, r.birthdate, r.sex, r.address, r.phone
+            SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified'
-            ORDER BY u.full_name
+            UNION ALL
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
+            FROM family_members fm
+            JOIN users u2 ON fm.user_id = u2.id
+            LEFT JOIN residents ro ON ro.user_id = fm.user_id
+            WHERE fm.is_solo_parent = 1
+            ORDER BY full_name
         ");
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
     case 'total_residents':
-        $stmt = $pdo->query("SELECT r.*, u.full_name, u.email FROM residents r JOIN users u ON u.id = r.user_id WHERE r.verification_status = 'verified' ORDER BY u.full_name");
+        $stmt = $pdo->query("
+            SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
+            FROM residents r JOIN users u ON u.id = r.user_id
+            WHERE r.verification_status = 'verified'
+            UNION ALL
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
+            FROM family_members fm
+            JOIN users u2 ON fm.user_id = u2.id
+            LEFT JOIN residents ro ON ro.user_id = fm.user_id
+            ORDER BY full_name
+        ");
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 

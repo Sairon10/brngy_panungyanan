@@ -18,10 +18,20 @@ $db_start = $start_date . ' 00:00:00';
 $db_end = $end_date . ' 23:59:59';
 
 // 1. Residents Demographics
-$stmt = $pdo->query("SELECT COUNT(*) FROM residents WHERE verification_status = 'verified'");
+$stmt = $pdo->query("
+    SELECT 
+        (SELECT COUNT(*) FROM residents WHERE verification_status = 'verified') +
+        (SELECT COUNT(*) FROM family_members)
+");
 $total_residents = $stmt->fetchColumn();
 
-$stmt = $pdo->query("SELECT sex, COUNT(*) as count FROM residents WHERE verification_status = 'verified' GROUP BY sex");
+$stmt = $pdo->query("
+    SELECT sex, SUM(cnt) as count FROM (
+        SELECT sex, COUNT(*) as cnt FROM residents WHERE verification_status = 'verified' GROUP BY sex
+        UNION ALL
+        SELECT sex, COUNT(*) as cnt FROM family_members GROUP BY sex
+    ) t GROUP BY sex
+");
 $gender_stats = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $male_res = $gender_stats['Male'] ?? 0;
 $female_res = $gender_stats['Female'] ?? 0;
@@ -33,7 +43,8 @@ $stmt = $pdo->query("
         (SELECT COUNT(*) FROM family_members WHERE is_senior = 1) as seniors,
         (SELECT COUNT(*) FROM residents WHERE is_pwd = 1 AND verification_status = 'verified') + 
         (SELECT COUNT(*) FROM family_members WHERE is_pwd = 1) as pwds,
-        (SELECT COUNT(*) FROM residents WHERE is_solo_parent = 1 AND verification_status = 'verified') as solo_parents
+        (SELECT COUNT(*) FROM residents WHERE is_solo_parent = 1 AND verification_status = 'verified') +
+        (SELECT COUNT(*) FROM family_members WHERE is_solo_parent = 1) as solo_parents
 ");
 $special_sectors = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -183,10 +194,10 @@ require_once __DIR__ . '/header.php';
     <!-- Restore Summary Cards -->
     <div class="row g-4 mb-4">
         <div class="col-md-4">
-            <div class="admin-stats-card info m-0 shadow-sm report-card-clickable" onclick="loadReport('total_residents','Total Verified Residents')" title="Click to view list">
+            <div class="admin-stats-card info m-0 shadow-sm report-card-clickable" onclick="loadReport('total_residents','Total of Resident')" title="Click to view list">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <div class="stats-label">Total Verified Residents</div>
+                        <div class="stats-label">Total of Resident</div>
                         <div class="stats-number"><?php echo number_format($total_residents); ?></div>
                     </div>
                     <i class="fas fa-users stats-icon"></i>
@@ -340,15 +351,15 @@ require_once __DIR__ . '/header.php';
         let headers = '';
 
         if (type === 'male' || type === 'female' || type === 'total_residents') {
-            headers = '<th>#</th><th>Full Name</th><th>Source / Belongs To</th><th>Birthdate</th><th>Sex</th><th>Civil Status</th><th>Address</th><th>Phone</th>';
+            headers = '<th>#</th><th>Full Name</th><th>Type</th><th>Birthdate</th><th>Sex</th><th>Civil Status</th><th>Address</th><th>Phone</th>';
             data.forEach((r, i) => {
                 const isFM = r.source === 'Family Member' && r.owner_name;
                 rows += `<tr>
                 <td>${i + 1}</td>
                 <td class="fw-bold">${esc(r.full_name)}</td>
                 <td>${isFM
-                        ? `<span class="badge bg-secondary">Family Member</span><br><small class="text-muted">${esc(r.owner_name)}</small>`
-                        : `<span class="badge bg-primary">Resident</span>`}</td>
+                        ? `<span class="badge bg-secondary">Family Member</span>`
+                        : `<span class="badge bg-primary">Owner</span>`}</td>
                 <td>${r.birthdate ? formatDate(r.birthdate) : '—'}</td>
                 <td>${esc(r.sex || '—')}</td>
                 <td>${esc(r.civil_status || '—')}</td>
@@ -357,26 +368,30 @@ require_once __DIR__ . '/header.php';
             </tr>`;
             });
         } else if (type === 'seniors' || type === 'pwds') {
-            headers = '<th>#</th><th>Full Name</th><th>Source / Belongs To</th><th>Birthdate</th><th>Sex</th><th>Address</th>';
+            headers = '<th>#</th><th>Full Name</th><th>Type</th><th>Birthdate</th><th>Sex</th><th>Address</th>';
             data.forEach((r, i) => {
                 const isFM = r.source === 'Family Member' && r.owner_name;
                 rows += `<tr>
                 <td>${i + 1}</td>
                 <td class="fw-bold">${esc(r.full_name)}</td>
                 <td>${isFM
-                        ? `<span class="badge bg-secondary">Family Member</span><br><small class="text-muted">${esc(r.owner_name)}</small>`
-                        : `<span class="badge bg-primary">Resident</span>`}</td>
+                        ? `<span class="badge bg-secondary">Family Member</span>`
+                        : `<span class="badge bg-primary">Owner</span>`}</td>
                 <td>${r.birthdate ? formatDate(r.birthdate) : '—'}</td>
                 <td>${esc(r.sex || '—')}</td>
                 <td>${esc(r.address || '—')}</td>
             </tr>`;
             });
         } else if (type === 'solo_parents') {
-            headers = '<th>#</th><th>Full Name</th><th>Birthdate</th><th>Sex</th><th>Address</th><th>Phone</th>';
+            headers = '<th>#</th><th>Full Name</th><th>Type</th><th>Birthdate</th><th>Sex</th><th>Address</th><th>Phone</th>';
             data.forEach((r, i) => {
+                const isFM = r.source === 'Family Member' && r.owner_name;
                 rows += `<tr>
                 <td>${i + 1}</td>
                 <td class="fw-bold">${esc(r.full_name)}</td>
+                <td>${isFM
+                        ? `<span class="badge bg-secondary">Family Member</span>`
+                        : `<span class="badge bg-primary">Owner</span>`}</td>
                 <td>${r.birthdate ? formatDate(r.birthdate) : '—'}</td>
                 <td>${esc(r.sex || '—')}</td>
                 <td>${esc(r.address || '—')}</td>
@@ -1131,7 +1146,7 @@ function printRbiFormC(data, label) {
 
         const periodLabel = `${formatDate(START_DATE)} to ${formatDate(END_DATE)}`;
         const types = [
-            { key: 'total_residents', label: 'Total Verified Residents' },
+            { key: 'total_residents', label: 'Total of Resident' },
             { key: 'male', label: 'Male Residents' },
             { key: 'female', label: 'Female Residents' },
             { key: 'seniors', label: 'Senior Citizens' },
