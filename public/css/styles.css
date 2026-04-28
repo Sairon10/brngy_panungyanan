@@ -524,15 +524,7 @@ a {
   z-index: 1050;
 }
 
-@media (max-width: 767.98px) {
-  .chatbot-toggle {
-    display: none !important;
-  }
 
-  .chatbot-panel {
-    display: none !important;
-  }
-}
 
 .chatbot-toggle:hover {
   transform: scale(1.1);
