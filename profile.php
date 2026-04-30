@@ -186,7 +186,7 @@ if (!empty($data['address'])) {
                 <div class="position-absolute top-0 start-0 w-100 h-100 bg-pattern opacity-10"></div>
 
                 <?php if (!empty($data['avatar'])): ?>
-                    <img src="/<?php echo htmlspecialchars($data['avatar']); ?>" alt="Profile Picture"
+                    <img src="<?php echo htmlspecialchars($data['avatar']); ?>" alt="Profile Picture"
                         class="rounded-circle mx-auto mb-3 shadow-lg"
                         style="width: 100px; height: 100px; object-fit: cover; border: 4px solid white;">
                 <?php else: ?>
@@ -233,17 +233,15 @@ if (!empty($data['address'])) {
                         const isSuccess = msg.toLowerCase().includes('successfully') || msg.toLowerCase().includes('removed');
                         Swal.fire({
                             icon: isSuccess ? 'success' : 'error',
-                            title: isSuccess ? 'Success!' : 'Oops...',
+                            title: isSuccess ? 'Success!' : 'Notice',
                             text: msg,
-                            confirmButtonColor: '#0f766e',
-                            timer: 3000,
-                            timerProgressBar: true
+                            confirmButtonColor: '#0f766e'
                         });
                     });
                 </script>
                 <?php endif; ?>
 
-                <form method="post" enctype="multipart/form-data">
+                <form method="post" enctype="multipart/form-data" id="profileForm">
                     <?php echo csrf_field(); ?>
 
                     <h6 class="text-uppercase text-secondary fw-bold small mb-4 pb-2 border-bottom">Profile Picture</h6>
@@ -452,7 +450,7 @@ if (!empty($data['address'])) {
             </div>
 
             <div class="d-flex justify-content-end mt-3">
-                <button class="btn btn-primary btn-lg rounded-pill px-5" type="submit">
+                <button class="btn btn-primary btn-lg rounded-pill px-5" type="submit" id="saveBtn">
                     <i class="fas fa-save me-2"></i> Save Changes
                 </button>
             </div>
@@ -508,6 +506,11 @@ if (!empty($data['address'])) {
         const provinceSelect = document.getElementById('province');
         const municipalitySelect = document.getElementById('municipality');
         const barangaySelect = document.getElementById('barangay');
+
+        if (!provinceSelect || !municipalitySelect || !barangaySelect) {
+            console.log('Address dropdowns not found, skipping PSGC initialization.');
+            return;
+        }
 
         const selectedProv = provinceSelect.dataset.selected;
         const selectedMun = municipalitySelect.dataset.selected;
@@ -633,6 +636,16 @@ if (!empty($data['address'])) {
                     barangaySelect.replaceWith(input);
                 });
         });
+
+        // Save Button Loading State
+        const profileForm = document.getElementById('profileForm');
+        const saveBtn = document.getElementById('saveBtn');
+        if (profileForm && saveBtn) {
+            profileForm.addEventListener('submit', function() {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+            });
+        }
     });
 </script>
 
