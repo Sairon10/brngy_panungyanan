@@ -266,10 +266,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     <h3 class="fw-bold text-dark">Identity Verified!</h3>
                                     <p class="text-muted col-lg-8 mx-auto">You have successfully verified your identity. You
                                         now have full access to all resident services and portal features.</p>
-                                    <div class="mt-4">
+                                    <div class="mt-4 d-flex flex-wrap justify-content-center gap-2">
                                         <a href="dashboard.php" class="btn btn-outline-primary rounded-pill px-4 py-2">
                                             <i class="fas fa-home me-2"></i> Go to Dashboard
                                         </a>
+                                        <button type="button" class="btn btn-primary rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#viewMyIDModal">
+                                            <i class="fas fa-eye me-2"></i> View My Submitted ID
+                                        </button>
                                     </div>
                                 </div>
                             <?php endif; ?>
@@ -319,7 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 </div>
                             </div>
 
-                            <?php if ($resident['id_front_path'] || $resident['id_back_path']): ?>
+                            <?php if ($resident['id_front_path'] || $resident['id_back_path'] || !empty($resident['id_document_path'])): ?>
                                 <hr class="my-4 border-light">
                                 <h6 class="fw-bold text-uppercase text-muted small mb-3 letter-spacing-1">Current Uploads
                                 </h6>
@@ -410,6 +413,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <div class="col-md-6 text-center">
                             <label class="form-label fw-bold small text-uppercase text-muted mb-2">Back ID View</label>
                             <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_back_path']); ?>" 
+                                 class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
+                                 onclick="window.open(this.src, '_blank')">
+                        </div>
+                    <?php endif; ?>
+                    <?php if (empty($resident['id_front_path']) && empty($resident['id_back_path']) && !empty($resident['id_document_path'])): ?>
+                        <div class="col-12 text-center">
+                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">ID Document (Legacy Format)</label>
+                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_document_path']); ?>" 
                                  class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
                                  onclick="window.open(this.src, '_blank')">
                         </div>
