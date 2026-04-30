@@ -9,172 +9,172 @@ $pdo = get_db_connection();
 $msg = '';
 $family_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!csrf_validate()) {
-        $msg = 'Invalid session. Please reload and try again.';
-    } else {
-        // Get form data
-        $first_name = trim($_POST['first_name'] ?? '');
-        $last_name = trim($_POST['last_name'] ?? '');
-        $middle_name = trim($_POST['middle_name'] ?? '');
-        $suffix = trim($_POST['suffix'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        // Address broken down into components
-        $province = trim($_POST['province'] ?? '');
-        $municipality = trim($_POST['municipality'] ?? '');
-        $barangay = trim($_POST['barangay'] ?? '');
-        // Use direct address field if provided, otherwise build from components
-        $address_direct = trim($_POST['address'] ?? '');
-        if ($address_direct !== '') {
-            $address = $address_direct;
+    try {
+        if (!csrf_validate()) {
+            $msg = 'Invalid session. Please reload and try again.';
         } else {
-            $address = implode(', ', array_filter([$barangay, $municipality, $province]));
-        }
-        $phone = trim($_POST['phone'] ?? '');
-        $birthdate = $_POST['birthdate'] ?? null;
-        $sex = $_POST['sex'] ?? null;
-        $citizenship = trim($_POST['citizenship'] ?? '');
-        $civil_status = trim($_POST['civil_status'] ?? '');
-        // Auto-generate barangay_id: YEAR-NNNN format
-        $barangay_id = date('Y') . '-' . str_pad((string) $_SESSION['user_id'], 4, '0', STR_PAD_LEFT);
-        $purok = trim($_POST['purok'] ?? '');
-        $is_solo_parent = isset($_POST['is_solo_parent']) ? 1 : 0;
-        $is_pwd = isset($_POST['is_pwd']) ? 1 : 0;
-        $is_senior = isset($_POST['is_senior']) ? 1 : 0;
-        $religion = trim($_POST['religion'] ?? '');
-        $occupation = trim($_POST['occupation'] ?? '');
-        // Combine educational attainment and status
-        $edu_base = trim($_POST['educational_attainment'] ?? '');
-        $edu_status = trim($_POST['edu_status'] ?? '');
-        $educational_attainment = $edu_base . ($edu_status ? " ($edu_status)" : "");
-        if (empty(trim($educational_attainment))) {
-            $educational_attainment = trim($_POST['educational_attainment_text'] ?? ''); // Fallback if still using a text field
-        }
-        $classifications = $_POST['classifications'] ?? [];
-        $classification_json = json_encode($classifications);
-
-        // Build full_name from parts
-        $name_parts = array_filter([$first_name, $middle_name, $last_name, $suffix]);
-        $full_name = implode(' ', $name_parts);
-
-        // Validation
-        $errors = [];
-
-        // Handle profile picture upload
-        $avatarPath = null;
-        if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
-            $file = $_FILES['profile_picture'];
-            $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-            $maxSize = 5 * 1024 * 1024; // 5MB
-
-            if (!in_array($file['type'], $allowedTypes)) {
-                $errors[] = 'Only JPG, JPEG, and PNG images are allowed for profile picture.';
-            } elseif ($file['size'] > $maxSize) {
-                $errors[] = 'Profile picture size must not exceed 5MB.';
+            // Get form data
+            $first_name = trim($_POST['first_name'] ?? '');
+            $last_name = trim($_POST['last_name'] ?? '');
+            $middle_name = trim($_POST['middle_name'] ?? '');
+            $suffix = trim($_POST['suffix'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            // Address components
+            $province = trim($_POST['province'] ?? '');
+            $municipality = trim($_POST['municipality'] ?? '');
+            $barangay = trim($_POST['barangay'] ?? '');
+            
+            $address_direct = trim($_POST['address'] ?? '');
+            if ($address_direct !== '') {
+                $address = $address_direct;
             } else {
-                $uploadDir = __DIR__ . '/uploads/profile_pictures/';
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0755, true);
+                $address = implode(', ', array_filter([$barangay, $municipality, $province]));
+            }
+            $phone = trim($_POST['phone'] ?? '');
+            $birthdate = $_POST['birthdate'] ?? null;
+            $sex = $_POST['sex'] ?? null;
+            $citizenship = trim($_POST['citizenship'] ?? '');
+            $civil_status = trim($_POST['civil_status'] ?? '');
+            
+            $barangay_id = date('Y') . '-' . str_pad((string) $_SESSION['user_id'], 4, '0', STR_PAD_LEFT);
+            $purok = trim($_POST['purok'] ?? '');
+            $is_solo_parent = isset($_POST['is_solo_parent']) ? 1 : 0;
+            $is_pwd = isset($_POST['is_pwd']) ? 1 : 0;
+            $is_senior = isset($_POST['is_senior']) ? 1 : 0;
+            $religion = trim($_POST['religion'] ?? '');
+            $occupation = trim($_POST['occupation'] ?? '');
+            
+            $edu_base = trim($_POST['educational_attainment'] ?? '');
+            $edu_status = trim($_POST['edu_status'] ?? '');
+            $educational_attainment = $edu_base . ($edu_status ? " ($edu_status)" : "");
+            if (empty(trim($educational_attainment))) {
+                $educational_attainment = trim($_POST['educational_attainment_text'] ?? '');
+            }
+            $classifications = $_POST['classifications'] ?? [];
+            $classification_json = json_encode($classifications);
+
+            $name_parts = array_filter([$first_name, $middle_name, $last_name, $suffix]);
+            $full_name = implode(' ', $name_parts);
+
+            $errors = [];
+
+            // Handle profile picture upload
+            $avatarPath = null;
+            if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['profile_picture'];
+                $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                $maxSize = 5 * 1024 * 1024;
+
+                if (!in_array($file['type'], $allowedTypes)) {
+                    $errors[] = 'Only JPG, JPEG, and PNG images are allowed.';
+                } elseif ($file['size'] > $maxSize) {
+                    $errors[] = 'Profile picture size must not exceed 5MB.';
+                } else {
+                    $uploadDir = __DIR__ . '/uploads/profile_pictures/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0777, true);
+                    }
+
+                    $stmt = $pdo->prepare('SELECT avatar FROM residents WHERE user_id = ?');
+                    $stmt->execute([$_SESSION['user_id']]);
+                    $existingResident = $stmt->fetch();
+                    $oldAvatarPath = $existingResident['avatar'] ?? null;
+
+                    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '_' . uniqid() . '.' . $extension;
+                    $uploadPath = $uploadDir . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        $avatarPath = 'uploads/profile_pictures/' . $filename;
+                        if ($oldAvatarPath && file_exists(__DIR__ . '/' . $oldAvatarPath)) {
+                            @unlink(__DIR__ . '/' . $oldAvatarPath);
+                        }
+                    } else {
+                        $errors[] = 'Failed to upload profile picture. Check folder permissions.';
+                    }
                 }
+            }
+            
+            if ($first_name === '') $errors[] = 'First name is required';
+            if ($last_name === '') $errors[] = 'Last name is required';
+            if ($email === '') {
+                $errors[] = 'Email is required';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $errors[] = 'Valid email is required';
+            }
+            if ($phone === '') $errors[] = 'Phone is required';
 
-                // Get existing avatar to delete later
-                $stmt = $pdo->prepare('SELECT avatar FROM residents WHERE user_id = ?');
+            if ($birthdate !== '' && $birthdate !== null) {
+                try {
+                    $birth_date = new DateTime($birthdate);
+                    $today = new DateTime();
+                    if ($today->diff($birth_date)->y < 18) {
+                        $errors[] = 'You must be at least 18 years old';
+                    }
+                } catch (Exception $dtE) {
+                    $errors[] = 'Invalid birthdate format.';
+                }
+            }
+
+            if (empty($errors)) {
+                // Update users table
+                $stmt = $pdo->prepare('UPDATE users SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, email=? WHERE id=?');
+                $stmt->execute([$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $email, $_SESSION['user_id']]);
+
+                // Update or insert residents table
+                $stmt = $pdo->prepare('SELECT id FROM residents WHERE user_id = ?');
                 $stmt->execute([$_SESSION['user_id']]);
-                $existingResident = $stmt->fetch();
-                $oldAvatarPath = $existingResident['avatar'] ?? null;
-
-                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
-                $uploadPath = $uploadDir . $filename;
-
-                if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
-                    $avatarPath = 'uploads/profile_pictures/' . $filename;
-
-                    // Delete old avatar if it exists
-                    if ($oldAvatarPath && file_exists(__DIR__ . '/' . $oldAvatarPath)) {
-                        @unlink(__DIR__ . '/' . $oldAvatarPath);
+                $exists = $stmt->fetch();
+                if ($exists) {
+                    if ($avatarPath !== null) {
+                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, avatar=?, religion=COALESCE(NULLIF(?,\'\'), religion), occupation=COALESCE(NULLIF(?,\'\'), occupation), educational_attainment=COALESCE(NULLIF(?,\'\'), educational_attainment), classification=CASE WHEN ? != \'[]\' THEN ? ELSE classification END WHERE user_id=?')
+                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $religion, $occupation, $educational_attainment, $classification_json, $classification_json, $_SESSION['user_id']]);
+                    } else {
+                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, religion=COALESCE(NULLIF(?,\'\'), religion), occupation=COALESCE(NULLIF(?,\'\'), occupation), educational_attainment=COALESCE(NULLIF(?,\'\'), educational_attainment), classification=CASE WHEN ? != \'[]\' THEN ? ELSE classification END WHERE user_id=?')
+                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $religion, $occupation, $educational_attainment, $classification_json, $classification_json, $_SESSION['user_id']]);
                     }
                 } else {
-                    $errors[] = 'Failed to upload profile picture. Please try again.';
+                    $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, sex, citizenship, civil_status, barangay_id, purok, is_solo_parent, is_pwd, is_senior, avatar, religion, occupation, educational_attainment, classification) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+                        ->execute([$_SESSION['user_id'], $address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json]);
                 }
-            }
-        }
-        if ($first_name === '')
-            $errors[] = 'First name is required';
-        if ($last_name === '')
-            $errors[] = 'Last name is required';
-        if ($email === '') {
-            $errors[] = 'Email is required';
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Valid email is required';
-        }
-        if ($phone === '')
-            $errors[] = 'Phone is required';
-
-        // Validate age: must be between 18 and 59 years old
-        if ($birthdate !== '' && $birthdate !== null) {
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate)) {
-                $birth_date = new DateTime($birthdate);
-                $today = new DateTime();
-                $age = $today->diff($birth_date)->y;
-
-                if ($age < 18) {
-                    $errors[] = 'You must be at least 18 years old';
-                }
-            }
-        }
-
-        if (empty($errors)) {
-            // Update users table
-            $stmt = $pdo->prepare('UPDATE users SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, email=? WHERE id=?');
-            $stmt->execute([$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $email, $_SESSION['user_id']]);
-
-            // Update or insert residents table
-            $stmt = $pdo->prepare('SELECT id FROM residents WHERE user_id = ?');
-            $stmt->execute([$_SESSION['user_id']]);
-            $exists = $stmt->fetch();
-            if ($exists) {
-                if ($avatarPath !== null) {
-                    $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, avatar=?, religion=COALESCE(NULLIF(?,\'\'), religion), occupation=COALESCE(NULLIF(?,\'\'), occupation), educational_attainment=COALESCE(NULLIF(?,\'\'), educational_attainment), classification=CASE WHEN ? != \'[]\' THEN ? ELSE classification END WHERE user_id=?')
-                        ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $religion, $occupation, $educational_attainment, $classification_json, $classification_json, $_SESSION['user_id']]);
-                } else {
-                    $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, religion=COALESCE(NULLIF(?,\'\'), religion), occupation=COALESCE(NULLIF(?,\'\'), occupation), educational_attainment=COALESCE(NULLIF(?,\'\'), educational_attainment), classification=CASE WHEN ? != \'[]\' THEN ? ELSE classification END WHERE user_id=?')
-                        ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $religion, $occupation, $educational_attainment, $classification_json, $classification_json, $_SESSION['user_id']]);
-                }
+                $msg = 'Profile saved successfully.';
             } else {
-                $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, sex, citizenship, civil_status, barangay_id, purok, is_solo_parent, is_pwd, is_senior, avatar, religion, occupation, educational_attainment, classification) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-                    ->execute([$_SESSION['user_id'], $address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json]);
+                $msg = implode('. ', $errors);
             }
-            $msg = 'Profile saved successfully.';
-        } else {
-            $msg = implode('. ', $errors);
+        }
+    } catch (Exception $e) {
+        file_put_contents(__DIR__ . '/profile_error_log.txt', date('Y-m-d H:i:s') . ' - POST ERROR: ' . $e->getMessage() . "\n", FILE_APPEND);
+        $msg = 'A server error occurred while saving: ' . $e->getMessage();
+    }
+}
+
+// Data fetching block
+try {
+    $stmt = $pdo->prepare('SELECT u.first_name, u.last_name, u.middle_name, u.suffix, u.full_name, u.email, r.* FROM users u LEFT JOIN residents r ON r.user_id = u.id WHERE u.id = ?');
+    $stmt->execute([$_SESSION['user_id']]);
+    $data = $stmt->fetch();
+
+    $barangay_id_display = date('Y') . '-' . str_pad((string) $_SESSION['user_id'], 4, '0', STR_PAD_LEFT);
+
+    $provinceValue = $municipalityValue = $barangayValue = '';
+    if (!empty($data['address'])) {
+        $storedAddressParts = array_map('trim', explode(',', $data['address']));
+        if (count($storedAddressParts) >= 3) {
+            $barangayValue = $storedAddressParts[0];
+            $municipalityValue = $storedAddressParts[1];
+            $provinceValue = $storedAddressParts[2];
+        } elseif (count($storedAddressParts) === 2) {
+            $barangayValue = $storedAddressParts[0];
+            $municipalityValue = $storedAddressParts[1];
+        } elseif (count($storedAddressParts) === 1) {
+            $municipalityValue = $storedAddressParts[0];
         }
     }
+} catch (Exception $e) {
+    file_put_contents(__DIR__ . '/profile_error_log.txt', date('Y-m-d H:i:s') . ' - FETCH ERROR: ' . $e->getMessage() . "\n", FILE_APPEND);
+    die('A critical error occurred while loading your profile data. Please check the error log.');
 }
 
-
-$stmt = $pdo->prepare('SELECT u.first_name, u.last_name, u.middle_name, u.suffix, u.full_name, u.email, r.* FROM users u LEFT JOIN residents r ON r.user_id = u.id WHERE u.id = ?');
-$stmt->execute([$_SESSION['user_id']]);
-$data = $stmt->fetch();
-
-// Auto-generate barangay_id: YEAR-NNNN format
-$barangay_id_display = date('Y') . '-' . str_pad((string) $_SESSION['user_id'], 4, '0', STR_PAD_LEFT);
-
-
-// Pre-fill address components from stored address (saved as "Barangay, Municipality, Province")
-$provinceValue = $municipalityValue = $barangayValue = '';
-if (!empty($data['address'])) {
-    $storedAddressParts = array_map('trim', explode(',', $data['address']));
-    if (count($storedAddressParts) >= 3) {
-        $barangayValue = $storedAddressParts[0];
-        $municipalityValue = $storedAddressParts[1];
-        $provinceValue = $storedAddressParts[2];
-    } elseif (count($storedAddressParts) === 2) {
-        $barangayValue = $storedAddressParts[0];
-        $municipalityValue = $storedAddressParts[1];
-    } elseif (count($storedAddressParts) === 1) {
-        $municipalityValue = $storedAddressParts[0];
-    }
-}
 ?>
 
 <div class="row justify-content-center animate__animated animate__fadeInUp">
