@@ -1,0 +1,24 @@
+2026-04-30 03:55:37 - /admin/resident_record_view?id=8&user_id=14
+POST: Array
+(
+    [csrf_token] => 6fd271abc26f0a779f47c01cb62d7d89499dc7836e3c29eb9edb4e0ae285cdc1
+    [action] => edit_family_member
+    [fm_id] => 4
+    [fm_first_name] => All
+    [fm_middle_name] => Caguitla
+    [fm_last_name] => Manalad
+    [fm_suffix] => 
+    [fm_relationship] => Parent
+    [fm_philsys_card_no] => 
+    [fm_citizenship] => FILIPINO
+    [fm_birthdate] => 1965-10-08
+    [fm_sex] => Male
+    [fm_civil_status] => Married
+    [fm_religion] => Roman Catholic
+    [fm_birth_place] => Pampanga
+    [fm_occupation] => Electrician
+    [fm_educational_attainment] => High School Graduate
+    [fm_educational_status] => Graduated
+    [fm_is_senior] => on
+)
+

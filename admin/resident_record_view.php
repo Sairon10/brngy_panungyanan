@@ -4,6 +4,10 @@ if (!is_admin())
     redirect('/index.php');
 
 $pdo = get_db_connection();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    file_put_contents(__DIR__ . '/request_log_view.txt', date('Y-m-d H:i:s') . " - " . $_SERVER['REQUEST_URI'] . "\nPOST: " . print_r($_POST, true) . "\n", FILE_APPEND);
+}
 $record_id = (int) ($_GET['id'] ?? 0);
 $user_id = (int) ($_GET['user_id'] ?? 0);
 
@@ -946,7 +950,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Resident Record</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="resident_records.php?redirect=view&id=<?php echo $record_id; ?>&user_id=<?php echo $user_id; ?>" id="editForm">
+            <form method="post" action="resident_records?redirect=view&id=<?php echo $record_id; ?>&user_id=<?php echo $user_id; ?>" id="editForm">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="record_id" id="edit_record_id">
@@ -1458,7 +1462,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         document.getElementById('fm_edit_educational_attainment').value = fm.educational_attainment || '';
         document.getElementById('fm_edit_educational_status').value = fm.educational_status || 'N/A';
-        
         document.getElementById('fm_edit_is_pwd').checked = fm.is_pwd == 1;
         document.getElementById('fm_edit_is_senior').checked = fm.is_senior == 1;
         document.getElementById('fm_edit_is_minor').checked = fm.is_minor == 1;
@@ -1466,15 +1469,50 @@ document.addEventListener('DOMContentLoaded', function () {
         
         new bootstrap.Modal(document.getElementById('familyMemberEditModal')).show();
     }
+</script>
 
-    // Auto-init toast and handle edit redirect
+<script>
     document.addEventListener('DOMContentLoaded', function () {
-        const toastEl = document.getElementById('actionToast');
-        if (toastEl) {
-            new bootstrap.Toast(toastEl, { delay: 4000 }).show();
+        const editForm = document.getElementById('editForm');
+        if (editForm) {
+            editForm.addEventListener('submit', function(e) {
+                Swal.fire({
+                    title: 'Saving...',
+                    text: 'Please wait while your changes are saved.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            });
         }
 
         const urlParams = new URLSearchParams(window.location.search);
+        
+        if (urlParams.has('updated')) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: 'Resident record updated successfully',
+                confirmButtonColor: '#198754'
+            }).then(() => {
+                urlParams.delete('updated');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            });
+        } else if (urlParams.has('msg')) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: urlParams.get('msg'),
+                confirmButtonColor: '#198754'
+            }).then(() => {
+                urlParams.delete('msg');
+                const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+                window.history.replaceState({}, '', newUrl);
+            });
+        }
+
         if (urlParams.has('edit')) {
             const fmId = urlParams.get('fm_id');
             if (fmId) {

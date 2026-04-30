@@ -1,0 +1,94 @@
+2026-04-30 03:53:16 - /admin/resident_records?redirect=view&id=8&user_id=14
+POST: Array
+(
+    [csrf_token] => 4e7e1a1160ca0985af47d219d24fc9930352db324fcd79fabacd3a3a24f1b0d0
+    [action] => update
+    [record_id] => 8
+    [user_id] => 0
+    [first_name] => Sairon 
+    [last_name] => Manalad
+    [middle_name] => Caguitla
+    [suffix] => 
+    [email] => saironmarkmanalad71@gmail.com
+    [phone] => 09261640911
+    [birthdate] => 2003-02-10
+    [sex] => Male
+    [citizenship] => Filipino
+    [civil_status] => Single
+    [religion] => Roman catholic
+    [occupation] => N/A
+    [educational_attainment] => College
+    [edu_status] => Under Graduate
+    [address] => 103, Panungyanan, City of General Trias, Cavite
+    [barangay_id] => 2026-0014
+    [purok] => Purok 6
+    [classifications] => Array
+        (
+            [0] => Unemployed
+        )
+
+    [is_active] => 1
+)
+
+2026-04-30 03:55:18 - /admin/resident_records?redirect=view&id=8&user_id=14
+POST: Array
+(
+    [csrf_token] => 6fd271abc26f0a779f47c01cb62d7d89499dc7836e3c29eb9edb4e0ae285cdc1
+    [action] => update
+    [record_id] => 8
+    [user_id] => 0
+    [first_name] => Sairon 
+    [last_name] => Manalad
+    [middle_name] => Caguitla
+    [suffix] => 
+    [email] => saironmarkmanalad71@gmail.com
+    [phone] => 09261640911
+    [birthdate] => 2003-02-10
+    [sex] => Male
+    [citizenship] => Filipino
+    [civil_status] => Single
+    [religion] => Roman catholic
+    [occupation] => N/A
+    [educational_attainment] => College
+    [address] => 103, Panungyanan, City of General Trias, Cavite
+    [barangay_id] => 2026-0014
+    [purok] => Purok 6
+    [classifications] => Array
+        (
+            [0] => Unemployed
+        )
+
+    [is_active] => 1
+)
+
+2026-04-30 03:55:27 - /admin/resident_records?redirect=view&id=8&user_id=14
+POST: Array
+(
+    [csrf_token] => 6fd271abc26f0a779f47c01cb62d7d89499dc7836e3c29eb9edb4e0ae285cdc1
+    [action] => update
+    [record_id] => 8
+    [user_id] => 0
+    [first_name] => Sairon Mark
+    [last_name] => Manalad
+    [middle_name] => Caguitla
+    [suffix] => 
+    [email] => saironmarkmanalad71@gmail.com
+    [phone] => 09261640911
+    [birthdate] => 2003-02-10
+    [sex] => Male
+    [citizenship] => Filipino
+    [civil_status] => Single
+    [religion] => Roman catholic
+    [occupation] => N/A
+    [educational_attainment] => College
+    [address] => 103, Panungyanan, City of General Trias, Cavite
+    [barangay_id] => 2026-0014
+    [purok] => Purok 6
+    [classifications] => Array
+        (
+            [0] => Unemployed
+        )
+
+    [is_active] => 1
+)
+

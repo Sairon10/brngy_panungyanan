@@ -1,9 +1,13 @@
 <?php
 require_once __DIR__ . '/../config.php';
-if (!is_admin() || $_SESSION['user_id'] != 1)
+if (!is_admin())
     redirect('../index.php');
-$page_title = 'All resident';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    file_put_contents(__DIR__ . '/request_log.txt', date('Y-m-d H:i:s') . " - " . $_SERVER['REQUEST_URI'] . "\nPOST: " . print_r($_POST, true) . "\n", FILE_APPEND);
+}
+
+$page_title = 'All resident';
 require_once __DIR__ . '/header.php';
 ?>
 
@@ -14,6 +18,7 @@ require_once __DIR__ . '/header.php';
 
 <?php
 $pdo = get_db_connection();
+
 $errors = [];
 $success = '';
 
@@ -102,7 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $province = trim($_POST['province'] ?? '');
         $municipality = trim($_POST['municipality'] ?? '');
         $barangay = trim($_POST['barangay'] ?? '');
-        $address = implode(', ', array_filter([$barangay, $municipality, $province]));
+        $address_parts = array_filter([$barangay, $municipality, $province]);
+        $address = !empty($address_parts) ? implode(', ', $address_parts) : trim($_POST['address'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
         $birthdate = $_POST['birthdate'] ?? '';
         $sex = $_POST['sex'] ?? '';
@@ -166,17 +172,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     if ($emailExists) {
                         $errors[] = 'Email already exists in another resident record';
                     } else {
+                        $log_msg = "Starting update for Record ID: $record_id, User ID: $user_id\n";
+                        
                         if ($record_id > 0) {
-                            $stmt = $pdo->prepare('UPDATE resident_records SET email = ?, first_name = ?, last_name = ?, middle_name = ?, suffix = ?, full_name = ?, address = ?, phone = ?, birthdate = ?, sex = ?, citizenship = ?, civil_status = ?, purok = ?, is_active = ?, is_solo_parent = ?, is_pwd = ?, is_senior = ?, barangay_id = ?, religion = ?, occupation = ?, educational_attainment = ?, philsys_card_no = ?, is_family_head = ?, classification = ? WHERE id = ?');
-                            $stmt->execute([$email ?: null, $first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $address, $phone ?: null, $birthdate ?: null, $sex ?: null, $citizenship ?: null, $civil_status ?: null, $purok ?: null, $is_active, $is_solo_parent, $is_pwd, $is_senior, $barangay_id ?: null, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $philsys_card_no ?: null, $is_family_head, $classification_json, $record_id]);
+                            $log_msg .= "Updating resident_records table...\n";
+                            $stmt = $pdo->prepare('UPDATE resident_records SET email = ?, first_name = ?, last_name = ?, middle_name = ?, suffix = ?, full_name = ?, address = ?, phone = ?, birthdate = ?, sex = ?, citizenship = ?, civil_status = ?, purok = ?, is_active = ?, is_solo_parent = ?, is_pwd = ?, is_senior = ?, barangay_id = ? WHERE id = ?');
+                            $stmt->execute([$email ?: null, $first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $address, $phone ?: null, $birthdate ?: null, $sex ?: null, $citizenship ?: null, $civil_status ?: null, $purok ?: null, $is_active, $is_solo_parent, $is_pwd, $is_senior, $barangay_id ?: null, $record_id]);
                             $success = 'Resident record updated successfully';
                         } else {
+                            $log_msg .= "No resident_records ID found, skipping that table.\n";
                             $success = 'Resident account updated successfully';
                         }
 
                         // Sync back to residents/users tables if a linked account exists
                         $linked_user_id = $user_id > 0 ? $user_id : null;
-                        if ($email) {
+                        if (!$linked_user_id && $email) {
                             $chk = $pdo->prepare('SELECT u.id FROM users u WHERE u.email = ? AND u.role = "resident" LIMIT 1');
                             $chk->execute([$email]);
                             $lu = $chk->fetch();
@@ -188,14 +198,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             $lu = $chk->fetch();
                             if ($lu) $linked_user_id = $lu['id'];
                         }
+                        
                         if ($linked_user_id) {
+                            $log_msg .= "Found linked user ID: $linked_user_id. Updating users and residents tables...\n";
                             // Update users table
                             $pdo->prepare('UPDATE users SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=? WHERE id=?')
                                 ->execute([$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $linked_user_id]);
                             // Update residents table
-                            $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, religion=?, occupation=?, educational_attainment=?, classification=?, barangay_id=? WHERE user_id=?')
-                                ->execute([$address, $phone ?: null, $birthdate ?: null, $sex ?: null, $citizenship ?: null, $civil_status ?: null, $purok ?: null, $is_solo_parent, $is_pwd, $is_senior, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json, $barangay_id, $linked_user_id]);
+                            $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, religion=?, occupation=?, educational_attainment=?, educational_status=?, classification=?, barangay_id=? WHERE user_id=?')
+                                ->execute([$address, $phone ?: null, $birthdate ?: null, $sex ?: null, $citizenship ?: null, $civil_status ?: null, $purok ?: null, $is_solo_parent, $is_pwd, $is_senior, $religion ?: null, $occupation ?: null, $edu_base, $edu_status, $classification_json, $barangay_id, $linked_user_id]);
+                        } else {
+                            $log_msg .= "No linked user account found to sync.\n";
                         }
+
+                        file_put_contents(__DIR__ . '/update_log.txt', date('Y-m-d H:i:s') . " - " . $log_msg . "\n", FILE_APPEND);
 
                         // Redirect to view page if requested
                         if (isset($_GET['redirect']) && $_GET['redirect'] === 'view') {
@@ -206,8 +222,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     }
                 }
             } catch (Exception $e) {
+                file_put_contents(__DIR__ . '/debug_errors.txt', date('Y-m-d H:i:s') . " - EXCEPTION: " . $e->getMessage() . "\n", FILE_APPEND);
                 $errors[] = 'Server error: ' . htmlspecialchars($e->getMessage());
             }
+        }
+        
+        if ($errors) {
+            file_put_contents(__DIR__ . '/debug_errors.txt', date('Y-m-d H:i:s') . "\nPOST: " . print_r($_POST, true) . "\nERRORS: " . print_r($errors, true) . "\n\n", FILE_APPEND);
         }
     }
 }
