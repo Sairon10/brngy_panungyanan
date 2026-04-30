@@ -5,6 +5,8 @@ error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
 $error = '';
+$info = $_SESSION['info'] ?? '';
+unset($_SESSION['info']);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if (!csrf_validate()) {
 		$error = 'Invalid session token. Please reload the page.';
@@ -126,11 +128,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 									<p class="text-muted small mb-0">Sign in to continue.</p>
 								</div>
 
+								<?php if ($info): ?>
+									<div class="alert alert-success border-0 bg-success bg-opacity-10 text-success small mb-4">
+										<i class="fas fa-check-circle me-2"></i><?php echo htmlspecialchars($info); ?>
+									</div>
+								<?php endif; ?>
+
 								<?php if ($error): ?>
 									<div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small mb-4">
-										<i
-											class="fas fa-exclamation-circle me-2"></i><?php echo htmlspecialchars($error); ?>
-									</div><?php endif; ?>
+										<i class="fas fa-exclamation-circle me-2"></i><?php echo htmlspecialchars($error); ?>
+									</div>
+								<?php endif; ?>
 
 								<form method="post" novalidate>
 									<?php echo csrf_field(); ?>

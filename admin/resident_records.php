@@ -228,9 +228,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 if ($type === 'OWNER') {
                     if ($record_id > 0) {
                         $pdo->prepare('DELETE FROM resident_records WHERE id = ?')->execute([$record_id]);
-                        $deleted_count++;
-                    } else if ($user_id > 0) {
+                    }
+                    if ($user_id > 0) {
+                        $pdo->prepare('DELETE FROM residents WHERE user_id = ?')->execute([$user_id]);
                         $pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$user_id]);
+                    }
+                    if ($record_id > 0 || $user_id > 0) {
                         $deleted_count++;
                     }
                 } else if ($type === 'MEMBER') {
@@ -263,12 +266,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         // Delete the official record
                         $stmt = $pdo->prepare('DELETE FROM resident_records WHERE id = ?');
                         $stmt->execute([$record_id]);
-                        $success = 'Resident record deleted successfully';
-                    } else if ($user_id > 0) {
-                        // Delete the user account (which should cascade to residents table)
+                    }
+                    if ($user_id > 0) {
+                        // Delete the user account and associated resident profile
+                        $stmt = $pdo->prepare('DELETE FROM residents WHERE user_id = ?');
+                        $stmt->execute([$user_id]);
                         $stmt = $pdo->prepare('DELETE FROM users WHERE id = ?');
                         $stmt->execute([$user_id]);
-                        $success = 'Resident account deleted successfully';
+                    }
+                    if ($record_id > 0 || $user_id > 0) {
+                        $success = 'Resident record deleted successfully';
                     }
                 } else {
                     // Delete family member

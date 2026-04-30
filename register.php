@@ -144,7 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$is_senior
 				]);
 
-				$success = 'Registration successful! Please login and upload your ID for verification.';
+				$_SESSION['info'] = 'Registration successful! Please login to your account.';
+				redirect('login.php');
 			}
 		} catch (Exception $e) {
 			$errors[] = 'Server error. Please try again.';
