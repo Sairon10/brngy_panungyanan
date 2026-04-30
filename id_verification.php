@@ -19,9 +19,8 @@ if (!$resident) {
     redirect('index.php');
 } elseif (!$resident['is_rbi_completed']) {
     redirect('rbi_form.php');
-} elseif ($resident['verification_status'] === 'verified') {
-    redirect('dashboard.php');
 }
+
 
 // Handle file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'upload_id') {
@@ -268,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     <p class="text-muted col-lg-8 mx-auto">You have successfully verified your identity. You
                                         now have full access to all resident services and portal features.</p>
                                     <div class="mt-4">
-                                        <a href="index.php" class="btn btn-outline-primary rounded-pill px-4 py-2">
+                                        <a href="dashboard.php" class="btn btn-outline-primary rounded-pill px-4 py-2">
                                             <i class="fas fa-home me-2"></i> Go to Dashboard
                                         </a>
                                     </div>
@@ -324,34 +323,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 <hr class="my-4 border-light">
                                 <h6 class="fw-bold text-uppercase text-muted small mb-3 letter-spacing-1">Current Uploads
                                 </h6>
-                                <div class="p-3 bg-light rounded-3 border border-light">
-                                    <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <span class="badge bg-white text-dark border shadow-sm">Submitted Files</span>
-                                        <?php if (isset($resident['verified_at']) && $resident['verified_at']): ?>
-                                            <small
-                                                class="text-muted"><?php echo date('M j, Y', strtotime($resident['verified_at'])); ?></small>
-                                        <?php endif; ?>
-                                    </div>
-                                    
-                                    <?php if ($resident['id_front_path']): ?>
-                                    <div class="text-truncate small text-muted font-monospace mb-1">
-                                        <i class="fas fa-file-image me-2"></i>Front: <?php echo htmlspecialchars(basename($resident['id_front_path'])); ?>
-                                    </div>
-                                    <?php endif; ?>
-
-                                    <?php if ($resident['id_back_path']): ?>
-                                    <div class="text-truncate small text-muted font-monospace mb-2">
-                                        <i class="fas fa-file-image me-2"></i>Back: <?php echo htmlspecialchars(basename($resident['id_back_path'])); ?>
-                                    </div>
-                                    <?php endif; ?>
-
-                                    <?php if (!empty($resident['address_on_id'])): ?>
-                                        <div class="small text-muted border-top pt-2">
-                                            <i class="fas fa-map-pin me-2 text-secondary"></i>
-                                            <span class="fst-italic"><?php echo htmlspecialchars($resident['address_on_id']); ?></span>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
+                                 <div class="p-3 bg-light rounded-3 border border-light">
+                                     <div class="d-flex align-items-center justify-content-between mb-3">
+                                         <span class="badge bg-white text-dark border shadow-sm">Submitted Files</span>
+                                         <?php if (isset($resident['verified_at']) && $resident['verified_at']): ?>
+                                             <small
+                                                 class="text-muted"><?php echo date('M j, Y', strtotime($resident['verified_at'])); ?></small>
+                                         <?php endif; ?>
+                                     </div>
+                                     
+                                     <button type="button" class="btn btn-sm btn-outline-primary w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#viewMyIDModal">
+                                         <i class="fas fa-eye me-1"></i> View Details
+                                     </button>
+                                 </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -393,6 +377,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Viewing My ID Details -->
+<div class="modal fade" id="viewMyIDModal" tabindex="-1" aria-labelledby="viewMyIDModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="viewMyIDModalLabel"><i class="fas fa-id-card me-2 text-primary"></i>My ID Verification Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4 justify-content-center">
+                    <div class="col-12 mb-2">
+                        <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
+                        <div class="p-3 bg-light rounded-3 border fw-semibold text-dark" style="font-size: 0.95rem;">
+                            <?php echo !empty($resident['address_on_id']) ? htmlspecialchars($resident['address_on_id']) : '<i class="text-muted fw-normal">No address provided.</i>'; ?>
+                        </div>
+                    </div>
+                    <?php if (!empty($resident['id_front_path'])): ?>
+                        <div class="col-md-6 text-center">
+                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">Front ID View</label>
+                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_front_path']); ?>" 
+                                 class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
+                                 onclick="window.open(this.src, '_blank')">
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($resident['id_back_path'])): ?>
+                        <div class="col-md-6 text-center">
+                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">Back ID View</label>
+                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_back_path']); ?>" 
+                                 class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
+                                 onclick="window.open(this.src, '_blank')">
+                        </div>
+                    <?php endif; ?>
+                    <div class="col-12 mt-3 text-center">
+                        <div class="alert alert-info border-0 rounded-3 small py-2 mb-0">
+                            <i class="fas fa-info-circle me-1"></i> Tip: Click on an image to view it in full size.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
