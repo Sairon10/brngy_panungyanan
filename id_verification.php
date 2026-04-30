@@ -266,13 +266,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     <h3 class="fw-bold text-dark">Identity Verified!</h3>
                                     <p class="text-muted col-lg-8 mx-auto">You have successfully verified your identity. You
                                         now have full access to all resident services and portal features.</p>
-                                    <div class="mt-4 d-flex flex-wrap justify-content-center gap-2">
+                                    <div class="mt-4">
                                         <a href="dashboard.php" class="btn btn-outline-primary rounded-pill px-4 py-2">
                                             <i class="fas fa-home me-2"></i> Go to Dashboard
                                         </a>
-                                        <button type="button" class="btn btn-primary rounded-pill px-4 py-2" data-bs-toggle="modal" data-bs-target="#viewMyIDModal">
-                                            <i class="fas fa-eye me-2"></i> View My Submitted ID
-                                        </button>
                                     </div>
                                 </div>
                             <?php endif; ?>
