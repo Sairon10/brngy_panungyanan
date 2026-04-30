@@ -157,6 +157,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Handle avatar removal
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'remove_avatar') {
+    try {
+        if (csrf_validate()) {
+            $stmt = $pdo->prepare('SELECT avatar FROM residents WHERE user_id = ?');
+            $stmt->execute([$_SESSION['user_id']]);
+            $res = $stmt->fetch();
+            if ($res && !empty($res['avatar'])) {
+                if (file_exists(__DIR__ . '/' . $res['avatar'])) {
+                    @unlink(__DIR__ . '/' . $res['avatar']);
+                }
+                $pdo->prepare('UPDATE residents SET avatar = NULL WHERE user_id = ?')->execute([$_SESSION['user_id']]);
+                $msg = 'Profile picture removed successfully.';
+            }
+        }
+    } catch (Exception $e) {
+        $msg = 'Error removing picture: ' . $e->getMessage();
+    }
+}
+
 // Data fetching block
 try {
     $stmt = $pdo->prepare('SELECT u.first_name, u.last_name, u.middle_name, u.suffix, u.full_name, u.email, r.* FROM users u LEFT JOIN residents r ON r.user_id = u.id WHERE u.id = ?');
@@ -195,12 +215,15 @@ try {
                 <div class="position-absolute top-0 start-0 w-100 h-100 bg-pattern opacity-10"></div>
 
                 <?php if (!empty($data['avatar'])): ?>
-                    <img src="<?php echo htmlspecialchars($data['avatar']); ?>" alt="Profile Picture"
-                        class="rounded-circle mx-auto mb-3 shadow-lg"
-                        style="width: 100px; height: 100px; object-fit: cover; border: 4px solid white;">
+                    <div class="position-relative d-inline-block mb-3">
+                        <img src="<?php echo htmlspecialchars($data['avatar']); ?>" alt="Profile Picture"
+                            class="rounded-circle shadow-lg"
+                            style="width: 120px; height: 120px; object-fit: cover; border: 4px solid white; cursor: pointer;"
+                            onclick="previewProfileImage(this.src)">
+                    </div>
                 <?php else: ?>
-                    <div class="avatar-circle width-12 height-12 bg-white text-primary fw-bold mx-auto mb-3 shadow-lg fs-2 d-flex align-items-center justify-content-center"
-                        style="width: 100px; height: 100px;">
+                    <div class="avatar-circle bg-white text-primary fw-bold mx-auto mb-3 shadow-lg fs-2 d-flex align-items-center justify-content-center"
+                        style="width: 120px; height: 120px; border-radius: 50%;">
                         <?php echo strtoupper(substr($data['full_name'] ?? 'U', 0, 1)); ?>
                     </div>
                 <?php endif; ?>
@@ -264,10 +287,12 @@ try {
                             <div class="form-text small text-muted">Accepted formats: JPG, JPEG, PNG. Maximum size: 5MB
                             </div>
                             <?php if (!empty($data['avatar'])): ?>
-                                <div class="mt-2">
-                                    <small class="text-muted">Current profile picture: <a
-                                            href="/<?php echo htmlspecialchars($data['avatar']); ?>"
-                                            target="_blank">View</a></small>
+                                <div class="mt-2 d-flex align-items-center gap-2">
+                                    <small class="text-muted">Current profile picture:</small>
+                                    <a href="<?php echo htmlspecialchars($data['avatar']); ?>" 
+                                       target="_blank" class="btn btn-sm btn-outline-info py-0 px-2">View</a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" 
+                                            onclick="confirmRemoveAvatar()">Delete</button>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -656,6 +681,42 @@ try {
             });
         }
     });
+
+    function confirmRemoveAvatar() {
+        Swal.fire({
+            title: 'Remove photo?',
+            text: "Are you sure you want to remove your profile picture?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, remove it!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Create a temporary form to submit the removal
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.innerHTML = `
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <input type="hidden" name="action" value="remove_avatar">
+                `;
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    function previewProfileImage(src) {
+        Swal.fire({
+            html: `<img src="${src}" class="rounded-circle shadow" style="width: 300px; height: 300px; object-fit: cover; border: 5px solid white;">`,
+            showConfirmButton: false,
+            showCloseButton: true,
+            background: 'transparent',
+            customClass: {
+                popup: 'border-0 shadow-none'
+            }
+        });
+    }
 </script>
 
 <?php require_once __DIR__ . '/partials/user_dashboard_footer.php'; ?>

@@ -374,7 +374,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 <?php if (!$is_family_member && $avatar && file_exists(__DIR__ . '/../' . $avatar)): ?>
                     <img src="/<?php echo htmlspecialchars($avatar); ?>" alt="Profile Picture"
                         class="rounded-circle mx-auto mb-3 shadow-lg"
-                        style="width: 120px; height: 120px; object-fit: cover; border: 4px solid white;">
+                        style="width: 120px; height: 120px; object-fit: cover; border: 4px solid white; cursor: pointer; position: relative; z-index: 10;"
+                        onclick="previewProfileImage(this.src)">
                 <?php else: ?>
                     <div class="avatar-circle bg-white text-primary fw-bold mx-auto mb-3 shadow-lg fs-2 d-flex align-items-center justify-content-center"
                         style="width: 120px; height: 120px; border-radius: 50%;">
@@ -1524,6 +1525,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
     });
+
+    function previewProfileImage(src) {
+        Swal.fire({
+            html: `<img src="${src}" class="rounded-circle shadow" style="width: 300px; height: 300px; object-fit: cover; border: 5px solid white;">`,
+            showConfirmButton: false,
+            showCloseButton: true,
+            background: 'transparent',
+            customClass: {
+                popup: 'border-0 shadow-none'
+            }
+        });
+    }
 </script>
 
 <?php require_once __DIR__ . '/footer.php'; ?>
