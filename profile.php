@@ -117,21 +117,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($errors)) {
+                // Get current data for fallback
+                $stmt = $pdo->prepare('SELECT * FROM residents WHERE user_id = ?');
+                $stmt->execute([$_SESSION['user_id']]);
+                $current = $stmt->fetch();
+
+                // Fallback logic in PHP to avoid SQL collation issues (NULLIF/COALESCE)
+                $final_religion = !empty($religion) ? $religion : ($current['religion'] ?? null);
+                $final_occupation = !empty($occupation) ? $occupation : ($current['occupation'] ?? null);
+                $final_edu = !empty($educational_attainment) ? $educational_attainment : ($current['educational_attainment'] ?? null);
+                
+                // If classifications is empty, keep old ones
+                $final_classification = ($classification_json !== '[]') ? $classification_json : ($current['classification'] ?? '[]');
+
                 // Update users table
                 $stmt = $pdo->prepare('UPDATE users SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, email=? WHERE id=?');
                 $stmt->execute([$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $email, $_SESSION['user_id']]);
 
-                // Update or insert residents table
-                $stmt = $pdo->prepare('SELECT id FROM residents WHERE user_id = ?');
-                $stmt->execute([$_SESSION['user_id']]);
-                $exists = $stmt->fetch();
-                if ($exists) {
+                if ($current) {
                     if ($avatarPath !== null) {
-                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, avatar=?, religion=COALESCE(NULLIF(?,\'\'), religion), occupation=COALESCE(NULLIF(?,\'\'), occupation), educational_attainment=COALESCE(NULLIF(?,\'\'), educational_attainment), classification=CASE WHEN ? != \'[]\' THEN ? ELSE classification END WHERE user_id=?')
-                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $religion, $occupation, $educational_attainment, $classification_json, $classification_json, $_SESSION['user_id']]);
+                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, avatar=?, religion=?, occupation=?, educational_attainment=?, classification=? WHERE user_id=?')
+                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $final_religion, $final_occupation, $final_edu, $final_classification, $_SESSION['user_id']]);
                     } else {
-                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, religion=COALESCE(NULLIF(?,\'\'), religion), occupation=COALESCE(NULLIF(?,\'\'), occupation), educational_attainment=COALESCE(NULLIF(?,\'\'), educational_attainment), classification=CASE WHEN ? != \'[]\' THEN ? ELSE classification END WHERE user_id=?')
-                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $religion, $occupation, $educational_attainment, $classification_json, $classification_json, $_SESSION['user_id']]);
+                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, religion=?, occupation=?, educational_attainment=?, classification=? WHERE user_id=?')
+                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $final_religion, $final_occupation, $final_edu, $final_classification, $_SESSION['user_id']]);
                     }
                 } else {
                     $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, sex, citizenship, civil_status, barangay_id, purok, is_solo_parent, is_pwd, is_senior, avatar, religion, occupation, educational_attainment, classification) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
