@@ -47,7 +47,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                         $pdo->prepare('UPDATE residents SET verification_status = \'verified\', verified_at = NOW(), verified_by = ? WHERE id = ?')->execute([$_SESSION['user_id'], $resident_id]);
                         if (!empty($rd['email']))
                             send_id_verification_email($rd['email'], 'verified', ['full_name' => $rd['full_name'], 'verification_notes' => null]);
-                        header('Location: resident_record_view.php?id=' . $record_id . '&msg=' . urlencode('Resident has been verified successfully.'));
+                        $redirect_url = 'resident_record_view.php?id=' . $record_id;
+                        if ($record_id <= 0 && $user_id > 0) {
+                            $redirect_url .= '&user_id=' . $user_id;
+                        }
+                        header('Location: ' . $redirect_url . '&msg=' . urlencode('Resident has been verified successfully.'));
                         exit;
                     } elseif ($_POST['action'] === 'reject') {
                         $notes = trim($_POST['rejection_notes'] ?? '');
@@ -57,7 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                             $pdo->prepare('UPDATE residents SET verification_status = \'rejected\', verification_notes = ?, verified_at = NOW(), verified_by = ? WHERE id = ?')->execute([$notes, $_SESSION['user_id'], $resident_id]);
                             if (!empty($rd['email']))
                                 send_id_verification_email($rd['email'], 'rejected', ['full_name' => $rd['full_name'], 'verification_notes' => $notes]);
-                            header('Location: resident_record_view.php?id=' . $record_id . '&msg=' . urlencode('Resident verification has been rejected.'));
+                            
+                            $redirect_url = 'resident_record_view.php?id=' . $record_id;
+                            if ($record_id <= 0 && $user_id > 0) {
+                                $redirect_url .= '&user_id=' . $user_id;
+                            }
+                            header('Location: ' . $redirect_url . '&msg=' . urlencode('Resident verification has been rejected.'));
                             exit;
                         }
                     }
@@ -634,32 +643,36 @@ document.addEventListener('DOMContentLoaded', function () {
                                     </div>
                                     <!-- Action Buttons -->
                                     <div class="d-flex flex-wrap gap-2 align-items-center">
-                                        <?php if (!empty($linked_resident['id_document_path'])): ?>
-                                            <a href="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_document_path']); ?>"
-                                                target="_blank" class="btn btn-sm btn-outline-dark">
-                                                <i class="fas fa-id-card me-1"></i> View Uploaded ID
-                                            </a>
+                                        <?php if (!empty($linked_resident['id_front_path']) || !empty($linked_resident['id_back_path']) || !empty($linked_resident['id_document_path'])): ?>
+                                            <div class="mb-2 w-100">
+                                                <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#viewIDModal">
+                                                    <i class="fas fa-eye me-1"></i> View ID Details
+                                                </button>
+                                            </div>
                                         <?php endif; ?>
+
                                         <?php if ($res_id_for_action > 0): ?>
-                                            <?php if ($verification_status !== 'verified'): ?>
-                                                <form method="post" class="d-inline admin-confirm-form"
-                                                    data-action-name="Verify Resident">
-                                                    <?php echo csrf_field(); ?>
-                                                    <input type="hidden" name="action" value="verify">
-                                                    <input type="hidden" name="resident_id"
-                                                        value="<?php echo $res_id_for_action; ?>">
-                                                    <button type="button" class="btn btn-success btn-sm btn-confirm-submit"
-                                                        title="Verify">
-                                                        <i class="fas fa-check me-1"></i>
-                                                        <?php echo $verification_status === 'rejected' ? 'Re-verify' : 'Verify'; ?>
-                                                    </button>
-                                                </form>
-                                            <?php endif; ?>
-                                            <button type="button" class="btn btn-danger btn-sm"
-                                                onclick="document.getElementById('reject_resident_id').value=<?php echo $res_id_for_action; ?>;new bootstrap.Modal(document.getElementById('rejectModal')).show()">
-                                                <i class="fas fa-times me-1"></i>
-                                                <?php echo $verification_status === 'rejected' ? 'Re-reject' : 'Reject'; ?>
-                                            </button>
+                                            <div class="w-100 d-flex gap-2">
+                                                <?php if ($verification_status !== 'verified'): ?>
+                                                    <form method="post" class="d-inline admin-confirm-form"
+                                                        data-action-name="Verify Resident">
+                                                        <?php echo csrf_field(); ?>
+                                                        <input type="hidden" name="action" value="verify">
+                                                        <input type="hidden" name="resident_id"
+                                                            value="<?php echo $res_id_for_action; ?>">
+                                                        <button type="button" class="btn btn-success btn-sm btn-confirm-submit"
+                                                            title="Verify">
+                                                            <i class="fas fa-check me-1"></i>
+                                                            <?php echo $verification_status === 'rejected' ? 'Re-verify' : 'Verify'; ?>
+                                                        </button>
+                                                    </form>
+                                                <?php endif; ?>
+                                                <button type="button" class="btn btn-danger btn-sm"
+                                                    onclick="document.getElementById('reject_resident_id').value=<?php echo $res_id_for_action; ?>;new bootstrap.Modal(document.getElementById('rejectModal')).show()">
+                                                    <i class="fas fa-times me-1"></i>
+                                                    <?php echo $verification_status === 'rejected' ? 'Re-reject' : 'Reject'; ?>
+                                                </button>
+                                            </div>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -1506,7 +1519,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 icon: 'success',
                 title: 'Success!',
                 text: urlParams.get('msg'),
-                confirmButtonColor: '#198754'
+                confirmButtonColor: '#0f766e',
+                timer: 5000,
+                timerProgressBar: true
             }).then(() => {
                 urlParams.delete('msg');
                 const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
@@ -1538,5 +1553,59 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 </script>
+
+<!-- Modal for Viewing ID Details -->
+<div class="modal fade" id="viewIDModal" tabindex="-1" aria-labelledby="viewIDModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="viewIDModalLabel"><i class="fas fa-id-card me-2 text-primary"></i>Uploaded ID Documents</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4 justify-content-center">
+                    <div class="col-12 mb-2">
+                        <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
+                        <div class="p-3 bg-light rounded-3 border fw-semibold text-dark" style="font-size: 0.95rem;">
+                            <?php echo !empty($linked_resident['address_on_id']) ? htmlspecialchars($linked_resident['address_on_id']) : '<i class="text-muted fw-normal">No address provided during upload.</i>'; ?>
+                        </div>
+                    </div>
+                    <?php if (!empty($linked_resident['id_front_path'])): ?>
+                        <div class="col-md-6 text-center">
+                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">Front ID View</label>
+                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_front_path']); ?>" 
+                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
+                                 onclick="window.open(this.src, '_blank')">
+                        </div>
+                    <?php endif; ?>
+                    <?php if (!empty($linked_resident['id_back_path'])): ?>
+                        <div class="col-md-6 text-center">
+                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">Back ID View</label>
+                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_back_path']); ?>" 
+                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
+                                 onclick="window.open(this.src, '_blank')">
+                        </div>
+                    <?php endif; ?>
+                    <?php if (empty($linked_resident['id_front_path']) && empty($linked_resident['id_back_path']) && !empty($linked_resident['id_document_path'])): ?>
+                        <div class="col-12 text-center">
+                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">ID Document</label>
+                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_document_path']); ?>" 
+                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
+                                 onclick="window.open(this.src, '_blank')">
+                        </div>
+                    <?php endif; ?>
+                    <div class="col-12 mt-3 text-center">
+                        <div class="alert alert-info border-0 rounded-3 small py-2 mb-0">
+                            <i class="fas fa-info-circle me-1"></i> Tip: Click on an image to view it in full size.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

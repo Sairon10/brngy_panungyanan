@@ -28,48 +28,75 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (!csrf_validate()) {
         $errors[] = 'Invalid CSRF token. Please refresh the page and try again.';
     } else {
-        if (isset($_FILES['id_document']) && $_FILES['id_document']['error'] === UPLOAD_ERR_OK) {
-            $file = $_FILES['id_document'];
-            $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
-            $max_size = 5 * 1024 * 1024; // 5MB
+        $id_front = null;
+        $id_back = null;
+        $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        $max_size = 5 * 1024 * 1024; // 5MB
+        $upload_dir = __DIR__ . '/uploads/id_documents/';
+        if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
+        // Handle Front ID
+        if (isset($_FILES['id_front']) && $_FILES['id_front']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['id_front'];
             if (!in_array($file['type'], $allowed_types)) {
-                $errors[] = 'Only JPEG, PNG, and PDF files are allowed.';
+                $errors[] = 'Front ID: Only JPEG, PNG, and PDF files are allowed.';
             } elseif ($file['size'] > $max_size) {
-                $errors[] = 'File size must be less than 5MB.';
-            } elseif (empty(trim($_POST['address_note'] ?? ''))) {
-                $errors[] = 'Address on ID is required.';
+                $errors[] = 'Front ID: File size must be less than 5MB.';
             } else {
-                // Generate unique filename
                 $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filename = 'id_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
-                $upload_path = __DIR__ . '/uploads/id_documents/' . $filename;
-
-                if (move_uploaded_file($file['tmp_name'], $upload_path)) {
-                    // Update resident record with document path
-                    $address_note = trim($_POST['address_note']);
-                    $stmt = $pdo->prepare('UPDATE residents SET id_document_path = ?, address_on_id = ?, verification_status = \'pending\' WHERE user_id = ?');
-                    $stmt->execute([$filename, $address_note, $_SESSION['user_id']]);
-                    
-                    // Notify all admins
-                    $admin_stmt = $pdo->query('SELECT id FROM users WHERE role = "admin"');
-                    foreach ($admin_stmt->fetchAll() as $admin) {
-                        $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "New ID Verification Upload", "A resident has uploaded an ID for verification.")')
-                            ->execute([$admin['id']]);
-                    }
-                    
-                    $success = 'ID document uploaded successfully. Please wait for admin verification.';
-
-                    // Refresh resident data
-                    $stmt = $pdo->prepare('SELECT r.*, u.full_name, u.email FROM residents r JOIN users u ON r.user_id = u.id WHERE r.user_id = ? LIMIT 1');
-                    $stmt->execute([$_SESSION['user_id']]);
-                    $resident = $stmt->fetch();
+                $filename = 'id_front_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
+                if (move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
+                    $id_front = $filename;
                 } else {
-                    $errors[] = 'Failed to upload file. Please try again.';
+                    $errors[] = 'Failed to upload Front ID.';
                 }
             }
         } else {
-            $errors[] = 'Please select a valid file to upload.';
+            $errors[] = 'Front ID is required.';
+        }
+
+        // Handle Back ID
+        if (isset($_FILES['id_back']) && $_FILES['id_back']['error'] === UPLOAD_ERR_OK) {
+            $file = $_FILES['id_back'];
+            if (!in_array($file['type'], $allowed_types)) {
+                $errors[] = 'Back ID: Only JPEG, PNG, and PDF files are allowed.';
+            } elseif ($file['size'] > $max_size) {
+                $errors[] = 'Back ID: File size must be less than 5MB.';
+            } else {
+                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                $filename = 'id_back_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
+                if (move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
+                    $id_back = $filename;
+                } else {
+                    $errors[] = 'Failed to upload Back ID.';
+                }
+            }
+        } else {
+            $errors[] = 'Back ID is required.';
+        }
+
+        if (empty(trim($_POST['address_note'] ?? ''))) {
+            $errors[] = 'Address on ID is required.';
+        }
+
+        if (empty($errors)) {
+            $address_note = trim($_POST['address_note']);
+            $stmt = $pdo->prepare('UPDATE residents SET id_front_path = ?, id_back_path = ?, address_on_id = ?, verification_status = \'pending\' WHERE user_id = ?');
+            $stmt->execute([$id_front, $id_back, $address_note, $_SESSION['user_id']]);
+            
+            // Notify all admins
+            $admin_stmt = $pdo->query('SELECT id FROM users WHERE role = "admin"');
+            foreach ($admin_stmt->fetchAll() as $admin) {
+                $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "New ID Verification Upload", "A resident has uploaded ID (Front & Back) for verification.")')
+                    ->execute([$admin['id']]);
+            }
+            
+            $success = 'ID documents uploaded successfully. Please wait for admin verification.';
+
+            // Refresh resident data
+            $stmt = $pdo->prepare('SELECT r.*, u.full_name, u.email FROM residents r JOIN users u ON r.user_id = u.id WHERE r.user_id = ? LIMIT 1');
+            $stmt->execute([$_SESSION['user_id']]);
+            $resident = $stmt->fetch();
         }
     }
 }
@@ -161,39 +188,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="action" value="upload_id">
 
-                                    <div class="mb-4">
-                                        <label
-                                            class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">ID
-                                            Document <span class="text-danger">*</span></label>
-                                        <div
-                                            class="upload-zone border-2 border-dashed rounded-4 p-5 text-center bg-light transition-all position-relative overflow-hidden group-hover-border-primary">
-                                            <input type="file" name="id_document"
-                                                class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
-                                                accept="image/*,.pdf" required id="idDocumentInput">
-                                            <div class="pointer-events-none" id="uploadPlaceholder">
-                                                <div class="mb-3">
-                                                    <div class="icon-circle bg-white shadow-sm d-inline-flex align-items-center justify-content-center rounded-circle"
-                                                        style="width: 64px; height: 64px;">
-                                                        <i class="fas fa-cloud-upload-alt fs-3 text-primary"></i>
-                                                    </div>
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Front ID View <span class="text-danger">*</span></label>
+                                            <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2" style="height: 180px;">
+                                                <input type="file" name="id_front" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !$resident['id_front_path'] ? 'required' : ''; ?> onchange="previewID(this, 'front')">
+                                                <div id="front_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo $resident['id_front_path'] ? 'd-none' : ''; ?>">
+                                                    <i class="fas fa-id-card fs-2 text-primary mb-2"></i>
+                                                    <h6 class="fw-bold text-dark small mb-0">Upload Front</h6>
                                                 </div>
-                                                <h6 class="fw-bold text-dark mb-1">Click or drag file to upload</h6>
-                                                <p class="text-muted small mb-0">Accepted formats: JPEG, PNG, PDF (Max 5MB)
-                                                </p>
-                                            </div>
-                                            <div id="previewContainer" class="d-none position-relative z-1 pointer-events-none">
-                                                <div class="preview-img-wrapper mb-3 mx-auto" style="max-width: 300px; max-height: 200px; overflow: hidden; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-                                                    <img id="imagePreview" src="#" alt="Preview" class="w-100 h-auto d-none" style="object-fit: contain;">
-                                                    <div id="pdfPreview" class="d-none p-4 bg-white rounded-3 shadow-sm">
-                                                        <i class="fas fa-file-pdf text-danger display-4 mb-2"></i>
-                                                        <p class="mb-0 fw-bold text-dark">PDF Selected</p>
-                                                    </div>
+                                                <div id="front_preview" class="<?php echo $resident['id_front_path'] ? '' : 'd-none'; ?> h-100 w-100">
+                                                    <img src="<?php echo $resident['id_front_path'] ? 'uploads/id_documents/' . $resident['id_front_path'] : '#'; ?>" alt="Front Preview" class="w-100 h-100 object-fit-contain rounded-3">
                                                 </div>
-                                                <div id="fileName" class="badge bg-primary-subtle text-primary"></div>
                                             </div>
                                         </div>
-                                        <div class="form-text mt-2"><i class="fas fa-info-circle me-1"></i> Upload a valid
-                                            government-issued ID (Driver's License, Passport, Postal ID, etc.)</div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Back ID View <span class="text-danger">*</span></label>
+                                            <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2" style="height: 180px;">
+                                                <input type="file" name="id_back" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !$resident['id_back_path'] ? 'required' : ''; ?> onchange="previewID(this, 'back')">
+                                                <div id="back_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo $resident['id_back_path'] ? 'd-none' : ''; ?>">
+                                                    <i class="fas fa-id-card fs-2 text-primary mb-2" style="transform: scaleX(-1);"></i>
+                                                    <h6 class="fw-bold text-dark small mb-0">Upload Back</h6>
+                                                </div>
+                                                <div id="back_preview" class="<?php echo $resident['id_back_path'] ? '' : 'd-none'; ?> h-100 w-100">
+                                                    <img src="<?php echo $resident['id_back_path'] ? 'uploads/id_documents/' . $resident['id_back_path'] : '#'; ?>" alt="Back Preview" class="w-100 h-100 object-fit-contain rounded-3">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     <div class="mb-4">
@@ -218,37 +239,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 </form>
 
                                 <script>
-                                    document.getElementById('idDocumentInput').addEventListener('change', function (e) {
-                                        const file = e.target.files[0];
-                                        const placeholder = document.getElementById('uploadPlaceholder');
-                                        const previewContainer = document.getElementById('previewContainer');
-                                        const imagePreview = document.getElementById('imagePreview');
-                                        const pdfPreview = document.getElementById('pdfPreview');
-                                        const fileNameEl = document.getElementById('fileName');
+                                    function previewID(input, side) {
+                                        const file = input.files[0];
+                                        const placeholder = document.getElementById(side + '_placeholder');
+                                        const preview = document.getElementById(side + '_preview');
+                                        const previewImg = preview.querySelector('img');
                                         
                                         if (file) {
-                                            placeholder.classList.add('d-none');
-                                            previewContainer.classList.remove('d-none');
-                                            fileNameEl.textContent = file.name;
-                                            
                                             const reader = new FileReader();
-                                            
-                                            if (file.type.startsWith('image/')) {
-                                                reader.onload = function(e) {
-                                                    imagePreview.src = e.target.result;
-                                                    imagePreview.classList.remove('d-none');
-                                                    pdfPreview.classList.add('d-none');
-                                                };
-                                                reader.readAsDataURL(file);
-                                            } else if (file.type === 'application/pdf') {
-                                                imagePreview.classList.add('d-none');
-                                                pdfPreview.classList.remove('d-none');
-                                            }
+                                            reader.onload = function(e) {
+                                                previewImg.src = e.target.result;
+                                                placeholder.classList.add('d-none');
+                                                preview.classList.remove('d-none');
+                                            };
+                                            reader.readAsDataURL(file);
                                         } else {
                                             placeholder.classList.remove('d-none');
-                                            previewContainer.classList.add('d-none');
+                                            preview.classList.add('d-none');
                                         }
-                                    });
+                                    }
                                 </script>
                             <?php else: ?>
                                 <div class="text-center py-5">
@@ -311,22 +320,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 </div>
                             </div>
 
-                            <?php if ($resident['id_document_path']): ?>
+                            <?php if ($resident['id_front_path'] || $resident['id_back_path']): ?>
                                 <hr class="my-4 border-light">
-                                <h6 class="fw-bold text-uppercase text-muted small mb-3 letter-spacing-1">Current Upload
+                                <h6 class="fw-bold text-uppercase text-muted small mb-3 letter-spacing-1">Current Uploads
                                 </h6>
                                 <div class="p-3 bg-light rounded-3 border border-light">
                                     <div class="d-flex align-items-center justify-content-between mb-2">
-                                        <span class="badge bg-white text-dark border shadow-sm">Latest File</span>
-                                        <?php if ($resident['verified_at']): ?>
+                                        <span class="badge bg-white text-dark border shadow-sm">Submitted Files</span>
+                                        <?php if (isset($resident['verified_at']) && $resident['verified_at']): ?>
                                             <small
                                                 class="text-muted"><?php echo date('M j, Y', strtotime($resident['verified_at'])); ?></small>
                                         <?php endif; ?>
                                     </div>
-                                    <div class="text-truncate small text-muted font-monospace mb-2">
-                                        <i
-                                            class="fas fa-file-alt me-2"></i><?php echo htmlspecialchars(basename($resident['id_document_path'])); ?>
+                                    
+                                    <?php if ($resident['id_front_path']): ?>
+                                    <div class="text-truncate small text-muted font-monospace mb-1">
+                                        <i class="fas fa-file-image me-2"></i>Front: <?php echo htmlspecialchars(basename($resident['id_front_path'])); ?>
                                     </div>
+                                    <?php endif; ?>
+
+                                    <?php if ($resident['id_back_path']): ?>
+                                    <div class="text-truncate small text-muted font-monospace mb-2">
+                                        <i class="fas fa-file-image me-2"></i>Back: <?php echo htmlspecialchars(basename($resident['id_back_path'])); ?>
+                                    </div>
+                                    <?php endif; ?>
+
                                     <?php if (!empty($resident['address_on_id'])): ?>
                                         <div class="small text-muted border-top pt-2">
                                             <i class="fas fa-map-pin me-2 text-secondary"></i>

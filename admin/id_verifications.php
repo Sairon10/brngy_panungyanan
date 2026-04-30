@@ -236,11 +236,29 @@ $all_residents = $pdo->query('
                                 <strong>Registered:</strong> <?php echo date('M j, Y', strtotime($resident['user_created_at'])); ?>
                             </div>
                             
-                            <?php if ($resident['id_document_path']): ?>
+                            <?php if ($resident['id_front_path'] || $resident['id_back_path']): ?>
+                                <div class="mb-3">
+                                    <strong>Uploaded ID:</strong><br>
+                                    <div class="d-flex gap-2 mt-1">
+                                        <?php if ($resident['id_front_path']): ?>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                    onclick="showIdModal('front', '../uploads/id_documents/<?php echo htmlspecialchars($resident['id_front_path']); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>', 'Front ID')">
+                                                <i class="fas fa-eye"></i> Front
+                                            </button>
+                                        <?php endif; ?>
+                                        <?php if ($resident['id_back_path']): ?>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                    onclick="showIdModal('back', '../uploads/id_documents/<?php echo htmlspecialchars($resident['id_back_path']); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>', 'Back ID')">
+                                                <i class="fas fa-eye"></i> Back
+                                            </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php elseif ($resident['id_document_path']): ?>
                                 <div class="mb-3">
                                     <strong>Uploaded Document:</strong><br>
                                     <button type="button" class="btn btn-sm btn-outline-primary" 
-                                            onclick="showIdModal('../uploads/id_documents/<?php echo htmlspecialchars($resident['id_document_path'] ?? ''); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>')">
+                                            onclick="showIdModal('front', '../uploads/id_documents/<?php echo htmlspecialchars($resident['id_document_path'] ?? ''); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>', 'ID Document')">
                                         <i class="fas fa-eye"></i> View Document
                                     </button>
                                 </div>
@@ -328,12 +346,27 @@ $all_residents = $pdo->query('
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($resident['id_document_path']): ?>
-                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                        onclick="showIdModal('../uploads/id_documents/<?php echo htmlspecialchars($resident['id_document_path'] ?? ''); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>')">
-                                    <i class="fas fa-eye"></i> View ID
-                                </button>
-                            <?php endif; ?>
+                            <div class="d-flex gap-1">
+                                <?php if ($resident['id_front_path']): ?>
+                                    <button type="button" class="btn btn-xs btn-outline-primary" title="View Front"
+                                            onclick="showIdModal('front', '../uploads/id_documents/<?php echo htmlspecialchars($resident['id_front_path']); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>', 'Front ID')">
+                                        F
+                                    </button>
+                                <?php endif; ?>
+                                <?php if ($resident['id_back_path']): ?>
+                                    <button type="button" class="btn btn-xs btn-outline-primary" title="View Back"
+                                            onclick="showIdModal('back', '../uploads/id_documents/<?php echo htmlspecialchars($resident['id_back_path']); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>', 'Back ID')">
+                                        B
+                                    </button>
+                                <?php endif; ?>
+                                <?php if (!$resident['id_front_path'] && !$resident['id_back_path'] && $resident['id_document_path']): ?>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" 
+                                            onclick="showIdModal('front', '../uploads/id_documents/<?php echo htmlspecialchars($resident['id_document_path']); ?>', '<?php echo htmlspecialchars($resident['full_name'] ?? ''); ?>', 'ID Document')">
+                                        <i class="fas fa-eye"></i> View
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                             
                             <?php if ($resident['verification_status'] === 'pending'): ?>
                                 <form method="post" class="d-inline admin-confirm-form" data-action-name="Verify Resident">
@@ -409,9 +442,9 @@ $all_residents = $pdo->query('
 </div>
 
 <script>
-function showIdModal(imagePath, residentName) {
+function showIdModal(side, imagePath, residentName, sideTitle) {
     document.getElementById('idModalImage').src = imagePath;
-    document.getElementById('idModalResidentName').textContent = residentName;
+    document.getElementById('idModalResidentName').textContent = residentName + ' (' + sideTitle + ')';
     document.getElementById('idModalDownloadLink').href = imagePath;
     new bootstrap.Modal(document.getElementById('idModal')).show();
 }

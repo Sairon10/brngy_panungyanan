@@ -22,3 +22,45 @@ POST: Array
     [fm_is_senior] => on
 )
 
+2026-04-30 07:07:48 - /admin/resident_record_view?id=0&user_id=19
+POST: Array
+(
+    [csrf_token] => ab6bb74b54d441b7fda4391be8f845a3819ac3e2bfb2c124c4b0d8e438f90afe
+    [action] => verify
+    [resident_id] => 18
+)
+
+2026-04-30 07:08:18 - /admin/resident_record_view?id=0&user_id=19
+POST: Array
+(
+    [csrf_token] => ab6bb74b54d441b7fda4391be8f845a3819ac3e2bfb2c124c4b0d8e438f90afe
+    [action] => reject
+    [resident_id] => 18
+    [rejection_notes] => czc
+)
+
+2026-04-30 07:14:01 - /admin/resident_record_view?id=0&user_id=19
+POST: Array
+(
+    [csrf_token] => 312b37607bfa29f9613db89844b9cdadec93700cc14094e3782df4b21225b1e3
+    [action] => verify
+    [resident_id] => 18
+)
+
+2026-04-30 07:23:42 - /admin/resident_record_view?id=0&user_id=19
+POST: Array
+(
+    [csrf_token] => 312b37607bfa29f9613db89844b9cdadec93700cc14094e3782df4b21225b1e3
+    [action] => reject
+    [resident_id] => 18
+    [rejection_notes] => sdsa
+)
+
+2026-04-30 07:23:57 - /admin/resident_record_view?id=0&user_id=19
+POST: Array
+(
+    [csrf_token] => 312b37607bfa29f9613db89844b9cdadec93700cc14094e3782df4b21225b1e3
+    [action] => verify
+    [resident_id] => 18
+)
+
