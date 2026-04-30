@@ -8,7 +8,7 @@ $pdo = get_db_connection();
 $is_editing = isset($_GET['edit']) && $_GET['edit'] == 1;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_admin') {
-    if (validate_csrf($_POST['csrf_token'])) {
+    if (csrf_validate()) {
         $full_name = filter_input(INPUT_POST, 'full_name', FILTER_SANITIZE_SPECIAL_CHARS);
         $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL);
         $address = filter_input(INPUT_POST, 'address', FILTER_SANITIZE_SPECIAL_CHARS);
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         
         $profile_picture = $current_admin['profile_picture'];
         if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
-            $upload_dir = '../public/uploads/profile_pics/';
+            $upload_dir = __DIR__ . '/../public/uploads/profile_pics/';
             if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
             
             $file_ext = strtolower(pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION));
@@ -47,17 +47,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $pdo->prepare('SELECT user_id FROM residents WHERE user_id = ?');
             $stmt->execute([$admin_id]);
             if ($stmt->fetch()) {
-                $stmt = $pdo->prepare('UPDATE residents SET address = ?, phone = ?, sex = ?, civil_status = ?, birthdate = ?, citizenship = ?, purok = ? WHERE user_id = ?');
-                $stmt->execute([$address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $admin_id]);
+                $stmt = $pdo->prepare('UPDATE residents SET address = ?, phone = ?, sex = ?, civil_status = ?, birthdate = ?, citizenship = ?, purok = ?, avatar = ? WHERE user_id = ?');
+                $stmt->execute([$address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $profile_picture, $admin_id]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, sex, civil_status, birthdate, citizenship, purok) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$admin_id, $address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok]);
+                $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, sex, civil_status, birthdate, citizenship, purok, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$admin_id, $address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $profile_picture]);
             }
             $pdo->commit();
             redirect('admin_info.php?updated=1');
         } catch (Exception $e) {
             $pdo->rollBack();
             $error = "Update failed: " . $e->getMessage();
+        }
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_profile_pic') {
+    if (csrf_validate()) {
+        try {
+            $pdo->beginTransaction();
+            $stmt = $pdo->prepare('UPDATE users SET profile_picture = NULL WHERE id = ?');
+            $stmt->execute([$admin_id]);
+            
+            $stmt = $pdo->prepare('UPDATE residents SET avatar = NULL WHERE user_id = ?');
+            $stmt->execute([$admin_id]);
+            
+            $pdo->commit();
+            redirect('admin_info.php?updated=1');
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $error = 'Delete failed: ' . $e->getMessage();
         }
     }
 }
@@ -99,7 +116,10 @@ require_once __DIR__ . '/header.php';
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card profile-card">
-                <div class="profile-header text-center">
+                <form method="POST" enctype="multipart/form-data">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="update_admin">
+                    <div class="profile-header text-center">
                     <?php if (!$is_editing): ?>
                         <a href="?edit=1" class="edit-toggle-btn" title="Edit Profile"><i class="fas fa-pen fa-sm"></i></a>
                     <?php else: ?>
@@ -108,15 +128,25 @@ require_once __DIR__ . '/header.php';
 
                     <div class="profile-img-wrapper">
                         <?php 
-                            $p_img = !empty($admin['profile_picture']) ? '../' . $admin['profile_picture'] : '../public/img/barangaylogo.png';
+                            $p_img = !empty($admin['profile_picture']) ? '../' . $admin['profile_picture'] . '?v=' . time() : '../public/img/barangaylogo.png';
                         ?>
-                        <img src="<?php echo $p_img; ?>" class="profile-img rounded-circle shadow-sm" alt="Profile Logo">
+                        <img src="<?php echo $p_img; ?>" 
+                             class="profile-img rounded-circle shadow-sm" 
+                             alt="Profile Logo" 
+                             id="avatarPreview"
+                             style="cursor: pointer; position: relative; z-index: 5;"
+                             onclick="viewProfileCircle('<?php echo $p_img; ?>')">
                         <?php if ($is_editing): ?>
                             <div class="mt-2">
                                 <label for="profile_pic" class="badge bg-white text-dark py-2 px-3 shadow-sm border" style="cursor:pointer;">
                                     <i class="fas fa-camera me-1"></i> Change Photo
                                 </label>
-                                <input type="file" id="profile_pic" name="profile_pic" class="d-none" accept="image/*">
+                                <input type="file" id="profile_pic" name="profile_pic" class="d-none" accept="image/*" onchange="previewImage(this)">
+                                <?php if (!empty($admin['profile_picture'])): ?>
+                                    <button type="button" class="badge bg-danger text-white py-2 px-3 shadow-sm border-0 ms-1" onclick="confirmDeletePhoto()">
+                                        <i class="fas fa-trash me-1"></i> Delete Photo
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -137,9 +167,7 @@ require_once __DIR__ . '/header.php';
                         </div>
                     <?php endif; ?>
 
-                    <form method="POST" enctype="multipart/form-data">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="update_admin">
+
                         
                         <!-- SECTION: PERSONAL -->
                         <div class="mb-4">
@@ -249,6 +277,55 @@ require_once __DIR__ . '/header.php';
 </div>
 
 <script>
+function viewProfileCircle(imgSrc) {
+    Swal.fire({
+        imageUrl: imgSrc,
+        imageWidth: 400,
+        imageHeight: 400,
+        imageAlt: 'Profile Picture',
+        showConfirmButton: false,
+        background: 'transparent',
+        backdrop: `rgba(0,0,123,0.4)`,
+        customClass: {
+            image: 'rounded-circle shadow-lg border border-4 border-white'
+        }
+    });
+}
+
+function confirmDeletePhoto() {
+    Swal.fire({
+        title: 'Delete Profile Photo?',
+        text: 'This will remove your current profile picture and revert to the default.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Delete It',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.innerHTML = `
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="action" value="delete_profile_pic">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 function confirmUpdate(btn) {
     const form = btn.closest('form');
     Swal.fire({

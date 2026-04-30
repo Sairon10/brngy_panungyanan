@@ -3,10 +3,17 @@ require_once __DIR__ . '/../config.php';
 if (!is_logged_in()) {
 	redirect('login.php');
 }
-// Prevent admins from accessing resident pages via tab sharing or direct URL
+// Prevent admins from accessing resident pages
 if (is_admin()) {
 	redirect('admin/index.php');
 }
+
+// Fetch user data for navbar
+$pdo = get_db_connection();
+$stmt = $pdo->prepare('SELECT avatar FROM residents WHERE user_id = ?');
+$stmt->execute([$_SESSION['user_id']]);
+$user_nav_data = $stmt->fetch();
+$nav_avatar = $user_nav_data['avatar'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -516,10 +523,16 @@ if (is_admin()) {
 								<button
 									class="btn border-0 p-1 pe-3 text-dark dropdown-toggle d-flex align-items-center gap-2 rounded-pill shadow-sm bg-light"
 									type="button" data-bs-toggle="dropdown">
-									<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
-										style="width: 36px; height: 36px; font-size: 0.9rem;">
-										<?php echo strtoupper(substr($_SESSION['full_name'] ?? 'U', 0, 1)); ?>
-									</div>
+									<?php if ($nav_avatar && file_exists(__DIR__ . '/../' . $nav_avatar)): ?>
+										<img src="<?php echo htmlspecialchars($nav_avatar); ?>" 
+											class="rounded-circle shadow-sm"
+											style="width: 36px; height: 36px; object-fit: cover; border: 2px solid white;">
+									<?php else: ?>
+										<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+											style="width: 36px; height: 36px; font-size: 0.9rem;">
+											<?php echo strtoupper(substr($_SESSION['full_name'] ?? 'U', 0, 1)); ?>
+										</div>
+									<?php endif; ?>
 								</button>
 								<ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-2 rounded-4">
 									<li class="px-3 py-2 d-md-none">

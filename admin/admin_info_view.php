@@ -1,8 +1,8 @@
 <?php 
 require_once __DIR__ . '/../config.php';
-if (!is_admin() || $_SESSION['user_id'] != 1) redirect('../index.php');
-
 $admin_id = (int)($_GET['id'] ?? 0);
+if (!is_admin() || ($_SESSION['user_id'] != 1 && $_SESSION['user_id'] != $admin_id)) redirect('../index.php');
+
 if ($admin_id <= 0) redirect('sub_admin_management.php');
 
 $pdo = get_db_connection();
@@ -21,48 +21,96 @@ if (!$admin) {
     exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_admin') {
-    if (csrf_validate()) {
-        $full_name = trim($_POST['full_name'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $phone = trim($_POST['phone'] ?? '');
-        $address = trim($_POST['address'] ?? '');
-        $sex = trim($_POST['sex'] ?? '');
-        $civil_status = trim($_POST['civil_status'] ?? '');
-        $birthdate = trim($_POST['birthdate'] ?? '');
-        $citizenship = trim($_POST['citizenship'] ?? '');
-        $purok = trim($_POST['purok'] ?? '');
-        $is_solo_parent = isset($_POST['is_solo_parent']) ? 1 : 0;
-        $is_pwd = isset($_POST['is_pwd']) ? 1 : 0;
-        $is_senior = isset($_POST['is_senior']) ? 1 : 0;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    file_put_contents(__DIR__ . '/profile_error_log.txt', "[" . date('Y-m-d H:i:s') . "] POST Action: " . ($_POST['action'] ?? 'none') . " | POST Data: " . json_encode($_POST) . "\n", FILE_APPEND);
+    
+    if (isset($_POST['action']) && $_POST['action'] === 'update_admin') {
+        if (csrf_validate()) {
+            $full_name = trim($_POST['full_name'] ?? '');
+            $email = trim($_POST['email'] ?? '');
+            $phone = trim($_POST['phone'] ?? '');
+            $address = trim($_POST['address'] ?? '');
+            $sex = trim($_POST['sex'] ?? '');
+            $civil_status = trim($_POST['civil_status'] ?? '');
+            $birthdate = trim($_POST['birthdate'] ?? '');
+            $citizenship = trim($_POST['citizenship'] ?? '');
+            $purok = trim($_POST['purok'] ?? '');
+            $is_solo_parent = isset($_POST['is_solo_parent']) ? 1 : 0;
+            $is_pwd = isset($_POST['is_pwd']) ? 1 : 0;
+            $is_senior = isset($_POST['is_senior']) ? 1 : 0;
 
-        $profile_picture = $admin['profile_picture'];
-        if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
-            $upload_dir = '../public/uploads/profile_pics/';
-            if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
-            
-            $file_ext = strtolower(pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION));
-            $new_filename = 'admin_' . $admin_id . '_' . time() . '.' . $file_ext;
-            $target_file = $upload_dir . $new_filename;
-            
-            if (move_uploaded_file($_FILES['profile_pic']['tmp_name'], $target_file)) {
-                $profile_picture = 'public/uploads/profile_pics/' . $new_filename;
+            $profile_picture = $admin['profile_picture'];
+            if (isset($_FILES['profile_pic']) && $_FILES['profile_pic']['error'] === UPLOAD_ERR_OK) {
+                $upload_dir = __DIR__ . '/../public/uploads/profile_pics/';
+                if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+                
+                $file_ext = strtolower(pathinfo($_FILES['profile_pic']['name'], PATHINFO_EXTENSION));
+                $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+                
+                if (in_array($file_ext, $allowed_extensions)) {
+                    $new_filename = 'admin_' . $admin_id . '_' . uniqid() . '.' . $file_ext;
+                    $target_file = $upload_dir . $new_filename;
+                    
+                    if (move_uploaded_file($_FILES['profile_pic']['tmp_name'], $target_file)) {
+                        $profile_picture = 'public/uploads/profile_pics/' . $new_filename;
+                    } else {
+                        $error = 'Failed to move uploaded file to destination.';
+                    }
+                } else {
+                    $error = 'Invalid file type. Only JPG, PNG, and GIF are allowed.';
+                }
             }
+
+            if (!isset($error)) {
+                try {
+                    $pdo->beginTransaction();
+                    $stmt = $pdo->prepare('UPDATE users SET full_name = ?, email = ?, profile_picture = ? WHERE id = ?');
+                    $stmt->execute([$full_name, $email, $profile_picture, $admin_id]);
+
+                    $stmt = $pdo->prepare('SELECT user_id FROM residents WHERE user_id = ?');
+                    $stmt->execute([$admin_id]);
+                    if ($stmt->fetch()) {
+                        $stmt = $pdo->prepare('UPDATE residents SET address = ?, phone = ?, sex = ?, civil_status = ?, birthdate = ?, citizenship = ?, purok = ?, is_solo_parent = ?, is_pwd = ?, is_senior = ?, avatar = ? WHERE user_id = ?');
+                        $stmt->execute([$address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $is_solo_parent, $is_pwd, $is_senior, $profile_picture, $admin_id]);
+                    } else {
+                        $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, sex, civil_status, birthdate, citizenship, purok, is_solo_parent, is_pwd, is_senior, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                        $stmt->execute([$admin_id, $address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $is_solo_parent, $is_pwd, $is_senior, $profile_picture]);
+                    }
+                    $pdo->commit();
+                    header("Location: admin_info_view.php?id=$admin_id&updated=1");
+                    exit;
+                } catch (Throwable $e) {
+                    $pdo->rollBack();
+                    $error = 'Database Error: ' . $e->getMessage();
+                    file_put_contents(__DIR__ . '/profile_error_log.txt', "[" . date('Y-m-d H:i:s') . "] Admin Update Error: " . $e->getMessage() . "\n", FILE_APPEND);
+                }
+            }
+        } else {
+            $error = 'Security Token mismatch. Please refresh and try again.';
+            file_put_contents(__DIR__ . '/profile_error_log.txt', "[" . date('Y-m-d H:i:s') . "] Admin Update CSRF Error\n", FILE_APPEND);
         }
-
-        try {
-            $pdo->beginTransaction();
-            $stmt = $pdo->prepare('UPDATE users SET full_name = ?, email = ?, profile_picture = ? WHERE id = ?');
-            $stmt->execute([$full_name, $email, $profile_picture, $admin_id]);
-
-            $stmt = $pdo->prepare('UPDATE residents SET address = ?, phone = ?, sex = ?, civil_status = ?, birthdate = ?, citizenship = ?, purok = ?, is_solo_parent = ?, is_pwd = ?, is_senior = ? WHERE user_id = ?');
-            $stmt->execute([$address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $is_solo_parent, $is_pwd, $is_senior, $admin_id]);
-            $pdo->commit();
-            header("Location: admin_info_view.php?id=$admin_id&updated=1");
-            exit;
-        } catch (Throwable $e) {
-            $pdo->rollBack();
-            $error = 'Error updating profile: ' . $e->getMessage();
+    } elseif (isset($_POST['action']) && $_POST['action'] === 'delete_profile_pic') {
+        if (csrf_validate()) {
+            try {
+                $pdo->beginTransaction();
+                $stmt = $pdo->prepare('UPDATE users SET profile_picture = NULL WHERE id = ?');
+                $stmt->execute([$admin_id]);
+                
+                $stmt = $pdo->prepare('UPDATE residents SET avatar = NULL WHERE user_id = ?');
+                $stmt->execute([$admin_id]);
+                
+                $pdo->commit();
+                file_put_contents(__DIR__ . '/profile_error_log.txt', "[" . date('Y-m-d H:i:s') . "] Photo Deleted Successfully for Admin ID: $admin_id\n", FILE_APPEND);
+                header("Location: admin_info_view.php?id=$admin_id&updated=1");
+                exit;
+            } catch (Throwable $e) {
+                $pdo->rollBack();
+                $error = 'Delete failed: ' . $e->getMessage();
+                file_put_contents(__DIR__ . '/profile_error_log.txt', "[" . date('Y-m-d H:i:s') . "] Photo Delete Error: " . $e->getMessage() . "\n", FILE_APPEND);
+            }
+        } else {
+            $error = 'Security Token mismatch during deletion.';
+            file_put_contents(__DIR__ . '/profile_error_log.txt', "[" . date('Y-m-d H:i:s') . "] Photo Delete CSRF Error\n", FILE_APPEND);
         }
     }
 }
@@ -105,7 +153,11 @@ require_once __DIR__ . '/header.php';
             </div>
 
             <div class="card profile-card">
-                <div class="profile-header text-center">
+                <form method="POST" enctype="multipart/form-data">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="update_admin">
+
+                    <div class="profile-header text-center">
                     <?php if (!$is_editing): ?>
                         <a href="?id=<?php echo $admin_id; ?>&edit=1" class="edit-toggle-btn" title="Edit Profile"><i class="fas fa-pen fa-sm"></i></a>
                     <?php else: ?>
@@ -114,15 +166,25 @@ require_once __DIR__ . '/header.php';
 
                     <div class="profile-img-wrapper">
                         <?php 
-                            $p_img = !empty($admin['profile_picture']) ? '../' . $admin['profile_picture'] : '../public/img/barangaylogo.png';
+                            $p_img = !empty($admin['profile_picture']) ? '../' . $admin['profile_picture'] . '?v=' . time() : '../public/img/barangaylogo.png';
                         ?>
-                        <img src="<?php echo $p_img; ?>" class="profile-img rounded-circle shadow-sm" alt="Profile Logo">
+                        <img src="<?php echo $p_img; ?>" 
+                             class="profile-img rounded-circle shadow-sm" 
+                             alt="Profile Logo" 
+                             id="avatarPreview" 
+                             style="cursor: pointer; position: relative; z-index: 5;"
+                             onclick="viewProfileCircle('<?php echo $p_img; ?>')">
                         <?php if ($is_editing): ?>
                             <div class="mt-2">
                                 <label for="profile_pic" class="badge bg-white text-dark py-2 px-3 shadow-sm border" style="cursor:pointer;">
                                     <i class="fas fa-camera me-1"></i> Change Photo
                                 </label>
-                                <input type="file" id="profile_pic" name="profile_pic" class="d-none" accept="image/*">
+                                <input type="file" id="profile_pic" name="profile_pic" class="d-none" accept="image/*" onchange="previewImage(this)">
+                                <?php if (!empty($admin['profile_picture'])): ?>
+                                    <button type="button" class="badge bg-danger text-white py-2 px-3 shadow-sm border-0 ms-1" onclick="confirmDeletePhoto()">
+                                        <i class="fas fa-trash me-1"></i> Delete Photo
+                                    </button>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -140,6 +202,13 @@ require_once __DIR__ . '/header.php';
                 </div>
 
                 <div class="card-body p-4">
+                    <?php if (isset($error)): ?>
+                        <div class="alert alert-danger border-0 rounded-3 p-2 mb-4 d-flex align-items-center gap-2 shadow-sm small">
+                            <i class="fas fa-exclamation-circle text-danger ms-2"></i>
+                            <div class="fw-bold"><?php echo htmlspecialchars($error); ?></div>
+                        </div>
+                    <?php endif; ?>
+
                     <?php if (isset($_GET['updated'])): ?>
                         <div class="alert alert-success border-0 rounded-3 p-2 mb-4 d-flex align-items-center gap-2 shadow-sm small">
                             <i class="fas fa-check-circle text-success ms-2"></i>
@@ -147,9 +216,7 @@ require_once __DIR__ . '/header.php';
                         </div>
                     <?php endif; ?>
 
-                    <form method="POST" enctype="multipart/form-data">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="action" value="update_admin">
+
                         
                         <!-- SECTION: PERSONAL -->
                         <div class="mb-4">
@@ -294,6 +361,55 @@ require_once __DIR__ . '/header.php';
 </div>
 
 <script>
+function viewProfileCircle(imgSrc) {
+    Swal.fire({
+        imageUrl: imgSrc,
+        imageWidth: 400,
+        imageHeight: 400,
+        imageAlt: 'Profile Picture',
+        showConfirmButton: false,
+        background: 'transparent',
+        backdrop: `rgba(0,0,123,0.4)`,
+        customClass: {
+            image: 'rounded-circle shadow-lg border border-4 border-white'
+        }
+    });
+}
+
+function confirmDeletePhoto() {
+    Swal.fire({
+        title: 'Delete Profile Photo?',
+        text: 'This will remove your current profile picture and revert to the default.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, Delete It',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.innerHTML = `
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="action" value="delete_profile_pic">
+            `;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('avatarPreview').src = e.target.result;
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
 function confirmUpdate(btn) {
     const form = btn.closest('form');
     Swal.fire({

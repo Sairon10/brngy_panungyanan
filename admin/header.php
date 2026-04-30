@@ -1,6 +1,13 @@
 <?php
 ob_start();
 require_once __DIR__ . '/../config.php';
+
+// Fetch user data for navbar
+$pdo = get_db_connection();
+$stmt = $pdo->prepare('SELECT avatar FROM residents WHERE user_id = ?');
+$stmt->execute([$_SESSION['user_id']]);
+$user_nav_data = $stmt->fetch();
+$nav_avatar = $user_nav_data['avatar'] ?? null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -840,10 +847,16 @@ require_once __DIR__ . '/../config.php';
 								<button
 									class="btn border-0 p-1 pe-3 text-dark dropdown-toggle d-flex align-items-center gap-2 rounded-pill shadow-sm bg-light"
 									type="button" data-bs-toggle="dropdown">
-									<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
-										style="width: 36px; height: 36px; font-size: 0.9rem;">
-										<?php echo strtoupper(substr($_SESSION['full_name'] ?? 'A', 0, 1)); ?>
-									</div>
+									<?php if ($nav_avatar && file_exists(__DIR__ . '/../' . $nav_avatar)): ?>
+										<img src="../<?php echo htmlspecialchars($nav_avatar); ?>" 
+											class="rounded-circle shadow-sm"
+											style="width: 36px; height: 36px; object-fit: cover; border: 2px solid white;">
+									<?php else: ?>
+										<div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold"
+											style="width: 36px; height: 36px; font-size: 0.9rem;">
+											<?php echo strtoupper(substr($_SESSION['full_name'] ?? 'A', 0, 1)); ?>
+										</div>
+									<?php endif; ?>
 								</button>
 								<ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-2 rounded-4">
 									<li class="px-3 py-2 d-md-none">
@@ -851,8 +864,8 @@ require_once __DIR__ . '/../config.php';
 										<small class="text-muted" style="font-size: 0.7rem;"><?php echo ($_SESSION['user_id'] == 1) ? 'System Admin' : 'Sub-Admin'; ?></small>
 										<hr class="my-2">
 									</li>
-									<li><a class="dropdown-item rounded-3 py-2" href="admin_info.php"><i
-												class="fas fa-user me-2 text-muted"></i> My Profile</a></li>
+									<li><a class="dropdown-item rounded-3 py-2" href="admin_info_view.php?id=<?php echo $_SESSION['user_id']; ?>"><i
+												class="fas fa-user-circle me-2 text-muted"></i> My Profile</a></li>
 									<li>
 										<hr class="dropdown-divider">
 									</li>
