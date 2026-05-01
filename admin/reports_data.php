@@ -95,14 +95,12 @@ switch ($type) {
 
     case 'total_residents':
         $stmt = $pdo->query("
-            -- 1. Residents with accounts (Verified & Pending)
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE u.role = 'resident'
             
             UNION ALL
             
-            -- 2. Family Members
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
@@ -110,7 +108,6 @@ switch ($type) {
             
             UNION ALL
             
-            -- 3. Resident Records without accounts
             SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, rr.address, rr.phone, '' as owner_name
             FROM resident_records rr
             WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
@@ -159,21 +156,18 @@ switch ($type) {
 
     case 'households':
         $stmt = $pdo->query("
-            -- 1. Heads from accounts
             SELECT 'Head' as role, r.user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, r.address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status, r.citizenship
             FROM residents r JOIN users u ON u.id = r.user_id
             WHERE u.role = 'resident'
             
             UNION ALL
             
-            -- 2. Heads from resident_records without accounts
-            SELECT 'Head' as role, 0 as user_id, rr.first_name, rr.middle_name, rr.last_name, rr.suffix, rr.full_name, rr.email, rr.birthdate, rr.sex, rr.civil_status, rr.address, rr.purok, rr.phone, rr.birth_place, rr.occupation, '' as classification, rr.religion, '' as educational_attainment, '' as educational_status, rr.citizenship
+            SELECT 'Head' as role, 0 as user_id, rr.first_name, rr.middle_name, rr.last_name, rr.suffix, rr.full_name, rr.email, rr.birthdate, rr.sex, rr.civil_status, rr.address, rr.purok, rr.phone, NULL as birth_place, NULL as occupation, '' as classification, NULL as religion, '' as educational_attainment, '' as educational_status, rr.citizenship
             FROM resident_records rr
             WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
             
             UNION ALL
             
-            -- 3. Members
             SELECT 'Member' as role, fm.user_id, fm.first_name, fm.middle_name, fm.last_name, fm.suffix, fm.full_name, '' as email, fm.birthdate, fm.sex, fm.civil_status, r2.address, r2.purok, r2.phone, fm.birth_place, fm.occupation, fm.classification, fm.religion, fm.educational_attainment, fm.educational_status, fm.citizenship
             FROM family_members fm
             JOIN residents r2 ON fm.user_id = r2.user_id
