@@ -2,6 +2,7 @@
 $page_title = 'ID Verification';
 require_once __DIR__ . '/partials/user_dashboard_header.php'; 
 ?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <?php if (!is_logged_in())
     redirect('login.php'); ?>
 
@@ -111,14 +112,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $errors[] = 'Back ID is required.';
         }
 
+        if (empty(trim($_POST['id_type'] ?? ''))) {
+            $errors[] = 'Please select the type of ID you are uploading.';
+        }
+
         if (empty(trim($_POST['address_note'] ?? ''))) {
             $errors[] = 'Address on ID is required.';
         }
 
         if (empty($errors)) {
             $address_note = trim($_POST['address_note']);
-            $stmt = $pdo->prepare('UPDATE residents SET id_front_path = ?, id_back_path = ?, address_on_id = ?, verification_status = \'pending\' WHERE user_id = ?');
-            $stmt->execute([$id_front, $id_back, $address_note, $_SESSION['user_id']]);
+            $id_type = trim($_POST['id_type'] ?? '');
+            
+            // Check if id_type column exists
+            $check_id_type = $pdo->query("SHOW COLUMNS FROM residents LIKE 'id_type'");
+            if ($check_id_type->rowCount() > 0) {
+                $stmt = $pdo->prepare('UPDATE residents SET id_front_path = ?, id_back_path = ?, id_type = ?, address_on_id = ?, verification_status = \'pending\' WHERE user_id = ?');
+                $stmt->execute([$id_front, $id_back, $id_type, $address_note, $_SESSION['user_id']]);
+            } else {
+                // Fallback if migration not run yet
+                $stmt = $pdo->prepare('UPDATE residents SET id_front_path = ?, id_back_path = ?, address_on_id = ?, verification_status = \'pending\' WHERE user_id = ?');
+                $stmt->execute([$id_front, $id_back, $address_note, $_SESSION['user_id']]);
+            }
             
             // Notify all admins
             $admin_stmt = $pdo->query('SELECT id FROM users WHERE role = "admin"');
@@ -221,9 +236,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             <?php endif; ?>
 
                             <?php if (($resident['verification_status'] ?? '') !== 'verified'): ?>
-                                <form method="post" enctype="multipart/form-data">
+                                <form method="post" enctype="multipart/form-data" id="verificationForm">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="action" value="upload_id">
+
+                                    <div class="mb-4">
+                                        <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Select ID Type <span class="text-danger">*</span></label>
+                                        <select name="id_type" class="form-select bg-light border-0 rounded-3 p-3 focus-ring" required>
+                                            <option value="" selected disabled>Choose ID Type...</option>
+                                            <option value="National ID (Philsys)" <?php echo ($resident['id_type'] ?? '') == 'National ID (Philsys)' ? 'selected' : ''; ?>>National ID (Philsys)</option>
+                                            <option value="Driver's License" <?php echo ($resident['id_type'] ?? '') == "Driver's License" ? 'selected' : ''; ?>>Driver's License</option>
+                                            <option value="Voter's ID" <?php echo ($resident['id_type'] ?? '') == "Voter's ID" ? 'selected' : ''; ?>>Voter's ID</option>
+                                            <option value="Passport" <?php echo ($resident['id_type'] ?? '') == 'Passport' ? 'selected' : ''; ?>>Passport</option>
+                                            <option value="SSS / GSIS ID" <?php echo ($resident['id_type'] ?? '') == 'SSS / GSIS ID' ? 'selected' : ''; ?>>SSS / GSIS ID</option>
+                                            <option value="Postal ID" <?php echo ($resident['id_type'] ?? '') == 'Postal ID' ? 'selected' : ''; ?>>Postal ID</option>
+                                            <option value="Student ID" <?php echo ($resident['id_type'] ?? '') == 'Student ID' ? 'selected' : ''; ?>>Student ID</option>
+                                            <option value="Other Government ID" <?php echo ($resident['id_type'] ?? '') == 'Other Government ID' ? 'selected' : ''; ?>>Other Government ID</option>
+                                        </select>
+                                    </div>
 
                                     <div class="row mb-4">
                                         <div class="col-md-6">
@@ -295,6 +325,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                             preview.classList.add('d-none');
                                         }
                                     }
+                                    document.getElementById('verificationForm').addEventListener('submit', function(e) {
+                                        Swal.fire({
+                                            title: 'Are you sure?',
+                                            text: "You are about to submit your ID for verification.",
+                                            icon: 'warning',
+                                            showCancelButton: true,
+                                            confirmButtonColor: '#0d6efd',
+                                            cancelButtonColor: '#6c757d',
+                                            confirmButtonText: 'Yes, Submit!'
+                                        }).then((result) => {
+                                            if (result.isConfirmed) {
+                                                this.submit();
+                                            }
+                                        });
+                                        e.preventDefault();
+                                    });
                                 </script>
                             <?php else: ?>
                                 <div class="text-center py-5">
@@ -474,4 +520,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     </div>
 </div>
 
+<script>
+    document.getElementById('verificationForm')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        Swal.fire({
+            title: 'Submit for Verification?',
+            text: "Please ensure all information and photos are correct.",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0f766e',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, submit it!',
+            cancelButtonText: 'Review again',
+            reverseButtons: true,
+            borderRadius: '15px'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing...',
+                    text: 'Uploading your documents, please wait.',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                this.submit();
+            }
+        });
+    });
+
+    <?php if ($success): ?>
+    Swal.fire({
+        title: 'Success!',
+        text: '<?php echo $success; ?>',
+        icon: 'success',
+        confirmButtonColor: '#0f766e',
+        borderRadius: '15px'
+    });
+    <?php endif; ?>
+
+    <?php if ($errors): ?>
+    Swal.fire({
+        title: 'Wait!',
+        html: '<ul class="text-start small mb-0"><?php foreach($errors as $e) echo "<li>".htmlspecialchars($e)."</li>"; ?></ul>',
+        icon: 'error',
+        confirmButtonColor: '#0f766e',
+        borderRadius: '15px'
+    });
+    <?php endif; ?>
+</script>
 <?php require_once __DIR__ . '/partials/user_dashboard_footer.php'; ?>

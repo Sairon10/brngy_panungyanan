@@ -112,3 +112,13 @@ POST: Array
     [type] => OWNER
 )
 
+2026-05-01 10:49:57 - /admin/resident_records
+POST: Array
+(
+    [csrf_token] => 79ec58b9afd6ebb34e3421905f6cd44bbe1b5723e2126da3370498139099e98a
+    [action] => delete
+    [record_id] => 0
+    [user_id] => 22
+    [type] => OWNER
+)
+

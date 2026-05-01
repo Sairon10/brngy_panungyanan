@@ -664,7 +664,7 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 
 						<?php if ($_SESSION['user_id'] == 1): ?>
 						<?php
-						$is_acc_mgmt_section = (in_array($admin_req_basename, ['register_account.php', 'resident_records.php', 'account_management.php', 'admin_info.php', 'sub_admin_management.php', 'admin_info_view.php']));
+						$is_acc_mgmt_section = (in_array($admin_req_basename, ['register_account.php', 'resident_records.php', 'account_management.php', 'id_verifications.php', 'admin_info.php', 'sub_admin_management.php', 'admin_info_view.php']));
 						$is_admin_acc_section = (in_array($admin_req_basename, ['admin_info.php', 'sub_admin_management.php', 'admin_info_view.php']));
 						?>
 						<a class="nav-link <?php echo $is_acc_mgmt_section ? 'active' : ''; ?>"
@@ -683,6 +683,9 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 							<a class="nav-link ps-5 py-2 <?php echo ($admin_req_basename === 'account_management.php') ? 'active' : ''; ?>"
 								href="account_management.php" style="font-size: 0.85rem;"
 								title="Resident account">Resident account</a>
+							<a class="nav-link ps-5 py-2 <?php echo ($admin_req_basename === 'id_verifications.php') ? 'active' : ''; ?>"
+								href="id_verifications.php" style="font-size: 0.85rem;"
+								title="ID Verification">ID Verification</a>
 
 							<!-- Admin Account Nested Submenu -->
 							<a class="nav-link ps-5 py-2 <?php echo $is_admin_acc_section ? 'active' : ''; ?>"
