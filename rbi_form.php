@@ -6,12 +6,15 @@ if (!is_logged_in())
 $pdo = get_db_connection();
 $user_id = $_SESSION['user_id'];
 
-// Check if already completed
-$stmt = $pdo->prepare("SELECT is_rbi_completed FROM residents WHERE user_id = ?");
-$stmt->execute([$user_id]);
-$res = $stmt->fetch();
-if ($res && $res['is_rbi_completed']) {
-    redirect('dashboard.php');
+// Check if already completed (Safely)
+$check_col = $pdo->query("SHOW COLUMNS FROM residents LIKE 'is_rbi_completed'");
+if ($check_col->rowCount() > 0) {
+    $stmt = $pdo->prepare("SELECT is_rbi_completed FROM residents WHERE user_id = ?");
+    $stmt->execute([$user_id]);
+    $res = $stmt->fetch();
+    if ($res && isset($res['is_rbi_completed']) && $res['is_rbi_completed']) {
+        redirect('dashboard.php');
+    }
 }
 
 $success = '';

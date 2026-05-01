@@ -17,8 +17,17 @@ $resident = $stmt->fetch();
 
 if (!$resident) {
     redirect('index.php');
-} elseif (!$resident['is_rbi_completed']) {
-    redirect('rbi_form.php');
+}
+
+// Fallback check for missing column
+$is_rbi_completed = isset($resident['is_rbi_completed']) ? $resident['is_rbi_completed'] : 0;
+
+if (!$is_rbi_completed) {
+    // Check if column even exists to avoid redirect loops if DB is outdated
+    $check_col = $pdo->query("SHOW COLUMNS FROM residents LIKE 'is_rbi_completed'");
+    if ($check_col->rowCount() > 0) {
+        redirect('rbi_form.php');
+    }
 }
 
 
@@ -35,40 +44,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
         // Handle Front ID
-        if (isset($_FILES['id_front']) && $_FILES['id_front']['error'] === UPLOAD_ERR_OK) {
+        if (isset($_FILES['id_front'])) {
             $file = $_FILES['id_front'];
-            if (!in_array($file['type'], $allowed_types)) {
-                $errors[] = 'Front ID: Only JPEG, PNG, and PDF files are allowed.';
-            } elseif ($file['size'] > $max_size) {
-                $errors[] = 'Front ID: File size must be less than 5MB.';
-            } else {
-                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filename = 'id_front_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
-                if (move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
-                    $id_front = $filename;
+            if ($file['error'] === UPLOAD_ERR_OK) {
+                if (!in_array($file['type'], $allowed_types)) {
+                    $errors[] = 'Front ID: Only JPEG, PNG, and PDF files are allowed.';
+                } elseif ($file['size'] > $max_size) {
+                    $errors[] = 'Front ID: File size must be less than 5MB.';
                 } else {
-                    $errors[] = 'Failed to upload Front ID.';
+                    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filename = 'id_front_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
+                    if (move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
+                        $id_front = $filename;
+                    } else {
+                        $errors[] = 'Failed to save Front ID to server. Please check folder permissions.';
+                    }
                 }
+            } elseif ($file['error'] !== UPLOAD_ERR_NO_FILE) {
+                $upload_errors = [
+                    UPLOAD_ERR_INI_SIZE => 'Front ID exceeds the server limit (upload_max_filesize).',
+                    UPLOAD_ERR_FORM_SIZE => 'Front ID exceeds the form limit.',
+                    UPLOAD_ERR_PARTIAL => 'Front ID was only partially uploaded.',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server.',
+                    UPLOAD_ERR_CANT_WRITE => 'Failed to write Front ID to disk.',
+                    UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the upload.'
+                ];
+                $errors[] = 'Front ID: ' . ($upload_errors[$file['error']] ?? 'Unknown upload error.');
+            } else {
+                $errors[] = 'Front ID is required.';
             }
         } else {
             $errors[] = 'Front ID is required.';
         }
 
         // Handle Back ID
-        if (isset($_FILES['id_back']) && $_FILES['id_back']['error'] === UPLOAD_ERR_OK) {
+        if (isset($_FILES['id_back'])) {
             $file = $_FILES['id_back'];
-            if (!in_array($file['type'], $allowed_types)) {
-                $errors[] = 'Back ID: Only JPEG, PNG, and PDF files are allowed.';
-            } elseif ($file['size'] > $max_size) {
-                $errors[] = 'Back ID: File size must be less than 5MB.';
-            } else {
-                $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                $filename = 'id_back_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
-                if (move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
-                    $id_back = $filename;
+            if ($file['error'] === UPLOAD_ERR_OK) {
+                if (!in_array($file['type'], $allowed_types)) {
+                    $errors[] = 'Back ID: Only JPEG, PNG, and PDF files are allowed.';
+                } elseif ($file['size'] > $max_size) {
+                    $errors[] = 'Back ID: File size must be less than 5MB.';
                 } else {
-                    $errors[] = 'Failed to upload Back ID.';
+                    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filename = 'id_back_' . $_SESSION['user_id'] . '_' . time() . '.' . $extension;
+                    if (move_uploaded_file($file['tmp_name'], $upload_dir . $filename)) {
+                        $id_back = $filename;
+                    } else {
+                        $errors[] = 'Failed to save Back ID to server. Please check folder permissions.';
+                    }
                 }
+            } elseif ($file['error'] !== UPLOAD_ERR_NO_FILE) {
+                $upload_errors = [
+                    UPLOAD_ERR_INI_SIZE => 'Back ID exceeds the server limit.',
+                    UPLOAD_ERR_FORM_SIZE => 'Back ID exceeds the form limit.',
+                    UPLOAD_ERR_PARTIAL => 'Back ID was only partially uploaded.',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder.',
+                    UPLOAD_ERR_CANT_WRITE => 'Failed to write Back ID to disk.',
+                    UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the upload.'
+                ];
+                $errors[] = 'Back ID: ' . ($upload_errors[$file['error']] ?? 'Unknown upload error.');
+            } else {
+                $errors[] = 'Back ID is required.';
             }
         } else {
             $errors[] = 'Back ID is required.';
@@ -113,7 +150,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <div class="col-md-4 text-md-end mt-3 mt-md-0">
                     <span class="badge rounded-pill px-3 py-2
                         <?php
-                        switch ($resident['verification_status']) {
+                        $status = $resident['verification_status'] ?? 'pending';
+                        switch ($status) {
                             case 'verified':
                                 echo 'bg-success-subtle text-success border border-success-subtle';
                                 break;
@@ -125,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         }
                         ?>">
                         <i class="fas fa-circle small me-2"></i>
-                        Status: <?php echo ucfirst($resident['verification_status']); ?>
+                        Status: <?php echo ucfirst($status); ?>
                     </span>
                 </div>
             </div>
@@ -168,7 +206,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         </div>
                         <div class="card-body p-4">
 
-                            <?php if ($resident['verification_status'] === 'rejected' && $resident['verification_notes']): ?>
+                            <?php if (($resident['verification_status'] ?? '') === 'rejected' && ($resident['verification_notes'] ?? '')): ?>
                                 <div class="alert alert-warning border-0 bg-warning-subtle rounded-3 mb-4">
                                     <div class="d-flex">
                                         <i class="fas fa-exclamation-triangle mt-1 me-3 text-warning-emphasis"></i>
@@ -182,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 </div>
                             <?php endif; ?>
 
-                            <?php if ($resident['verification_status'] !== 'verified'): ?>
+                            <?php if (($resident['verification_status'] ?? '') !== 'verified'): ?>
                                 <form method="post" enctype="multipart/form-data">
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="action" value="upload_id">
@@ -191,26 +229,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Front ID View <span class="text-danger">*</span></label>
                                             <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2" style="height: 180px;">
-                                                <input type="file" name="id_front" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !$resident['id_front_path'] ? 'required' : ''; ?> onchange="previewID(this, 'front')">
-                                                <div id="front_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo $resident['id_front_path'] ? 'd-none' : ''; ?>">
-                                                    <i class="fas fa-id-card fs-2 text-primary mb-2"></i>
-                                                    <h6 class="fw-bold text-dark small mb-0">Upload Front</h6>
-                                                </div>
-                                                <div id="front_preview" class="<?php echo $resident['id_front_path'] ? '' : 'd-none'; ?> h-100 w-100">
-                                                    <img src="<?php echo $resident['id_front_path'] ? 'uploads/id_documents/' . $resident['id_front_path'] : '#'; ?>" alt="Front Preview" class="w-100 h-100 object-fit-contain rounded-3">
+                                                <div id="front_preview" class="<?php echo ($resident['id_front_path'] ?? '') ? '' : 'd-none'; ?> h-100 w-100">
+                                                    <img src="<?php echo ($resident['id_front_path'] ?? '') ? 'uploads/id_documents/' . $resident['id_front_path'] : '#'; ?>" alt="Front Preview" class="w-100 h-100 object-fit-contain rounded-3">
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Back ID View <span class="text-danger">*</span></label>
                                             <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2" style="height: 180px;">
-                                                <input type="file" name="id_back" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !$resident['id_back_path'] ? 'required' : ''; ?> onchange="previewID(this, 'back')">
-                                                <div id="back_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo $resident['id_back_path'] ? 'd-none' : ''; ?>">
+                                                <input type="file" name="id_back" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !($resident['id_back_path'] ?? '') ? 'required' : ''; ?> onchange="previewID(this, 'back')">
+                                                <div id="back_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo ($resident['id_back_path'] ?? '') ? 'd-none' : ''; ?>">
                                                     <i class="fas fa-id-card fs-2 text-primary mb-2" style="transform: scaleX(-1);"></i>
                                                     <h6 class="fw-bold text-dark small mb-0">Upload Back</h6>
                                                 </div>
-                                                <div id="back_preview" class="<?php echo $resident['id_back_path'] ? '' : 'd-none'; ?> h-100 w-100">
-                                                    <img src="<?php echo $resident['id_back_path'] ? 'uploads/id_documents/' . $resident['id_back_path'] : '#'; ?>" alt="Back Preview" class="w-100 h-100 object-fit-contain rounded-3">
+                                                <div id="back_preview" class="<?php echo ($resident['id_back_path'] ?? '') ? '' : 'd-none'; ?> h-100 w-100">
+                                                    <img src="<?php echo ($resident['id_back_path'] ?? '') ? 'uploads/id_documents/' . $resident['id_back_path'] : '#'; ?>" alt="Back Preview" class="w-100 h-100 object-fit-contain rounded-3">
                                                 </div>
                                             </div>
                                         </div>
@@ -319,7 +352,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 </div>
                             </div>
 
-                            <?php if ($resident['id_front_path'] || $resident['id_back_path'] || !empty($resident['id_document_path'])): ?>
+                            <?php if (($resident['id_front_path'] ?? '') || ($resident['id_back_path'] ?? '') || !empty($resident['id_document_path'])): ?>
                                 <hr class="my-4 border-light">
                                 <h6 class="fw-bold text-uppercase text-muted small mb-3 letter-spacing-1">Current Uploads
                                 </h6>
