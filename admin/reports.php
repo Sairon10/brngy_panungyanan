@@ -17,11 +17,13 @@ $end_date = $_GET['end_date'] ?? date('Y-m-t');     // Last day of current month
 $db_start = $start_date . ' 00:00:00';
 $db_end = $end_date . ' 23:59:59';
 
-// 1. Residents Demographics
+// 1. Residents Demographics (Unified Count)
 $stmt = $pdo->query("
     SELECT 
-        (SELECT COUNT(*) FROM residents WHERE verification_status = 'verified') +
-        (SELECT COUNT(*) FROM family_members)
+        (SELECT COUNT(*) FROM users WHERE role = 'resident') +
+        (SELECT COUNT(*) FROM family_members) +
+        (SELECT COUNT(*) FROM resident_records rr 
+         WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name)))
 ");
 $total_residents = $stmt->fetchColumn();
 

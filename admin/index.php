@@ -52,8 +52,18 @@ $incidents_canceled  = (int)($pdo->query("SELECT COUNT(*) as c FROM incidents i 
 // --- General Stats (Population Overview) ---
 $pop_date_query = !empty($date_where) ? " WHERE " . substr($date_where, 5) : "";
 
-$total_rr = (int)($pdo->query("SELECT COUNT(*) AS c FROM resident_records $pop_date_query")->fetch()['c'] ?? 0);
+// Count unique residents (Users with role 'resident')
+$total_users = (int)($pdo->query("SELECT COUNT(*) as c FROM users WHERE role = 'resident' " . str_replace("created_at", "created_at", $date_where))->fetch()['c'] ?? 0);
+
+// Count family members
 $total_fm = (int)($pdo->query("SELECT COUNT(*) AS c FROM family_members $pop_date_query")->fetch()['c'] ?? 0);
+
+// Count resident_records that don't have matching user accounts (to avoid double counting)
+// We check by email or full_name matching
+$total_orphaned_rr = (int)($pdo->query("
+    SELECT COUNT(*) as c FROM resident_records rr 
+    WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
+    " . str_replace("WHERE", "AND", $pop_date_query))->fetch()['c'] ?? 0);
 
 $solo_parents_rr = (int)($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE is_solo_parent = 1 $date_where")->fetch()['c'] ?? 0);
 $solo_parents_fm = (int)($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE is_solo_parent = 1 $date_where")->fetch()['c'] ?? 0);
@@ -68,7 +78,7 @@ $senior_fm = (int)($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE i
 $res_date_where = !empty($date_where) ? str_replace('created_at', 'u.created_at', $date_where) : "";
 
 $stats = [
-	'total_residents'       => $total_rr + $total_fm,
+	'total_residents'       => $total_users + $total_fm + $total_orphaned_rr,
 	'solo_parents'          => $solo_parents_rr + $solo_parents_fm,
 	'pwd'                   => $pwd_rr + $pwd_fm,
 	'senior_citizens'       => $senior_rr + $senior_fm,
