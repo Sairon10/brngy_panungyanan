@@ -229,6 +229,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                         <div class="col-md-6">
                                             <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Front ID View <span class="text-danger">*</span></label>
                                             <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2" style="height: 180px;">
+                                                <input type="file" name="id_front" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !($resident['id_front_path'] ?? '') ? 'required' : ''; ?> onchange="previewID(this, 'front')">
+                                                <div id="front_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo ($resident['id_front_path'] ?? '') ? 'd-none' : ''; ?>">
+                                                    <i class="fas fa-id-card fs-2 text-primary mb-2"></i>
+                                                    <h6 class="fw-bold text-dark small mb-0">Upload Front</h6>
+                                                </div>
                                                 <div id="front_preview" class="<?php echo ($resident['id_front_path'] ?? '') ? '' : 'd-none'; ?> h-100 w-100">
                                                     <img src="<?php echo ($resident['id_front_path'] ?? '') ? 'uploads/id_documents/' . $resident['id_front_path'] : '#'; ?>" alt="Front Preview" class="w-100 h-100 object-fit-contain rounded-3">
                                                 </div>
