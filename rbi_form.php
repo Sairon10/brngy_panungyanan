@@ -100,7 +100,7 @@ $resident = $stmt->fetch();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RBI Profile Completion - Barangay Panungyanan</title>
+    <title>Finalize Your Profile - Barangay Panungyanan</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -195,9 +195,19 @@ $resident = $stmt->fetch();
             <div class="col-xl-11">
                 <div class="card rbi-card">
                     <div class="rbi-header">
-                        <h6 class="mb-0 fw-bold">Personal Information</h6>
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-user-edit me-2"></i>Finalize Your Resident Profile</h6>
                     </div>
                     <div class="card-body p-4 p-md-5">
+                        <div class="alert alert-info border-0 bg-info bg-opacity-10 text-info small mb-4">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-info-circle fs-5 me-3"></i>
+                                <div>
+                                    <strong>Almost there!</strong> Your account is created, but we need a few more details for the <strong>Registry of Barangay Inhabitants (RBI)</strong> to fully verify your residency.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <h5 class="section-title text-uppercase border-bottom pb-2 mb-4">Personal Information</h5>
                         <?php if ($error): ?>
                             <div class="alert alert-danger rounded-3 small"><i
                                     class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?></div>
