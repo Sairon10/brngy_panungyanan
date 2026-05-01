@@ -70,6 +70,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 // Get filter status
 $status_filter = $_GET['status'] ?? 'all';
+
+// Pagination logic
+$limit = 10;
+$page = (int)($_GET['page'] ?? 1);
+if ($page < 1) $page = 1;
+$offset = ($page - 1) * $limit;
+
+// Base query for data
 $query = "SELECT r.*, u.full_name, u.email, u.role FROM residents r JOIN users u ON r.user_id = u.id WHERE u.role = 'resident'";
 $params = [];
 
@@ -77,7 +85,16 @@ if ($status_filter !== 'all') {
     $query .= ' AND r.verification_status = ?';
     $params[] = $status_filter;
 }
-$query .= ' ORDER BY r.id DESC';
+
+// Get total count for pagination
+$count_query = "SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE u.role = 'resident'";
+if ($status_filter !== 'all') {
+    $count_query .= " AND r.verification_status = " . $pdo->quote($status_filter);
+}
+$total_records = $pdo->query($count_query)->fetchColumn();
+$total_pages = ceil($total_records / $limit);
+
+$query .= " ORDER BY r.id DESC LIMIT $limit OFFSET $offset";
 
 $residents = $pdo->prepare($query);
 $residents->execute($params);
@@ -208,7 +225,8 @@ $residents_data = $residents->fetchAll();
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="action" value="verify">
                                         <input type="hidden" name="resident_id" value="<?php echo $res['id']; ?>">
-                                        <button type="submit" class="btn btn-action btn-outline-success" title="Approve" onclick="return confirm('Verify this resident?')">
+                                        <button type="button" class="btn btn-action btn-outline-success" title="Approve" 
+                                                onclick="confirmVerification(this.form)">
                                             <i class="fas fa-check"></i>
                                         </button>
                                     </form>
@@ -224,6 +242,31 @@ $residents_data = $residents->fetchAll();
                 <?php endforeach; ?>
             </tbody>
         </table>
+    </div>
+    <!-- Pagination Footer -->
+    <div class="card-footer bg-white border-0 py-3 px-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="text-muted small">
+                Showing <?php echo count($residents_data); ?> of <?php echo $total_records; ?> residents
+            </div>
+            <?php if ($total_pages > 1): ?>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0 gap-1">
+                        <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                            <a class="page-link border-0 rounded-circle shadow-sm" href="?status=<?php echo $status_filter; ?>&page=<?php echo $page - 1; ?>"><i class="fas fa-chevron-left"></i></a>
+                        </li>
+                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                            <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
+                                <a class="page-link border-0 rounded-circle shadow-sm px-3" href="?status=<?php echo $status_filter; ?>&page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                            </li>
+                        <?php endfor; ?>
+                        <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                            <a class="page-link border-0 rounded-circle shadow-sm" href="?status=<?php echo $status_filter; ?>&page=<?php echo $page + 1; ?>"><i class="fas fa-chevron-right"></i></a>
+                        </li>
+                    </ul>
+                </nav>
+            <?php endif; ?>
+        </div>
     </div>
 </div>
 
@@ -263,20 +306,20 @@ $residents_data = $residents->fetchAll();
                 <h5 class="modal-title fw-bold text-danger"><i class="fas fa-times-circle me-2"></i>Reject Verification</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post">
+            <form method="post" id="rejectForm">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="reject">
                 <input type="hidden" name="resident_id" id="rejectResidentID">
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-uppercase text-muted">Reason for Rejection <span class="text-danger">*</span></label>
-                        <textarea name="rejection_notes" class="form-control rounded-3 bg-light border-0 p-3" rows="4" placeholder="Why is this being rejected?" required></textarea>
+                        <textarea name="rejection_notes" id="rejectionNotes" class="form-control rounded-3 bg-light border-0 p-3" rows="4" placeholder="Why is this being rejected?" required></textarea>
                         <div class="form-text small mt-2">The resident will see this message.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0 px-4 pb-4">
                     <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold">Confirm Rejection</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" onclick="confirmRejection()">Confirm Rejection</button>
                 </div>
             </form>
         </div>
@@ -284,6 +327,32 @@ $residents_data = $residents->fetchAll();
 </div>
 
 <script>
+function confirmVerification(form) {
+    Swal.fire({
+        title: 'Verify Resident?',
+        text: "Are you sure you want to verify this resident's identity?",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#16a34a',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Yes, Verify',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
+}
+
+function confirmRejection() {
+    const notes = document.getElementById('rejectionNotes').value;
+    if (notes.trim() === '') {
+        Swal.fire('Error', 'Rejection notes are required', 'error');
+        return;
+    }
+    document.getElementById('rejectForm').submit();
+}
+
 function viewID(data) {
     document.getElementById('modalResidentName').textContent = data.name;
     document.getElementById('modalAddressOnID').textContent = data.address_on_id || 'Not provided';
@@ -338,6 +407,26 @@ document.getElementById('tableSearch')?.addEventListener('keyup', function() {
         }
     });
 });
+
+<?php if ($success): ?>
+Swal.fire({
+    title: 'Success!',
+    text: '<?php echo htmlspecialchars($success); ?>',
+    icon: 'success',
+    confirmButtonColor: '#0f766e',
+    borderRadius: '15px'
+});
+<?php endif; ?>
+
+<?php if ($errors): ?>
+Swal.fire({
+    title: 'Wait!',
+    html: '<ul class="text-start small mb-0"><?php foreach($errors as $e) echo "<li>".htmlspecialchars($e)."</li>"; ?></ul>',
+    icon: 'error',
+    confirmButtonColor: '#0f766e',
+    borderRadius: '15px'
+});
+<?php endif; ?>
 </script>
 
 <style>
@@ -376,6 +465,26 @@ document.getElementById('tableSearch')?.addEventListener('keyup', function() {
 
 .btn-outline-danger { color: #dc2626; border-color: #e5e7eb; background: white; }
 .btn-outline-danger:hover { background: #dc2626; color: white; border-color: #dc2626; }
+
+/* Pagination styling */
+.pagination .page-link {
+    color: #4b5563;
+    font-weight: 500;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 2px;
+}
+.pagination .page-item.active .page-link {
+    background-color: #0f766e;
+    color: white;
+}
+.pagination .page-item.disabled .page-link {
+    background-color: #f9fafb;
+    color: #9ca3af;
+}
 </style>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

@@ -64,3 +64,12 @@ POST: Array
     [resident_id] => 18
 )
 
+2026-05-01 11:19:14 - /admin/resident_record_view?id=0&user_id=23
+POST: Array
+(
+    [csrf_token] => 77892ad0beae2800913bfafa9569338bebedaf4db63a1dbb97494adeb3d7d826
+    [action] => reject
+    [resident_id] => 23
+    [rejection_notes] => dacz
+)
+
