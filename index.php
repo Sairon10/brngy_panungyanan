@@ -18,7 +18,13 @@ if (is_logged_in() && $_SESSION['role'] === 'resident') {
 $sys_stats = ['residents' => 0, 'documents' => 0, 'incidents' => 0];
 try {
 	$stat_pdo = get_db_connection();
-	$sys_stats['residents'] = $stat_pdo->query("SELECT COUNT(*) FROM residents")->fetchColumn();
+	$sys_stats['residents'] = (int)$stat_pdo->query("
+		SELECT 
+			(SELECT COUNT(*) FROM users WHERE role = 'resident') +
+			(SELECT COUNT(*) FROM family_members) +
+			(SELECT COUNT(*) FROM resident_records rr 
+			 WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name)))
+	")->fetchColumn();
 	$sys_stats['documents'] = $stat_pdo->query("SELECT COUNT(*) FROM document_requests")->fetchColumn();
 	$sys_stats['incidents'] = $stat_pdo->query("SELECT COUNT(*) FROM incidents")->fetchColumn();
 } catch (Exception $e) {
