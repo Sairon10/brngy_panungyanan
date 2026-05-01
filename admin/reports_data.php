@@ -181,11 +181,19 @@ switch ($type) {
 
     case 'summary':
         // Comprehensive stats for RBI Form C (Unified)
+        // Select only specific shared columns to avoid UNION mismatch errors
         $residents = $pdo->query("
-            SELECT r.*, u.full_name FROM residents r JOIN users u ON u.id = r.user_id WHERE u.role = 'resident'
+            SELECT r.birthdate, r.sex, r.civil_status, r.is_senior, r.is_pwd, r.is_solo_parent, r.occupation, r.classification, r.citizenship, u.full_name 
+            FROM residents r JOIN users u ON u.id = r.user_id 
+            WHERE u.role = 'resident'
+            
             UNION ALL
-            SELECT rr.*, rr.full_name FROM resident_records rr WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
+            
+            SELECT rr.birthdate, rr.sex, rr.civil_status, rr.is_senior, rr.is_pwd, rr.is_solo_parent, NULL as occupation, '' as classification, rr.citizenship, rr.full_name 
+            FROM resident_records rr 
+            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
         ")->fetchAll(PDO::FETCH_ASSOC);
+        
         $family = $pdo->query("SELECT fm.*, r.address, r.purok FROM family_members fm JOIN residents r ON fm.user_id = r.user_id")->fetchAll(PDO::FETCH_ASSOC);
         
         $all = array_merge($residents, $family);
