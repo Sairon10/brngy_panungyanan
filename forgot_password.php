@@ -185,6 +185,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<div class="col-md-7 bg-white">
 							<div class="p-4 p-md-5">
 								<div class="mb-4 text-center text-md-start">
+									<a href="index.php" class="text-decoration-none small text-black fw-semibold">
+										<i class="fas fa-arrow-left me-1"></i>
+									</a>
 									<h1 class="h3 fw-bold mb-1">Forgot Password?</h1>
 									<p class="text-muted small mb-0">Choose how you want to receive your reset link.</p>
 								</div>
@@ -220,7 +223,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 									<!-- Email Input -->
 									<div class="mb-3" id="emailField" style="<?php echo $selectedMethod === 'sms' ? 'display:none;' : ''; ?>">
-										<label class="form-label fw-semibold text-secondary small text-uppercase">Email Address</label>
+										<label class="form-label fw-semibold small text-uppercase">Email Address</label>
 										<input type="email" name="identifier" id="emailInput" class="form-control form-control-lg"
 											placeholder="name@example.com"
 											value="<?php echo $selectedMethod === 'email' ? htmlspecialchars($_POST['identifier'] ?? '') : ''; ?>">
@@ -245,13 +248,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<i class="fas fa-paper-plane me-2"></i><span id="submitLabel">Send Reset Link</span>
 									</button>
 								</div>
-									<div class="text-center">
-										<p class="text-muted small mb-0">
-											<a href="login.php" class="text-success fw-semibold text-decoration-none">
-												<i class="fas fa-arrow-left me-1"></i>Back to Login
-											</a>
-										</p>
-									</div>
 								</form>
 							</div>
 						</div>
