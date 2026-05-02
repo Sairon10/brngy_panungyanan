@@ -152,7 +152,7 @@ require_once __DIR__ . '/header.php';
                     </div>
                     <h2 class="text-white fw-800 mb-1" style="font-size: 1.75rem; letter-spacing: -0.5px;"><?php echo htmlspecialchars($admin['full_name']); ?></h2>
                     <div class="d-flex flex-column align-items-center gap-2">
-                        <span class="badge bg-white text-teal px-3 py-2 rounded-pill" style="color: #14b8a6; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">
+                        <span class="badge bg-white text-secondary px-3 py-2 rounded-pill" style="font-size: 0.65rem; font-weight: 800; letter-spacing: 0.5px;">
                             <?php echo ($_SESSION['user_id'] == 1) ? 'SYSTEM ADMINISTRATOR' : 'SUB-ADMINISTRATOR'; ?>
                         </span>
                         <span class="badge bg-success text-white px-3 py-1.5 rounded-pill shadow-sm" style="font-size: 0.6rem; font-weight: 800;"><i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i>ACTIVE</span>
@@ -171,7 +171,7 @@ require_once __DIR__ . '/header.php';
                         
                         <!-- SECTION: PERSONAL -->
                         <div class="mb-4">
-                            <h6 class="fw-800 mb-3 d-flex align-items-center gap-2" style="color: #475569; font-size: 0.85rem;">
+                            <h6 class="fw-800 mb-3 d-flex align-items-center gap-2" style="font-size: 0.85rem;">
                                 <span style="width: 3px; height: 16px; background: #14b8a6; display: inline-block; border-radius: 10px;"></span>
                                 Personal Details
                             </h6>
@@ -225,7 +225,7 @@ require_once __DIR__ . '/header.php';
 
                         <!-- SECTION: CONTACT -->
                         <div class="mb-4">
-                            <h6 class="fw-800 mb-3 d-flex align-items-center gap-2" style="color: #475569; font-size: 0.85rem;">
+                            <h6 class="fw-800 mb-3 d-flex align-items-center gap-2" style="font-size: 0.85rem;">
                                 <span style="width: 3px; height: 16px; background: #14b8a6; display: inline-block; border-radius: 10px;"></span>
                                 Contact & Location
                             </h6>
@@ -234,7 +234,7 @@ require_once __DIR__ . '/header.php';
                                     <div class="info-card">
                                         <div class="section-label"><i class="fas fa-envelope"></i> Email Address</div>
                                         <?php if ($is_editing): ?><input type="email" name="email" class="form-control" value="<?php echo htmlspecialchars($admin['email']); ?>" required>
-                                        <?php else: ?><div class="info-value" style="color: #14b8a6;"><?php echo htmlspecialchars($admin['email']); ?></div><?php endif; ?>
+                                        <?php else: ?><div class="info-value text-secondary"><?php echo htmlspecialchars($admin['email']); ?></div><?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="col-md-6">

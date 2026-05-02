@@ -126,7 +126,7 @@ $display_rows = array_slice($rows, $offset, $limit);
 <div class="mb-4">
     <div class="row align-items-center">
         <div class="col-md-6">
-            <h4 class="fw-800 mb-1" style="color: #1e293b;">Sub-admin Management</h4>
+            <h4 class="fw-800 mb-1 text-dark">Sub-admin Management</h4>
             <p class="text-muted small mb-0">View and manage administrative staff accounts</p>
         </div>
         <div class="col-md-6 text-md-end">

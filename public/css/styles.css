@@ -15,6 +15,25 @@
   --white: #ffffff;
   --success: #10b981;
   --font-sans: 'Manrope', sans-serif;
+
+  /* Bootstrap Default Variable Overrides */
+  --bs-primary: var(--primary);
+  --bs-primary-rgb: 15, 118, 110;
+  
+  --bs-secondary: var(--secondary);
+  --bs-secondary-rgb: 20, 184, 166;
+  
+  --bs-success: var(--success);
+  --bs-success-rgb: 16, 185, 129;
+  
+  --bs-warning: var(--accent);
+  --bs-warning-rgb: 245, 158, 11;
+  
+  --bs-dark: var(--dark);
+  --bs-dark-rgb: 30, 41, 59;
+  
+  --bs-light: var(--light);
+  --bs-light-rgb: 248, 250, 252;
 }
 
 html {

@@ -394,7 +394,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 									
 									<!-- Step 1: Personal Information (Name) -->
 									<div class="step-content" data-step="1">
-										<h5 class="mb-4 fw-semibold" style="color: #0f766e;">Personal Information</h5>
+										<h5 class="mb-4 fw-semibold text-primary">Personal Information</h5>
 										<div class="row g-3">
 											<div class="col-md-12">
 												<label class="form-label fw-semibold text-secondary small text-uppercase">First Name <span class="text-danger">*</span></label>
@@ -417,7 +417,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 									<!-- Step 2: Personal Details -->
 									<div class="step-content d-none" data-step="2">
-										<h5 class="mb-4 fw-semibold" style="color: #0f766e;">Personal Details</h5>
+										<h5 class="mb-4 fw-semibold text-primary">Personal Details</h5>
 										<div class="row g-3">
 											<div class="col-md-6">
 												<label class="form-label fw-semibold text-secondary small text-uppercase">Birthdate <span class="text-danger">*</span></label>
@@ -478,7 +478,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 									<!-- Step 3: Contact Information -->
 									<div class="step-content d-none" data-step="3">
-										<h5 class="mb-4 fw-semibold" style="color: #0f766e;">Contact Information</h5>
+										<h5 class="mb-4 fw-semibold text-primary">Contact Information</h5>
 										<div class="row g-3">
 											<div class="col-12">
 												<label class="form-label fw-semibold text-secondary small text-uppercase">Email Address <span class="text-danger">*</span></label>
@@ -519,7 +519,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 									<!-- Step 4: Security (Password) -->
 									<div class="step-content d-none" data-step="4">
-										<h5 class="mb-4 fw-semibold" style="color: #0f766e;">Create Password</h5>
+										<h5 class="mb-4 fw-semibold text-primary">Create Password</h5>
 										<div class="row g-3">
 											<div class="col-md-12">
 												<label class="form-label fw-semibold text-secondary small text-uppercase">Password</label>
