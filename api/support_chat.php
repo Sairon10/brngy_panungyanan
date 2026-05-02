@@ -186,16 +186,14 @@ try {
             ");
             $stmt->execute([$chatId, $senderId, $senderType, $message]);
             
-            // Update chat
-            $pdo->prepare("
-                UPDATE support_chats 
-                SET last_message_at = NOW(), 
-                    status = CASE 
-                        WHEN status = 'waiting' AND ? = 'admin' THEN 'active'
-                        ELSE status
-                    END
-                WHERE id = ?
-            ")->execute([$senderType, $chatId]);
+            // Update chat status and activity
+            if ($senderType === 'admin' && $chat['status'] === 'waiting') {
+                $pdo->prepare("UPDATE support_chats SET last_message_at = NOW(), status = 'active' WHERE id = ?")
+                    ->execute([$chatId]);
+            } else {
+                $pdo->prepare("UPDATE support_chats SET last_message_at = NOW() WHERE id = ?")
+                    ->execute([$chatId]);
+            }
             
             // Send In-App Notification
             if ($senderType === 'user') {
