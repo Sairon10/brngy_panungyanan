@@ -61,6 +61,7 @@ h6 {
 a {
   text-decoration: none;
   transition: all 0.2s ease;
+  color: var(--primary);
 }
 
 /* Navbar */
@@ -311,7 +312,7 @@ a {
   }
 }
 
-.btn.btn-primary {
+.btn-primary {
   --bs-btn-color: #fff;
   --bs-btn-bg: var(--primary);
   --bs-btn-border-color: var(--primary);
