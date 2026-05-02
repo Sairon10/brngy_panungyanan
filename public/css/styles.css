@@ -314,12 +314,23 @@ a {
 .btn-primary {
   background-color: var(--primary);
   border-color: var(--primary);
+  color: var(--white);
 }
 
 .btn-primary:hover {
   background-color: var(--primary-dark);
   border-color: var(--primary-dark);
+  color: var(--white);
   transform: translateY(-1px);
+}
+
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+  color: var(--white) !important;
+  box-shadow: 0 0 0 0.25rem rgba(15, 118, 110, 0.25) !important;
 }
 
 .btn-outline-primary {
@@ -332,6 +343,15 @@ a {
   border-color: var(--primary-dark);
   color: white;
   transform: translateY(-1px);
+}
+
+.btn-outline-primary:focus,
+.btn-outline-primary:active,
+.btn-outline-primary.active {
+  background-color: var(--primary-dark) !important;
+  border-color: var(--primary-dark) !important;
+  color: white !important;
+  box-shadow: 0 0 0 0.25rem rgba(15, 118, 110, 0.25) !important;
 }
 
 /* Login/Auth Pages */
@@ -347,15 +367,21 @@ a {
 
 /* Fix for password toggle input group focus state */
 .input-group:focus-within .input-group-text {
-  border-color: #86b7fe;
+  border-color: var(--secondary);
 }
 .input-group:focus-within .form-control {
-  border-color: #86b7fe;
+  border-color: var(--secondary);
   box-shadow: none;
 }
 .input-group:focus-within {
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  box-shadow: 0 0 0 0.25rem rgba(15, 118, 110, 0.25);
   border-radius: 0.5rem;
+}
+
+/* Override default form control focus */
+.form-control:focus, .form-select:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 0.25rem rgba(15, 118, 110, 0.25);
 }
 
 .login-logo-section::after {
