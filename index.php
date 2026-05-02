@@ -44,14 +44,14 @@ require_once __DIR__ . '/partials/header.php';
 					<small class="fw-bold text-success text-uppercase tracking-wider">Official Barangay Portal</small>
 				</div>
 				<h1 class="display-4 fw-extrabold mb-4 lh-tight text-dark">
-					Barangay <span class="text-success">Panungyanan</span><br>
+					Barangay <span class="text-primary">Panungyanan</span><br>
 					Digital Services
 				</h1>
-				<p class="lead mb-5 text-secondary pe-lg-5">
+				<p class="lead mb-5 text-dark pe-lg-5">
 					Streamlined public services for a connected community. Request documents, report concerns, and stay
 					updated all in one secure platform.
 				</p>
-				<div class="mt-5 d-flex gap-4 text-muted small">
+				<div class="mt-5 d-flex gap-4 text-dark small">
 					<div class="d-flex align-items-center gap-2">
 						<i class="fas fa-check-circle text-success"></i> Fast Processing
 					</div>
@@ -82,21 +82,21 @@ require_once __DIR__ . '/partials/header.php';
 				<div class="p-3">
 					<h3 class="display-5 fw-bold text-dark mb-1"><?php echo number_format($sys_stats['residents']); ?>
 					</h3>
-					<p class="text-secondary small fw-bold text-uppercase tracking-wide mb-0">Residents</p>
+					<p class="text-dark small fw-bold text-uppercase tracking-wide mb-0">Residents</p>
 				</div>
 			</div>
 			<div class="col-md-3 col-6 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
 				<div class="p-3">
 					<h3 class="display-5 fw-bold text-dark mb-1"><?php echo number_format($sys_stats['documents']); ?>
 					</h3>
-					<p class="text-secondary small fw-bold text-uppercase tracking-wide mb-0">Documents</p>
+					<p class="text-dark small fw-bold text-uppercase tracking-wide mb-0">Documents</p>
 				</div>
 			</div>
 			<div class="col-md-3 col-6 animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
 				<div class="p-3">
 					<h3 class="display-5 fw-bold text-dark mb-1"><?php echo number_format($sys_stats['incidents']); ?>
 					</h3>
-					<p class="text-secondary small fw-bold text-uppercase tracking-wide mb-0">Incident Reports</p>
+					<p class="text-dark small fw-bold text-uppercase tracking-wide mb-0">Incident Reports</p>
 				</div>
 			</div>
 		</div>
@@ -109,7 +109,7 @@ require_once __DIR__ . '/partials/header.php';
 		<div class="row mb-5">
 			<div class="col-lg-6 mx-auto text-center animate__animated animate__fadeInUp">
 				<h2 class="mb-3">Essential Services</h2>
-				<p class="lead text-secondary">Everything you need to interact with your barangay, simplified.</p>
+				<p class="lead text-dark">Everything you need to interact with your barangay, simplified.</p>
 			</div>
 		</div>
 		<div class="row g-4">
@@ -119,9 +119,9 @@ require_once __DIR__ . '/partials/header.php';
 						<i class="fas fa-file-contract"></i>
 					</div>
 					<h4>Document Processing</h4>
-					<p class="text-secondary mb-4">Request and track certificates, clearances, and permits from the
+					<p class="text-dark mb-4">Request and track certificates, clearances, and permits from the
 						comfort of your home.</p>
-					<ul class="list-unstyled mb-0 small text-secondary">
+					<ul class="list-unstyled mb-0 small text-dark">
 						<li class="mb-2"><i class="fas fa-check text-primary me-2"></i>Barangay Clearance</li>
 						<li class="mb-2"><i class="fas fa-check text-primary me-2"></i>Indigency Certificate</li>
 						<li><i class="fas fa-check text-primary me-2"></i>Certificate of Residency</li>
@@ -134,9 +134,9 @@ require_once __DIR__ . '/partials/header.php';
 						<i class="fas fa-shield-alt"></i>
 					</div>
 					<h4>Incident Reporting</h4>
-					<p class="text-secondary mb-4">Direct line to barangay safety officers for emergencies and community
+					<p class="text-dark mb-4">Direct line to barangay safety officers for emergencies and community
 						concerns.</p>
-					<ul class="list-unstyled mb-0 small text-secondary">
+					<ul class="list-unstyled mb-0 small text-dark">
 						<li class="mb-2"><i class="fas fa-check text-warning me-2"></i>24/7 Monitoring</li>
 						<li class="mb-2"><i class="fas fa-check text-warning me-2"></i>GPS Location Tagging</li>
 						<li><i class="fas fa-check text-warning me-2"></i>Real-time Updates</li>
@@ -149,9 +149,9 @@ require_once __DIR__ . '/partials/header.php';
 						<i class="fas fa-id-card"></i>
 					</div>
 					<h4>Digital Identity</h4>
-					<p class="text-secondary mb-4">Secure digital verification system for all registered residents of
+					<p class="text-dark mb-4">Secure digital verification system for all registered residents of
 						the barangay.</p>
-					<ul class="list-unstyled mb-0 small text-secondary">
+					<ul class="list-unstyled mb-0 small text-dark">
 						<li class="mb-2"><i class="fas fa-check text-info me-2"></i>QR Code Access</li>
 						<li class="mb-2"><i class="fas fa-check text-info me-2"></i>Instant Verification</li>
 						<li><i class="fas fa-check text-info me-2"></i>Profile Management</li>
@@ -171,7 +171,7 @@ require_once __DIR__ . '/partials/header.php';
 					class="d-inline-block py-1 px-3 rounded-pill bg-primary bg-opacity-10 text-primary fw-bold text-uppercase small tracking-wide mb-3">About
 					Us</span>
 				<h2 class=" fw-extrabold mb-3">Barangay Panungyanan</h2>
-				<p class="lead text-secondary">Our commitment to serving the community with excellence and integrity</p>
+				<p class="lead text-dark">Our commitment to serving the community with excellence and integrity</p>
 			</div>
 		</div>
 
@@ -187,7 +187,7 @@ require_once __DIR__ . '/partials/header.php';
 							</div>
 							<h3 class="fw-bold mb-0 text-dark">MISSION</h3>
 						</div>
-						<p class="text-secondary mb-0 lh-lg">
+						<p class="text-dark mb-0 lh-lg">
 							To provide efficient, transparent, and responsive public service; maintain peace and order;
 							promote social justice and community participation; and implement sustainable programs that
 							improve the quality of life of all residents.
@@ -207,7 +207,7 @@ require_once __DIR__ . '/partials/header.php';
 							</div>
 							<h3 class="fw-bold mb-0 text-dark">VISION</h3>
 						</div>
-						<p class="text-secondary mb-0 lh-lg">
+						<p class="text-dark mb-0 lh-lg">
 							A peaceful, progressive, and united community with empowered citizens, effective leadership,
 							sustainable development, and a high quality of life for all.
 						</p>
@@ -226,7 +226,7 @@ require_once __DIR__ . '/partials/header.php';
 							</div>
 							<h3 class="fw-bold mb-0 text-dark">SERVICE PLEDGE</h3>
 						</div>
-						<p class="text-secondary mb-0 lh-lg">
+						<p class="text-dark mb-0 lh-lg">
 							We commit to serving our community with honesty, fairness, transparency, and compassion,
 							ensuring the efficient and respectful delivery of basic services, maintaining peace and
 							order, listening and responding to the needs of our residents, promoting unity and active
@@ -248,7 +248,7 @@ require_once __DIR__ . '/partials/header.php';
 							</div>
 							<h3 class="fw-bold mb-0 text-dark">ON VICINITY</h3>
 						</div>
-						<p class="text-secondary mb-0 lh-lg">
+						<p class="text-dark mb-0 lh-lg">
 							The Barangay shall maintain a clean, safe, organized, and environmentally friendly vicinity
 							within and around the barangay hall to ensure the comfort, health, and security of all
 							residents, employees, and visitors. Smoking is strictly prohibited, proper waste segregation
