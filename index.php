@@ -168,7 +168,7 @@ require_once __DIR__ . '/partials/header.php';
 		<div class="row mb-5">
 			<div class="col-lg-8 mx-auto text-center animate__animated animate__fadeInUp">
 				<span
-					class="d-inline-block py-1 px-3 rounded-pill bg-primary bg-opacity-10 text-primary fw-bold text-uppercase small tracking-wide mb-3">About
+					class="d-inline-block py-1 px-3 rounded-pill bg-secondary bg-opacity-10 text-primary fw-bold text-uppercase small tracking-wide mb-3">About
 					Us</span>
 				<h2 class=" fw-extrabold mb-3">Barangay Panungyanan</h2>
 				<p class="lead text-dark">Our commitment to serving the community with excellence and integrity</p>
@@ -182,7 +182,7 @@ require_once __DIR__ . '/partials/header.php';
 					<div class="card-body p-4">
 						<div class="d-flex align-items-center gap-3 mb-4">
 							<div
-								class="width-12 height-12 rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center">
+								class="width-12 height-12 rounded-3 bg-secondary bg-opacity-10 text-primary d-flex align-items-center justify-content-center">
 								<i class="fas fa-bullseye fa-lg"></i>
 							</div>
 							<h3 class="fw-bold mb-0 text-dark">MISSION</h3>
