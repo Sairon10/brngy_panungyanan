@@ -143,14 +143,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 								<form method="post" novalidate>
 									<?php echo csrf_field(); ?>
 									<div class="mb-3">
-										<label class="form-label fw-semibold text-secondary small text-uppercase">Email Address</label>
-										<input type="email" name="email" class="form-control form-control-lg"
+										<label class="form-label fw-semibold small text-uppercase">Email Address</label>
+										<input type="email" name="email" class="form-control"
 											placeholder="name@example.com" required>
 									</div>
 									<div class="mb-4">
 										<div class="d-flex justify-content-between align-items-center mb-1">
 											<label
-												class="form-label fw-semibold text-secondary small text-uppercase mb-0">Password</label>
+												class="form-label fw-semibold small text-uppercase mb-0">Password</label>
 											<a href="forgot_password.php"
 												class="text-decoration-none small text-primary fw-semibold">Forgot
 												password?</a>

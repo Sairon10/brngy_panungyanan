@@ -343,7 +343,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<div class="col-md-8 bg-white">
 							<div class="p-4 p-md-5">
 								<div class="mb-4 text-center text-md-start">
-									<!-- Back to Home Button -->
 									<a href="index.php" class="text-decoration-none small text-black fw-semibold">
 										<i class="fas fa-arrow-left me-1"></i>
 									</a>
@@ -401,20 +400,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<h5 class="mb-4 fw-semibold text-primary">Personal Information</h5>
 										<div class="row g-3">
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">First Name <span class="text-danger">*</span></label>
-												<input type="text" name="first_name" id="first_name" class="form-control form-control-lg" placeholder="e.g. Juan" value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>" required>
+												<label class="form-label fw-semibold small text-uppercase">First Name <span class="text-danger">*</span></label>
+												<input type="text" name="first_name" id="first_name" class="form-control" placeholder="e.g. Juan" value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>" required>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Last Name <span class="text-danger">*</span></label>
-												<input type="text" name="last_name" id="last_name" class="form-control form-control-lg" placeholder="e.g. Dela Cruz" value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>" required>
+												<label class="form-label fw-semibold small text-uppercase">Last Name <span class="text-danger">*</span></label>
+												<input type="text" name="last_name" id="last_name" class="form-control" placeholder="e.g. Dela Cruz" value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>" required>
 											</div>
 											<div class="col-md-8">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Middle Name</label>
-												<input type="text" name="middle_name" id="middle_name" class="form-control form-control-lg" placeholder="e.g. Santos" value="<?php echo htmlspecialchars($_POST['middle_name'] ?? ''); ?>">
+												<label class="form-label fw-semibold small text-uppercase">Middle Name</label>
+												<input type="text" name="middle_name" id="middle_name" class="form-control" placeholder="e.g. Santos" value="<?php echo htmlspecialchars($_POST['middle_name'] ?? ''); ?>">
 											</div>
 											<div class="col-md-4">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Suffix</label>
-												<input type="text" name="suffix" id="suffix" class="form-control form-control-lg" placeholder="e.g. Jr., Sr., III" value="<?php echo htmlspecialchars($_POST['suffix'] ?? ''); ?>">
+												<label class="form-label fw-semibold small text-uppercase">Suffix</label>
+												<input type="text" name="suffix" id="suffix" class="form-control" placeholder="e.g. Jr., Sr., III" value="<?php echo htmlspecialchars($_POST['suffix'] ?? ''); ?>">
 											</div>
 										</div>
 									</div>
