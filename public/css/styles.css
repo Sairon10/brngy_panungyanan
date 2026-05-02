@@ -311,47 +311,38 @@ a {
   }
 }
 
-.btn-primary {
-  background-color: var(--primary);
-  border-color: var(--primary);
-  color: var(--white);
+.btn.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--primary);
+  --bs-btn-border-color: var(--primary);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--primary-dark);
+  --bs-btn-hover-border-color: var(--primary-dark);
+  --bs-btn-focus-shadow-rgb: 15, 118, 110;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--primary-dark);
+  --bs-btn-active-border-color: var(--primary-dark);
+  --bs-btn-active-shadow-rgb: 15, 118, 110;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: var(--primary);
+  --bs-btn-disabled-border-color: var(--primary);
 }
 
-.btn-primary:hover {
-  background-color: var(--primary-dark);
-  border-color: var(--primary-dark);
-  color: var(--white);
+.btn.btn-outline-primary {
+  --bs-btn-color: var(--primary);
+  --bs-btn-border-color: var(--primary);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--primary-dark);
+  --bs-btn-hover-border-color: var(--primary-dark);
+  --bs-btn-focus-shadow-rgb: 15, 118, 110;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--primary-dark);
+  --bs-btn-active-border-color: var(--primary-dark);
+  --bs-btn-active-shadow-rgb: 15, 118, 110;
+}
+
+.btn.btn-primary:hover, .btn.btn-outline-primary:hover {
   transform: translateY(-1px);
-}
-
-.btn-primary:focus,
-.btn-primary:active,
-.btn-primary.active {
-  background-color: var(--primary-dark) !important;
-  border-color: var(--primary-dark) !important;
-  color: var(--white) !important;
-  box-shadow: 0 0 0 0.25rem rgba(15, 118, 110, 0.25) !important;
-}
-
-.btn-outline-primary {
-  color: var(--primary);
-  border-color: var(--primary);
-}
-
-.btn-outline-primary:hover {
-  background-color: var(--primary-dark);
-  border-color: var(--primary-dark);
-  color: white;
-  transform: translateY(-1px);
-}
-
-.btn-outline-primary:focus,
-.btn-outline-primary:active,
-.btn-outline-primary.active {
-  background-color: var(--primary-dark) !important;
-  border-color: var(--primary-dark) !important;
-  color: white !important;
-  box-shadow: 0 0 0 0.25rem rgba(15, 118, 110, 0.25) !important;
 }
 
 /* Login/Auth Pages */
