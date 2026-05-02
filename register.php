@@ -343,6 +343,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						<div class="col-md-8 bg-white">
 							<div class="p-4 p-md-5">
 								<div class="mb-4 text-center text-md-start">
+									<!-- Back to Home Button -->
+									<a href="index.php" class="text-decoration-none small text-black fw-semibold">
+										<i class="fas fa-arrow-left me-1"></i>
+									</a>
 									<h1 class="h3 fw-bold mb-1">Create your account</h1>
 									<p class="text-muted small mb-0">It only takes a minute to get started.</p>
 								</div>
