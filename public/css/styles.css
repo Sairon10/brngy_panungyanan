@@ -1,4 +1,6 @@
-:root {
+:root,
+[data-bs-theme=light] {
+  /* Custom Color System */
   --primary: #0f766e;
   /* Teal 700 */
   --primary-dark: #0d5c56;
@@ -16,24 +18,33 @@
   --success: #10b981;
   --font-sans: 'Manrope', sans-serif;
 
-  /* Bootstrap Default Variable Overrides */
-  --bs-primary: var(--primary);
+  /* Bootstrap Theme Color Overrides */
+  --bs-primary: #0f766e;
   --bs-primary-rgb: 15, 118, 110;
-  
-  --bs-secondary: var(--secondary);
+
+  --bs-secondary: #14b8a6;
   --bs-secondary-rgb: 20, 184, 166;
-  
-  --bs-success: var(--success);
+
+  --bs-success: #10b981;
   --bs-success-rgb: 16, 185, 129;
-  
-  --bs-warning: var(--accent);
+
+  --bs-warning: #f59e0b;
   --bs-warning-rgb: 245, 158, 11;
-  
-  --bs-dark: var(--dark);
+
+  --bs-dark: #1e293b;
   --bs-dark-rgb: 30, 41, 59;
-  
-  --bs-light: var(--light);
+
+  --bs-light: #f8fafc;
   --bs-light-rgb: 248, 250, 252;
+
+  /* Bootstrap Link Color Overrides */
+  --bs-link-color: #0f766e;
+  --bs-link-color-rgb: 15, 118, 110;
+  --bs-link-hover-color: #0d5c56;
+  --bs-link-hover-color-rgb: 13, 92, 86;
+
+  /* Bootstrap Focus Ring Override */
+  --bs-focus-ring-color: rgba(15, 118, 110, 0.25);
 }
 
 html {
