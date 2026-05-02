@@ -144,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 									<?php echo csrf_field(); ?>
 									<div class="mb-3">
 										<label class="form-label fw-semibold small text-uppercase">Email Address</label>
-										<input type="email" name="email" class="form-control"
+										<input type="email" name="email" class="form-control form-control-lg"
 											placeholder="name@example.com" required>
 									</div>
 									<div class="mb-4">
@@ -170,8 +170,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 											In</button>
 									</div>
 									<div class="text-center">
-										<p class="text-muted small mb-0">Don't have an account? <a href="register.php"
-												class="text-primary fw-semibold text-decoration-none">Create account</a>
+										<p class="text-muted small mb-0">Don't have an account? 
+											<a href="register.php"
+												class="text-primary fw-semibold text-decoration-none">
+												Create account
+											</a>
 										</p>
 									</div>
 								</form>

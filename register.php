@@ -572,7 +572,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 									</div>
 
 									<div class="text-center mt-3">
-										<p class="text-muted small mb-0">Already have an account? <a href="login.php" class="text-primary fw-semibold text-decoration-none">Sign in</a></p>
+										<p class="text-muted small mb-0">Already have an account? 
+											<a href="login.php" 
+												class="text-primary fw-semibold text-decoration-none">
+												Sign in
+											</a>
+										</p>
 									</div>
 								</form>
 							</div>
