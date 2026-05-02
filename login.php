@@ -152,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 											<label
 												class="form-label fw-semibold text-secondary small text-uppercase mb-0">Password</label>
 											<a href="forgot_password.php"
-												class="text-decoration-none small text-success fw-semibold">Forgot
+												class="text-decoration-none small text-primary fw-semibold">Forgot
 												password?</a>
 										</div>
 										<div class="input-group input-group-lg">
@@ -166,12 +166,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										</div>
 									</div>
 									<div class="d-grid mb-3">
-										<button type="submit" class="btn btn-success btn-md">Sign
+										<button type="submit" class="btn btn-primary btn-md">Sign
 											In</button>
 									</div>
 									<div class="text-center">
 										<p class="text-muted small mb-0">Don't have an account? <a href="register.php"
-												class="text-success fw-semibold text-decoration-none">Create account</a>
+												class="text-primary fw-semibold text-decoration-none">Create account</a>
 										</p>
 									</div>
 								</form>

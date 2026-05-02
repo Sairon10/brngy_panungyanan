@@ -557,13 +557,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 									<!-- Navigation Buttons -->
 									<div class="d-flex justify-content-between mt-4">
-										<button type="button" class="btn btn-outline-secondary btn-lg rounded-pill" id="prevBtn" style="display: none;">
+										<button type="button" class="btn btn-outline-secondary btn-md" id="prevBtn" style="display: none;">
 											<i class="fas fa-arrow-left me-2"></i>Previous
 										</button>
-										<button type="button" class="btn btn-primary btn-lg rounded-pill ms-auto" id="nextBtn">
+										<button type="button" class="btn btn-primary btn-md ms-auto" id="nextBtn">
 											Next<i class="fas fa-arrow-right ms-2"></i>
 										</button>
-										<button type="submit" class="btn btn-primary btn-lg rounded-pill ms-auto" id="submitBtn" style="display: none;">
+										<button type="submit" class="btn btn-primary btn-md ms-auto" id="submitBtn" style="display: none;">
 											Create Account<i class="fas fa-check ms-2"></i>
 										</button>
 									</div>
