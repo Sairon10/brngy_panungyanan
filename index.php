@@ -39,7 +39,7 @@ require_once __DIR__ . '/partials/header.php';
 		<div class="row align-items-center min-vh-75">
 			<div class="col-lg-6 order-lg-1 order-2 animate__animated animate__fadeInLeft">
 				<div
-					class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-teal-50 border border-teal-100 mb-4">
+					class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-light border border-secondary border-opacity-10 mb-4">
 					<span class="d-inline-block width-2 height-2 rounded-circle bg-success"></span>
 					<small class="fw-bold text-success text-uppercase tracking-wider">Official Barangay Portal</small>
 				</div>
@@ -239,11 +239,11 @@ require_once __DIR__ . '/partials/header.php';
 
 			<!-- On Vicinity -->
 			<div class="col-lg-12 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
-				<div class="card border-0 shadow-sm rounded-4 bg-teal-50">
+				<div class="card border-0 shadow-sm rounded-4 bg-light">
 					<div class="card-body p-4">
 						<div class="d-flex align-items-center gap-3 mb-4">
 							<div
-								class="width-12 height-12 rounded-3 bg-teal-600 text-white d-flex align-items-center justify-content-center">
+								class="width-12 height-12 rounded-3 bg-dark text-white d-flex align-items-center justify-content-center">
 								<i class="fas fa-building fa-lg"></i>
 							</div>
 							<h3 class="fw-bold mb-0 text-dark">ON VICINITY</h3>

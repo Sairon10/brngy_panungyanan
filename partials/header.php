@@ -56,7 +56,7 @@ if (is_logged_in()) {
 					<div class="dropdown d-lg-none">
 						<a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-1 pe-2 rounded-pill user-pill shadow-sm"
 							href="#" id="userDropdownMobile" role="button" data-bs-toggle="dropdown"
-							aria-expanded="false" style="background: rgba(20, 184, 166, 0.05); border: 1px solid rgba(20, 184, 166, 0.1);">
+							aria-expanded="false" style="background: rgba(0, 0, 0, 0.03); border: 1px solid rgba(0, 0, 0, 0.08);">
 							<?php if (!empty($user_avatar)): ?>
 								<img src="/<?php echo htmlspecialchars($user_avatar); ?>" alt="Profile"
 									class="avatar-circle"
@@ -176,7 +176,7 @@ if (is_logged_in()) {
 							<li class="nav-item dropdown d-none d-lg-flex align-items-center">
 								<a class="nav-link dropdown-toggle d-flex align-items-center gap-2 p-1 pe-2 pe-md-3 rounded-pill user-pill shadow-sm"
 									href="#" id="userDropdown" role="button" data-bs-toggle="dropdown"
-									aria-expanded="false" style="background: rgba(20, 184, 166, 0.05); border: 1px solid rgba(20, 184, 166, 0.1);">
+									aria-expanded="false" style="background: rgba(0, 0, 0, 0.03); border: 1px solid rgba(0, 0, 0, 0.08);">
 									<?php if (!empty($user_avatar)): ?>
 										<img src="/<?php echo htmlspecialchars($user_avatar); ?>" alt="Profile"
 											class="avatar-circle"

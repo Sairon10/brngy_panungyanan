@@ -583,7 +583,7 @@ $display_records = array_slice($unified_records, $offset, $limit);
                             <?php else: ?>
                                 <span
                                     class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-1"
-                                    style="font-size: 0.75rem;">Hindi Verified</span>
+                                    style="font-size: 0.75rem;">Not Verified</span>
                             <?php endif; ?>
                         </td>
                         <td class="text-center">

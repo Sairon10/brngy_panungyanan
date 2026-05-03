@@ -423,12 +423,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<h5 class="mb-4 fw-semibold text-primary">Personal Details</h5>
 										<div class="row g-3">
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Birthdate <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birthdate <span class="text-danger">*</span></label>
 												<input type="date" name="birthdate" id="birthdate" class="form-control form-control-lg" value="<?php echo htmlspecialchars($_POST['birthdate'] ?? ''); ?>" required>
 												<div class="form-text small text-muted">Must be at least 18 years old</div>
 											</div>
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Sex <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Sex <span class="text-danger">*</span></label>
 												<select name="sex" id="sex" class="form-select form-select-lg" required>
 													<option value="">Select Sex</option>
 													<option value="Male" <?php echo (isset($_POST['sex']) && $_POST['sex'] === 'Male') ? 'selected' : ''; ?>>Male</option>
@@ -436,11 +436,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 												</select>
 											</div>
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Citizenship <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Citizenship <span class="text-danger">*</span></label>
 												<input type="text" name="citizenship" id="citizenship" class="form-control form-control-lg" placeholder="e.g. Filipino" value="<?php echo htmlspecialchars($_POST['citizenship'] ?? ''); ?>" required>
 											</div>
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Civil Status <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Civil Status <span class="text-danger">*</span></label>
 												<select name="civil_status" id="civil_status" class="form-select form-select-lg" required>
 													<option value="">Select Civil Status</option>
 													<option value="Single" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Single') ? 'selected' : ''; ?>>Single</option>
@@ -451,7 +451,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 												</select>
 											</div>
 											<div class="col-12 mt-2">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Special Classification (Optional)</label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Special Classification (Optional)</label>
 												<div class="d-flex flex-wrap gap-3 mt-1">
 													<div class="classify-inline-item">
 														<input type="checkbox" name="is_solo_parent" id="is_solo_parent" value="1" class="classify-inline-check" <?php echo isset($_POST['is_solo_parent']) ? 'checked' : ''; ?>>
@@ -484,37 +484,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<h5 class="mb-4 fw-semibold text-primary">Contact Information</h5>
 										<div class="row g-3">
 											<div class="col-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Email Address <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Email Address <span class="text-danger">*</span></label>
 												<input type="email" name="email" id="email" class="form-control form-control-lg" placeholder="name@example.com" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
 											</div>
 											<div class="col-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Phone Number <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Phone Number <span class="text-danger">*</span></label>
 												<input type="tel" name="phone" id="phone" class="form-control form-control-lg" placeholder="e.g. 09123456789" value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>" required maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Province <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Province <span class="text-danger">*</span></label>
 												<select name="province" id="province" class="form-select form-select-lg" required>
 													<option value="">Select Province</option>
 												</select>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Municipality <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Municipality <span class="text-danger">*</span></label>
 												<select name="municipality" id="municipality" class="form-select form-select-lg" required disabled>
 													<option value="">Select Municipality</option>
 												</select>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Barangay <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Barangay <span class="text-danger">*</span></label>
 												<select name="barangay" id="barangay" class="form-select form-select-lg" required disabled>
 													<option value="">Select Barangay</option>
 												</select>
 											</div>
 											<div class="col-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Purok <span class="text-danger">*</span></label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok <span class="text-danger">*</span></label>
 												<input type="text" name="purok" id="purok" class="form-control form-control-lg" placeholder="e.g. Purok 1, Purok 2" value="<?php echo htmlspecialchars($_POST['purok'] ?? ''); ?>" required>
 											</div>
 											<div class="col-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Household/Block/lot/street</label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Household/Block/lot/street</label>
 												<input type="text" name="street" id="street" class="form-control form-control-lg" placeholder="e.g. Blk 1 Lot 2 Phase 3" value="<?php echo htmlspecialchars($_POST['street'] ?? ''); ?>">
 											</div>
 										</div>
@@ -525,7 +525,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<h5 class="mb-4 fw-semibold text-primary">Create Password</h5>
 										<div class="row g-3">
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Password</label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Password</label>
 												<div class="input-group input-group-lg">
 													<input type="password" name="password" id="password" class="form-control border-end-0" placeholder="••••••••" required minlength="8">
 													<span class="input-group-text bg-white border-start-0" id="togglePassword" style="cursor: pointer;">
@@ -534,7 +534,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 												</div>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-secondary small text-uppercase">Confirm Password</label>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Confirm Password</label>
 												<div class="input-group input-group-lg">
 													<input type="password" name="confirm_password" id="confirmPassword" class="form-control border-end-0" placeholder="••••••••" required>
 													<span class="input-group-text bg-white border-start-0" id="toggleConfirmPassword" style="cursor: pointer;">

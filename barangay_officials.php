@@ -18,7 +18,7 @@ require_once __DIR__ . '/partials/header.php';
     .member-photo { width: 140px; height: 180px; }
     
     .official-name { font-weight: 800; margin-bottom: 0.2rem; font-size: 0.95rem; text-transform: uppercase; color: #1e293b; }
-    .official-pos { font-size: 0.7rem; font-weight: 700; color: #14b8a6; opacity: 1; letter-spacing: 1px; text-transform: uppercase; }
+    .official-pos { font-size: 0.7rem; font-weight: 700; color: #475569; opacity: 0.9; letter-spacing: 1px; text-transform: uppercase; }
 
     .council-grid { max-width: 900px; margin: 3rem auto; display: flex; flex-wrap: wrap; justify-content: center; gap: 2rem; }
     .council-item { width: calc(25% - 2rem); min-width: 180px; flex-shrink: 0; padding: 15px; border-radius: 15px; background: #fff; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
@@ -31,7 +31,7 @@ require_once __DIR__ . '/partials/header.php';
             <i class="fas fa-user-shield me-1"></i> Governance
         </span>
         <h1 class="display-5 fw-bold mb-2">Barangay Officials</h1>
-        <p class="text-secondary lead">Dedicated leaders serving the community of Barangay Panungyanan.</p>
+        <p class="text-muted lead">Dedicated leaders serving the community of Barangay Panungyanan.</p>
     </div>
 
     <!-- CAPTAIN -->
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
-    .text-teal { color: #14b8a6 !important; }
+    .text-teal { color: #475569 !important; }
 </style>
 
 <?php require_once __DIR__ . '/partials/footer.php'; ?>
