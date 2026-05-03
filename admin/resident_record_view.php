@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     $is_verified = ($is_family_member || ($record['id'] ?? 0) > 0 || (($linked_resident['verification_status'] ?? '') === 'verified'));
                     ?>
                     <span class="badge <?php echo $is_verified ? 'bg-success' : 'bg-danger'; ?>">
-                        <?php echo $is_verified ? 'Verified' : 'Hindi Verified'; ?>
+                        <?php echo $is_verified ? 'Verified' : 'Unverified'; ?>
                     </span>
                 </p>
             </div>
@@ -697,7 +697,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             $is_verified = ($is_family_member || ($record['id'] ?? 0) > 0 || (($linked_resident['verification_status'] ?? '') === 'verified'));
                             ?>
                             <span class="badge <?php echo $is_verified ? 'bg-success' : 'bg-danger'; ?>">
-                                <?php echo $is_verified ? 'Verified' : 'Hindi Verified'; ?>
+                                <?php echo $is_verified ? 'Verified' : 'Unverified'; ?>
                             </span>
                         </div>
                     </div>
