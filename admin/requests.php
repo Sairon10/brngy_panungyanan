@@ -784,7 +784,7 @@ require_once __DIR__ . '/header.php';
 								</td>
 								<?php endif; ?>
 								<!-- # -->
-								<td class="<?php echo $show_request_checkboxes ? '' : 'ps-3 '; ?>text-secondary fw-semibold"><?php echo $row_number++; ?></td>
+								<td class="<?php echo $show_request_checkboxes ? '' : 'ps-3 '; ?>text-dark fw-semibold"><?php echo $row_number++; ?></td>
 								<!-- Name -->
 								<td>
 									<?php if ($is_fm): ?>
@@ -812,7 +812,7 @@ require_once __DIR__ . '/header.php';
 									</div>
 								</td>
 								<!-- Date -->
-								<td class="text-secondary small">
+								<td class="text-muted small">
 									<i class="far fa-calendar-alt me-1 opacity-50"></i>
 									<?php echo date('M d, Y', strtotime($req['date'])); ?>
 								</td>

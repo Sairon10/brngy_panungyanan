@@ -276,7 +276,7 @@ try {
                 <form method="post" enctype="multipart/form-data" id="profileForm">
                     <?php echo csrf_field(); ?>
 
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-4 pb-2 border-bottom">Profile Picture</h6>
+                    <h6 class="text-dark opacity-50 fw-bold small text-uppercase mb-4 pb-2 border-bottom">Profile Picture</h6>
 
                     <div class="row g-4 mb-4">
                         <div class="col-12">
@@ -298,60 +298,60 @@ try {
                         </div>
                     </div>
 
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-4 pb-2 border-bottom mt-5">Personal
+                    <h6 class="text-dark opacity-50 fw-bold small text-uppercase mb-4 pb-2 border-bottom mt-5">Personal
                         Information</h6>
 
                     <div class="row g-4 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">First Name <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">First Name <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="first_name" class="form-control"
                                 value="<?php echo htmlspecialchars($data['first_name'] ?? ''); ?>"
                                 placeholder="e.g. Juan" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Last Name <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Last Name <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="last_name" class="form-control"
                                 value="<?php echo htmlspecialchars($data['last_name'] ?? ''); ?>"
                                 placeholder="e.g. Dela Cruz" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Middle
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Middle
                                 Name</label>
                             <input type="text" name="middle_name" class="form-control"
                                 value="<?php echo htmlspecialchars($data['middle_name'] ?? ''); ?>"
                                 placeholder="e.g. Santos">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Suffix</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Suffix</label>
                             <input type="text" name="suffix" class="form-control"
                                 value="<?php echo htmlspecialchars($data['suffix'] ?? ''); ?>"
                                 placeholder="e.g. Jr., Sr., III">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Email <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Email <span
                                     class="text-danger">*</span></label>
                             <input type="email" name="email" class="form-control"
                                 value="<?php echo htmlspecialchars($data['email'] ?? ''); ?>"
                                 placeholder="name@example.com" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Phone <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Phone <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="phone" class="form-control"
                                 value="<?php echo htmlspecialchars($data['phone'] ?? ''); ?>"
                                 placeholder="e.g. 09123456789" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Birthdate <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birthdate <span
                                     class="text-danger">*</span></label>
                             <input type="date" name="birthdate" id="birthdate" class="form-control"
                                 value="<?php echo htmlspecialchars($data['birthdate'] ?? ''); ?>" required>
                             <div class="form-text small text-muted">Must be at least 18 years old</div>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Sex <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Sex <span
                                     class="text-danger">*</span></label>
                             <select name="sex" class="form-select" required>
                                 <option value="">Select Sex</option>
@@ -361,14 +361,14 @@ try {
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Citizenship <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Citizenship <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="citizenship" class="form-control"
                                 value="<?php echo htmlspecialchars($data['citizenship'] ?? ''); ?>"
                                 placeholder="e.g. Filipino" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Civil Status <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Civil Status <span
                                     class="text-danger">*</span></label>
                             <select name="civil_status" class="form-select" required>
                                 <option value="">Select Civil Status</option>
@@ -378,25 +378,25 @@ try {
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Purok</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok</label>
                             <input type="text" name="purok" class="form-control"
                                 value="<?php echo htmlspecialchars($data['purok'] ?? ''); ?>"
                                 placeholder="e.g. Purok 1, Purok 2">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Complete Address</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Complete Address</label>
                             <input type="text" name="address" class="form-control"
                                 value="<?php echo htmlspecialchars($data['address'] ?? ''); ?>"
                                 placeholder="e.g. 123 Main St., Panungyanan, General Trias, Cavite">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Religion</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Religion</label>
                             <input type="text" name="religion" class="form-control"
                                 value="<?php echo htmlspecialchars($data['religion'] ?? ''); ?>"
                                 placeholder="e.g. Roman Catholic">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Profession / Occupation</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Profession / Occupation</label>
                             <input type="text" name="occupation" class="form-control"
                                 value="<?php echo htmlspecialchars($data['occupation'] ?? ''); ?>"
                                 placeholder="e.g. Teacher, Farmer">
@@ -404,7 +404,7 @@ try {
                         <div class="col-12">
                             <div class="row g-3">
                                 <div class="col-md-6 border-end pe-4">
-                                    <label class="form-label fw-semibold text-secondary small text-uppercase d-block mb-3">HIGHEST EDUCATIONAL ATTAINMENT</label>
+                                    <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-block mb-3">HIGHEST EDUCATIONAL ATTAINMENT</label>
                                     <div class="d-flex flex-column gap-2">
                                         <?php
                                         $current_edu = $data['educational_attainment'] ?? '';
@@ -423,7 +423,7 @@ try {
                                     </div>
                                 </div>
                                 <div class="col-md-6 ps-4">
-                                    <label class="form-label fw-semibold text-secondary small text-uppercase d-block mb-3">PLEASE SPECIFY</label>
+                                    <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-block mb-3">PLEASE SPECIFY</label>
                                     <div class="d-flex flex-column gap-2">
                                         <?php
                                         $is_grad = stripos($current_edu, '(graduate)') !== false;
@@ -444,7 +444,7 @@ try {
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Special Classification (Optional - Multiple Selection)</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Special Classification (Optional - Multiple Selection)</label>
                             <?php
                             $saved_classes = [];
                             if (!empty($data['classification'])) {
@@ -471,7 +471,7 @@ try {
                         </div>
 
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase mb-1">Barangay ID</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase mb-1">Barangay ID</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-secondary"><i class="fas fa-id-badge"></i></span>
                                 <input type="text" name="barangay_id" class="form-control bg-light fw-bold"

@@ -292,7 +292,7 @@ $documents = $documents_stmt->fetchAll();
                     <?php endif; ?>
                     <!-- Request For selector (first field) -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Request For</label>
+                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Request For</label>
                         <input type="hidden" name="requestor_type" id="requestor_type_hidden" value="self">
                         <input type="hidden" name="family_member_id" id="family_member_id_hidden" value="">
                         <select id="request_for_select" class="form-select form-select-lg bg-light border-0" required onchange="handleRequestForChange(this)">
@@ -315,7 +315,7 @@ $documents = $documents_stmt->fetchAll();
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Document Type</label>
+                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Document Type</label>
                         <select name="doc_type" id="doc_type" class="form-select form-select-lg bg-light border-0" required>
                             <option value="">Select Document...</option>
                             <?php if (empty($document_types)): ?>
@@ -336,7 +336,7 @@ $documents = $documents_stmt->fetchAll();
                     </div>
 
                     <div class="mb-3" id="document_price_container" style="display: none;">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Price</label>
+                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Price</label>
                         <div class="p-3 bg-light rounded text-success fs-5 fw-bold border" id="document_price_display">
                             Free
                         </div>
@@ -344,7 +344,7 @@ $documents = $documents_stmt->fetchAll();
 
                     <!-- Purpose Selection for Indigency -->
                     <div class="mb-3" id="indigency_purpose_field" style="display: none;">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Select Purpose:</label>
+                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Select Purpose:</label>
                         <div class="border rounded p-3 bg-light">
                             <div class="d-flex flex-column gap-2">
                                 <?php foreach ($indigency_purposes_list as $purpose): ?>
@@ -364,7 +364,7 @@ $documents = $documents_stmt->fetchAll();
                     
                     <!-- Purpose Selection for Clearance -->
                     <div class="mb-3" id="clearance_purpose_field" style="display: none;">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Select Purpose:</label>
+                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Select Purpose:</label>
                         <div class="border rounded p-3 bg-light">
                             <div class="d-flex flex-column gap-2">
                                 <?php foreach ($clearance_purposes_list as $purpose): ?>
@@ -383,7 +383,7 @@ $documents = $documents_stmt->fetchAll();
                     </div>
                     
                     <div class="mb-4" id="purpose_text_field">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Purpose</label>
+                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purpose</label>
                         <textarea name="purpose" class="form-control bg-light border-0" rows="4"
                             placeholder="State your purpose..." id="purpose_textarea"></textarea>
                     </div>
@@ -497,10 +497,10 @@ $documents = $documents_stmt->fetchAll();
                             <?php if (empty($paginated_requests)): ?>
                                 <tr>
                                     <td colspan="5" class="text-center py-5">
-                                        <div class="text-secondary opacity-50 mb-2">
+                                        <div class="text-dark opacity-50 mb-2">
                                             <i class="fas fa-folder-open fa-3x"></i>
                                         </div>
-                                        <p class="text-secondary mb-0">No requests found.</p>
+                                        <p class="text-dark opacity-75 small mb-0">No requests found.</p>
                                     </td>
                                 </tr>
                             <?php else: ?>
@@ -544,7 +544,7 @@ $documents = $documents_stmt->fetchAll();
                                     ?>
                                     <tr>
                                         <!-- # -->
-                                        <td class="ps-4 text-secondary fw-semibold"><?php echo $row_number++; ?></td>
+                                        <td class="ps-4 text-dark opacity-50 fw-semibold"><?php echo $row_number++; ?></td>
                                         <!-- Name -->
                                         <td>
                                             <div class="fw-bold text-dark mb-0"><?php echo htmlspecialchars($requesterName); ?></div>
@@ -567,7 +567,7 @@ $documents = $documents_stmt->fetchAll();
                                             </div>
                                         </td>
                                         <!-- Date -->
-                                        <td class="text-secondary small">
+                                        <td class="text-dark opacity-75 small">
                                             <i class="far fa-calendar-alt me-1 opacity-50"></i>
                                             <?php echo date('M d, Y', strtotime($req['date'])); ?>
                                         </td>
@@ -612,7 +612,7 @@ $documents = $documents_stmt->fetchAll();
                 <?php if (!empty($all_requests) && $total_pages > 1): ?>
                 <div class="px-4 py-3 border-top bg-light mt-auto rounded-bottom-4">
                     <nav aria-label="Request history pagination" class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <span class="text-secondary small">
+                        <span class="text-dark opacity-75 small">
                             Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $per_page, $total_requests); ?> of <?php echo $total_requests; ?> requests
                         </span>
                         <?php 
@@ -657,23 +657,23 @@ $documents = $documents_stmt->fetchAll();
                 </div>
                 <table class="table table-borderless mb-0">
                     <tr>
-                        <td class="text-secondary fw-semibold small" style="width: 130px;">Document</td>
+                        <td class="text-dark opacity-75 fw-semibold small" style="width: 130px;">Document</td>
                         <td class="fw-bold" id="detail_document"></td>
                     </tr>
                     <tr>
-                        <td class="text-secondary fw-semibold small">Requester</td>
+                        <td class="text-dark opacity-75 fw-semibold small">Requester</td>
                         <td id="detail_requester"></td>
                     </tr>
                     <tr>
-                        <td class="text-secondary fw-semibold small">Purpose</td>
+                        <td class="text-dark opacity-75 fw-semibold small">Purpose</td>
                         <td id="detail_purpose"></td>
                     </tr>
                     <tr>
-                        <td class="text-secondary fw-semibold small">Status</td>
+                        <td class="text-dark opacity-75 fw-semibold small">Status</td>
                         <td id="detail_status"></td>
                     </tr>
                     <tr>
-                        <td class="text-secondary fw-semibold small">Date Filed</td>
+                        <td class="text-dark opacity-75 fw-semibold small">Date Filed</td>
                         <td id="detail_date"></td>
                     </tr>
                 </table>

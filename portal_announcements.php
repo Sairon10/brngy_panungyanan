@@ -18,7 +18,7 @@ $announcements = $pdo->query("SELECT id, title, content, media_path, created_at 
 				<i class="fas fa-bullhorn me-1"></i> Announcements
 			</span>
 			<h1 class="display-5 fw-bold mb-2">Barangay Announcements</h1>
-			<p class="text-secondary lead">Stay updated with the latest news and announcements from your barangay.</p>
+			<p class="text-muted lead">Stay updated with the latest news and announcements from your barangay.</p>
 		</div>
 
 		<?php if (empty($announcements)): ?>
@@ -28,7 +28,7 @@ $announcements = $pdo->query("SELECT id, title, content, media_path, created_at 
 					<i class="fas fa-bullhorn fa-4x text-muted opacity-25"></i>
 				</div>
 				<h4 class="text-muted fw-semibold">No Announcements Yet</h4>
-				<p class="text-secondary">There are currently no announcements. Check back later!</p>
+				<p class="text-muted">There are currently no announcements. Check back later!</p>
 			</div>
 		<?php else: ?>
 			<div class="row g-4">
@@ -57,13 +57,13 @@ $announcements = $pdo->query("SELECT id, title, content, media_path, created_at 
 									<div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; min-width: 40px;">
 										<i class="fas fa-bullhorn"></i>
 									</div>
-									<small class="text-muted">
+									<small class="text-dark opacity-75">
 										<i class="fas fa-calendar-alt me-1"></i>
 										<?php echo date('M j, Y', strtotime($ann['created_at'])); ?>
 									</small>
 								</div>
 								<h5 class="fw-bold mb-3 text-truncate-2"><?php echo htmlspecialchars($ann['title']); ?></h5>
-								<p class="text-secondary mb-0 text-truncate-3"><?php echo nl2br(htmlspecialchars($ann['content'])); ?></p>
+								<p class="text-dark opacity-75 mb-0 text-truncate-3"><?php echo nl2br(htmlspecialchars($ann['content'])); ?></p>
 							</div>
 						</div>
 					</div>
@@ -92,7 +92,7 @@ $announcements = $pdo->query("SELECT id, title, content, media_path, created_at 
             <div class="modal-body p-4">
                 <h3 id="modalTitle" class="fw-bold mb-4 text-dark h4"></h3>
                 <div class="bg-light p-4 rounded-4">
-                    <p id="modalContent" class="text-secondary mb-0" style="white-space: pre-line; line-height: 1.8;"></p>
+                    <p id="modalContent" class="text-dark mb-0" style="white-space: pre-line; line-height: 1.8; opacity: 0.85;"></p>
                 </div>
             </div>
             <div class="modal-footer border-0 p-4 pt-0">

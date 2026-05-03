@@ -230,7 +230,7 @@ try {
                             <i class="fas fa-file-alt fa-2x"></i>
                         </div>
                         <h5 class="text-dark fw-bold mb-2">Documents</h5>
-                        <p class="text-secondary small mb-0 px-2">Request barangay clearance, indigency, and other important certificates easily.</p>
+                        <p class="text-dark opacity-75 small mb-0 px-2">Request barangay clearance, indigency, and other important certificates easily.</p>
                     </div>
                 </div>
             </a>
@@ -243,7 +243,7 @@ try {
                             <i class="fas fa-exclamation-triangle fa-2x"></i>
                         </div>
                         <h5 class="text-dark fw-bold mb-2">Report Incident</h5>
-                        <p class="text-secondary small mb-0 px-2">Report an emergency, concern, or incident in your area directly to the barangay.</p>
+                        <p class="text-dark opacity-75 small mb-0 px-2">Report an emergency, concern, or incident in your area directly to the barangay.</p>
                     </div>
                 </div>
             </a>
@@ -256,7 +256,7 @@ try {
                             <i class="fas fa-user-shield fa-2x"></i>
                         </div>
                         <h5 class="text-dark fw-bold mb-2">Profile</h5>
-                        <p class="text-secondary small mb-0 px-2">Manage your account information and ID verification.</p>
+                        <p class="text-dark opacity-75 small mb-0 px-2">Manage your account information and ID verification.</p>
                     </div>
                 </div>
             </a>

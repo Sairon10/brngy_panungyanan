@@ -241,25 +241,25 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                 
                                 <div class="grid grid-cols-2 gap-3 mt-4 text-xs font-medium">
                                     <div class="bg-light p-2 rounded-3 border border-light">
-                                        <div class="text-muted text-uppercase letter-spacing-1 mb-1" style="font-size: 0.6rem;">PhilSys No</div>
-                                        <div class="text-dark"><?php echo $fm['philsys_card_no'] ?: '<span class="opacity-30">N/A</span>'; ?></div>
+                                        <div class="text-dark fw-bold text-uppercase letter-spacing-1 mb-1" style="font-size: 0.6rem; opacity: 0.8;">PhilSys No</div>
+                                        <div class="text-dark fw-semibold"><?php echo $fm['philsys_card_no'] ?: '<span class="opacity-30">N/A</span>'; ?></div>
                                     </div>
                                     <div class="bg-light p-2 rounded-3 border border-light">
-                                        <div class="text-muted text-uppercase letter-spacing-1 mb-1" style="font-size: 0.6rem;">Status</div>
-                                        <div class="text-dark"><?php echo $fm['civil_status'] ?: 'Single'; ?></div>
+                                        <div class="text-dark fw-bold text-uppercase letter-spacing-1 mb-1" style="font-size: 0.6rem; opacity: 0.8;">Status</div>
+                                        <div class="text-dark fw-semibold"><?php echo $fm['civil_status'] ?: 'Single'; ?></div>
                                     </div>
                                 </div>
 
                                 <div class="mt-4 pt-3 border-top">
-                                    <div class="row g-2 text-secondary small mb-3">
+                                    <div class="row g-2 text-dark small mb-3">
                                         <div class="col-6">
-                                            <i class="fas fa-birthday-cake me-2 opacity-50"></i><?php echo $fm['birthdate'] ? date('M j, Y', strtotime($fm['birthdate'])) : '---'; ?>
+                                            <i class="fas fa-birthday-cake me-2 text-muted"></i><?php echo $fm['birthdate'] ? date('M j, Y', strtotime($fm['birthdate'])) : '---'; ?>
                                         </div>
                                         <div class="col-6">
-                                            <i class="fas fa-venus-mars me-2 opacity-50"></i><?php echo $fm['sex'] ?: 'Unknown'; ?>
+                                            <i class="fas fa-venus-mars me-2 text-muted"></i><?php echo $fm['sex'] ?: 'Unknown'; ?>
                                         </div>
                                         <div class="col-12 mt-2">
-                                            <i class="fas fa-graduation-cap me-2 opacity-50"></i><?php echo $fm['educational_attainment'] ?: 'No Record'; ?>
+                                            <i class="fas fa-graduation-cap me-2 text-muted"></i><?php echo $fm['educational_attainment'] ?: 'No Record'; ?>
                                         </div>
                                     </div>
 
@@ -511,7 +511,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
 .btn-teal-600 { background-color: var(--teal-600); border-color: var(--teal-600); }
 .btn-teal-600:hover { background-color: var(--teal-700); border-color: var(--teal-700); color: white; }
 
-.rbi-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 5px; }
+.rbi-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #334155; margin-bottom: 5px; }
 .rbi-input { border: 1px solid #e2e8f0; font-size: 0.9rem; padding: 0.6rem 0.75rem; border-radius: 8px; transition: all 0.2s; }
 .rbi-input:focus { border-color: var(--teal-600); box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1); }
 .classification-box { transition: all 0.2s; background: #fff; cursor: pointer; }

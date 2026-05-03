@@ -280,7 +280,7 @@ unset($row);
                         </div>
                         <div>
                             <h4 class="fw-bold mb-0 text-dark">My Reports</h4>
-                            <p class="text-secondary small mb-0">Track and manage your reported incidents</p>
+                            <p class="text-dark opacity-75 small mb-0">Track and manage your reported incidents</p>
                         </div>
                     </div>
                     
@@ -317,7 +317,7 @@ unset($row);
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                         <thead class="bg-light">
-                            <tr class="text-secondary small text-uppercase">
+                            <tr class="text-dark opacity-50 small text-uppercase">
                                 <th class="py-3 border-0 ps-4">#</th>
                                 <th class="py-3 border-0">NAME</th>
                                 <th class="py-3 border-0" style="min-width: 120px;">Report Date</th>
@@ -337,11 +337,11 @@ unset($row);
                             <?php else: ?>
                                 <?php foreach ($rows as $i => $r): ?>
                                     <tr>
-                                        <td class="text-secondary ps-4"><?php echo $offset + $i + 1; ?></td>
+                                        <td class="text-dark ps-4 opacity-50"><?php echo $offset + $i + 1; ?></td>
                                         <td>
                                             <div class="fw-bold text-dark ps-2"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Resident'); ?></div>
                                         </td>
-                                        <td class="text-secondary fw-medium">
+                                        <td class="text-dark fw-medium">
                                             <?php echo date('M j, Y', strtotime($r['created_at'])); ?>
                                             <div class="small opacity-50"><?php echo date('g:i A', strtotime($r['created_at'])); ?></div>
                                         </td>
@@ -403,7 +403,7 @@ unset($row);
                     </div>
                     <div>
                         <h5 class="modal-title fw-bold mb-0" id="viewTitle">Incident #--</h5>
-                        <p class="text-secondary small mb-0">Detailed information about the reported incident</p>
+                        <p class="text-dark opacity-75 small mb-0">Detailed information about the reported incident</p>
                     </div>
                 </div>
                 <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -419,18 +419,18 @@ unset($row);
                         <div class="col-lg-8 p-4 bg-white">
                             <!-- Incident Information -->
                             <div class="mb-4">
-                                <h6 class="text-secondary small fw-bold text-uppercase border-bottom pb-2 mb-3">Incident Information</h6>
+                                <h6 class="text-dark small fw-bold text-uppercase border-bottom pb-2 mb-3">Incident Information</h6>
                                 <div class="row g-3">
                                     <div class="col-md-6 text-dark small fw-semibold d-flex">
-                                        <span class="text-secondary me-2">Status:</span>
+                                        <span class="text-dark opacity-75 me-2">Status:</span>
                                         <span id="viewStatus" class="badge rounded-pill px-3 py-1 fw-bold"></span>
                                     </div>
                                     <div class="col-md-6 text-dark small fw-semibold d-flex">
-                                        <span class="text-secondary me-2">Reported:</span>
+                                        <span class="text-dark opacity-75 me-2">Reported:</span>
                                         <span id="viewDate" class="fw-bold"></span>
                                     </div>
                                     <div class="col-12">
-                                        <label class="text-secondary small fw-bold d-block mb-1">Description:</label>
+                                        <label class="text-dark small fw-bold d-block mb-1">Description:</label>
                                         <div class="bg-light p-3 rounded-3 border-0">
                                             <p id="viewDescription" class="text-dark mb-0" style="white-space: pre-wrap; line-height: 1.6;"></p>
                                         </div>
@@ -445,18 +445,18 @@ unset($row);
 
                             <!-- Resident Information -->
                             <div class="mb-4">
-                                <h6 class="text-secondary small fw-bold text-uppercase border-bottom pb-2 mb-3">Resident Information</h6>
+                                <h6 class="text-dark small fw-bold text-uppercase border-bottom pb-2 mb-3">Resident Information</h6>
                                 <div class="row g-3">
                                     <div class="col-md-6 small fw-semibold">
-                                        <span class="text-secondary d-block">Name:</span>
+                                        <span class="text-dark opacity-75 d-block">Name:</span>
                                         <span id="viewResName" class="text-dark"></span>
                                     </div>
                                     <div class="col-md-6 small fw-semibold">
-                                        <span class="text-secondary d-block">Email:</span>
+                                        <span class="text-dark opacity-75 d-block">Email:</span>
                                         <span id="viewResEmail" class="text-dark"></span>
                                     </div>
                                     <div class="col-md-6 small fw-semibold">
-                                        <span class="text-secondary d-block">Phone:</span>
+                                        <span class="text-dark opacity-75 d-block">Phone:</span>
                                         <a href="" id="viewResPhoneLink" class="text-primary text-decoration-none d-flex align-items-center">
                                             <i class="fas fa-phone-alt me-1 x-small"></i><span id="viewResPhone"></span>
                                         </a>
@@ -466,10 +466,10 @@ unset($row);
 
                             <!-- Location Information -->
                             <div>
-                                <h6 class="text-secondary small fw-bold text-uppercase border-bottom pb-2 mb-3">Location Information</h6>
+                                <h6 class="text-dark small fw-bold text-uppercase border-bottom pb-2 mb-3">Location Information</h6>
                                 <div class="row g-3">
                                     <div class="col-12 small fw-semibold mb-2">
-                                        <span class="text-secondary me-2">Coordinates:</span>
+                                        <span class="text-dark opacity-75 me-2">Coordinates:</span>
                                         <span id="viewCoords" class="text-dark"></span>
                                     </div>
                                     <div class="col-12">
@@ -646,7 +646,7 @@ unset($row);
                     <div class="row g-4">
                         <!-- Left: Instructions & Map -->
                         <div class="col-md-7">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">1. Pin Location</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">1. Pin Location</label>
                             <div class="bg-light p-3 rounded-3 mb-3">
                                 <div class="input-group mb-3 shadow-none border rounded-3 overflow-hidden">
                                     <span class="input-group-text bg-white border-0"><i class="fas fa-search text-secondary"></i></span>
@@ -674,12 +674,12 @@ unset($row);
                         <!-- Right: Details & Image -->
                         <div class="col-md-5">
                             <div class="mb-4">
-                                <label class="form-label fw-semibold text-secondary small text-uppercase">2. Describe Incident</label>
+                                <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">2. Describe Incident</label>
                                 <textarea name="description" class="form-control bg-light border-0" rows="5" style="font-size: 0.9rem;" placeholder="What happened?" required></textarea>
                             </div>
                             
                             <div class="mb-4">
-                                <label class="form-label fw-semibold text-secondary small text-uppercase">3. Upload Proof (Optional)</label>
+                                <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">3. Upload Proof (Optional)</label>
                                 <input type="file" name="incident_image" id="incident_image" class="form-control form-control-sm bg-light border-0" accept="image/*">
                                 <div id="imagePreview" class="mt-2 d-none">
                                     <img id="previewImg" src="" alt="Preview" class="img-fluid rounded-2 shadow-sm" style="max-height: 100px;">

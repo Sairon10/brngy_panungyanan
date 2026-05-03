@@ -445,17 +445,17 @@ $wi_residents_inc = $pdo->query("
                                         <input type="checkbox" class="form-check-input" id="checkAll">
                                     </th>
                                 <?php endif; ?>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>Status</th>
-                                <th>Date</th>
+                                <th class="text-dark">#</th>
+                                <th class="text-dark">Name</th>
+                                <th class="text-dark">Status</th>
+                                <th class="text-dark">Date</th>
                                 <th class="py-3 pe-3 text-center" style="width: 110px;">
                                     <div class="d-flex align-items-center justify-content-center gap-2">
                                         Action
                                         <?php if ($show_bulk_actions): ?>
                                             <div class="dropdown">
                                                 <button
-                                                    class="btn btn-sm btn-light border-0 text-secondary p-0 incidents-drop-btn"
+                                                    class="btn btn-sm btn-light border-0 text-muted p-0 incidents-drop-btn"
                                                     type="button" data-bs-toggle="dropdown" aria-expanded="false"
                                                     data-bs-boundary="viewport" title="Bulk Actions"
                                                     style="width: 28px; height: 28px;">
@@ -535,7 +535,7 @@ $wi_residents_inc = $pdo->query("
                                             </td>
                                         <?php endif; ?>
                                         <td>
-                                            <span class="text-secondary fw-bold small"><?php echo $counter++; ?></span>
+                                            <span class="text-dark fw-bold small"><?php echo $counter++; ?></span>
                                         </td>
                                         <td>
                                             <?php
@@ -573,7 +573,7 @@ $wi_residents_inc = $pdo->query("
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="text-dark small">
+                                            <div class="text-dark small fw-medium">
                                                 <?php echo date('M j, Y', strtotime($r['created_at'])); ?>
                                             </div>
                                             <div class="text-muted small" style="font-size: 0.75rem;">
@@ -689,7 +689,7 @@ $wi_residents_inc = $pdo->query("
 
                     <!-- 0. Resident Name (free text — no account required) -->
                     <div class="mb-4 pb-3 border-bottom">
-                        <label class="form-label fw-semibold text-secondary small text-uppercase">Resident Name</label>
+                        <label class="form-label fw-semibold text-dark small text-uppercase">Resident Name</label>
                         <input type="text" name="wi_reporter_name" id="wiReporterName" class="form-control" placeholder="Enter resident's full name..." autocomplete="off">
                         <div class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Type any name — account not required for walk-in reports.</div>
                         <!-- Optional: live-search to link to a registered resident -->
@@ -701,22 +701,22 @@ $wi_residents_inc = $pdo->query("
                     <div class="row g-4">
                         <!-- Left: Map -->
                         <div class="col-md-7">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">1. Pin Location</label>
+                            <label class="form-label fw-semibold text-dark small text-uppercase">1. Pin Location</label>
                             <div class="bg-light p-3 rounded-3 mb-3">
                                 <div class="input-group mb-3 shadow-none border rounded-3 overflow-hidden">
-                                    <span class="input-group-text bg-white border-0"><i class="fas fa-search text-secondary"></i></span>
+                                    <span class="input-group-text bg-white border-0"><i class="fas fa-search text-muted"></i></span>
                                     <input type="text" id="wiLocationSearch" class="form-control border-0 shadow-none px-0" style="font-size:0.9rem;" placeholder="Search street or landmark...">
                                     <button class="btn btn-primary px-3 fw-semibold btn-sm" type="button" id="wiSearchLocationBtn">Search</button>
                                 </div>
                                 <div class="d-flex gap-2 mb-2">
-                                    <button type="button" class="btn btn-white btn-sm border shadow-sm flex-fill py-2 text-secondary fw-semibold" id="wiUseCurrentLocation">
+                                    <button type="button" class="btn btn-white btn-sm border shadow-sm flex-fill py-2 text-muted fw-semibold" id="wiUseCurrentLocation">
                                         <i class="fas fa-location-arrow me-1"></i>Current
                                     </button>
-                                    <button type="button" class="btn btn-white btn-sm border shadow-sm flex-fill py-2 text-secondary fw-semibold" id="wiSelectOnMap">
+                                    <button type="button" class="btn btn-white btn-sm border shadow-sm flex-fill py-2 text-muted fw-semibold" id="wiSelectOnMap">
                                         <i class="fas fa-map-marker-alt me-1"></i>Pick Map
                                     </button>
                                 </div>
-                                <div id="wiLocationStatus" class="text-secondary" style="font-size:0.75rem;">
+                                <div id="wiLocationStatus" class="text-muted" style="font-size:0.75rem;">
                                     <i class="fas fa-info-circle me-1"></i>Area: Barangay Panungyanan
                                 </div>
                             </div>
@@ -728,11 +728,11 @@ $wi_residents_inc = $pdo->query("
                         <!-- Right: Description + Upload -->
                         <div class="col-md-5">
                             <div class="mb-4">
-                                <label class="form-label fw-semibold text-secondary small text-uppercase">2. Describe Incident</label>
+                                <label class="form-label fw-semibold text-dark small text-uppercase">2. Describe Incident</label>
                                 <textarea name="wi_description" id="wiIncidentDescription" class="form-control bg-light border-0" rows="5" style="font-size:0.9rem;" placeholder="What happened?"></textarea>
                             </div>
                             <div class="mb-4">
-                                <label class="form-label fw-semibold text-secondary small text-uppercase">3. Upload Proof (Optional)</label>
+                                <label class="form-label fw-semibold text-dark small text-uppercase">3. Upload Proof (Optional)</label>
                                 <input type="file" name="wi_incident_image" id="wiIncidentImage" class="form-control form-control-sm bg-light border-0" accept="image/*">
                             </div>
                             <div class="d-grid pt-2">
