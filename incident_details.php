@@ -126,10 +126,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                             <div class="card-body p-4 pt-0">
                                 <!-- Incident Info -->
                                 <div class="mb-5">
-                                    <h6 class="text-secondary small fw-bold text-uppercase mb-3">Incident Information</h6>
+                                    <h6 class="text-dark opacity-50 small fw-bold text-uppercase mb-3">Incident Information</h6>
                                     <div class="row g-3">
                                         <div class="col-md-6 small">
-                                            <span class="text-secondary d-block">Status:</span>
+                                            <span class="text-dark opacity-75 d-block">Status:</span>
                                             <?php
                                             $status = $incident['status'] ?? 'submitted';
                                             $statusLabel = $status === 'submitted' ? 'Pending' : ($status === 'closed' ? 'Rejected' : ucfirst($status));
@@ -157,11 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                             <?php endif; ?>
                                         </div>
                                         <div class="col-md-6 small">
-                                            <span class="text-secondary d-block">Reported:</span>
+                                            <span class="text-dark opacity-75 d-block">Reported:</span>
                                             <span class="text-dark fw-bold"><?php echo date('M j, Y g:i A', strtotime($incident['created_at'])); ?></span>
                                         </div>
                                         <div class="col-12">
-                                            <span class="text-secondary small d-block mb-1">Description:</span>
+                                            <span class="text-dark opacity-75 small d-block mb-1">Description:</span>
                                             <div class="bg-light p-3 rounded-4 border-0">
                                                 <p class="text-dark mb-0" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;"><?php echo htmlspecialchars($incident['description']); ?></p>
                                             </div>
@@ -171,18 +171,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
 
                                 <!-- Resident Information -->
                                 <div class="mb-5">
-                                    <h6 class="text-secondary small fw-bold text-uppercase mb-3">Resident Information</h6>
+                                    <h6 class="text-dark opacity-50 small fw-bold text-uppercase mb-3">Resident Information</h6>
                                     <div class="row g-3">
                                         <div class="col-md-6 small">
-                                            <span class="text-secondary d-block">Name:</span>
+                                            <span class="text-dark opacity-75 d-block">Name:</span>
                                             <span class="text-dark fw-bold"><?php echo htmlspecialchars($incident['resident_name']); ?></span>
                                         </div>
                                         <div class="col-md-6 small">
-                                            <span class="text-secondary d-block">Email:</span>
+                                            <span class="text-dark opacity-75 d-block">Email:</span>
                                             <span class="text-dark fw-bold"><?php echo htmlspecialchars($incident['resident_email']); ?></span>
                                         </div>
                                         <div class="col-md-6 small">
-                                            <span class="text-secondary d-block">Phone:</span>
+                                            <span class="text-dark opacity-75 d-block">Phone:</span>
                                             <a href="tel:<?php echo $incident['resident_phone']; ?>" class="text-primary text-decoration-none fw-bold">
                                                 <i class="fas fa-phone-alt me-1 text-primary" style="font-size: 0.75rem;"></i> <?php echo htmlspecialchars($incident['resident_phone']); ?>
                                             </a>
@@ -192,15 +192,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
 
                                 <!-- Location Information -->
                                 <div>
-                                    <h6 class="text-secondary small fw-bold text-uppercase mb-3">Location Information</h6>
+                                    <h6 class="text-dark opacity-50 small fw-bold text-uppercase mb-3">Location Information</h6>
                                     <div class="row g-4 align-items-center">
                                         <div class="col-md-6">
                                             <p class="small mb-3">
-                                                <span class="text-secondary">Coordinates:</span>
+                                                <span class="text-dark opacity-75">Coordinates:</span>
                                                 <span class="text-dark fw-bold ms-2"><?php echo number_format($incident['latitude'], 7) . ', ' . number_format($incident['longitude'], 7); ?></span>
                                             </p>
                                             <div class="d-flex gap-2 mb-3">
-                                                <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-teal text-white fw-bold btn-sm flex-fill py-2">
+                                                <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-dark text-white fw-bold btn-sm flex-fill py-2">
                                                     <i class="fab fa-google me-1"></i> Google Maps
                                                 </a>
                                                 <a href="https://waze.com/ul?ll=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>&navigate=yes" target="_blank" class="btn btn-rose text-white fw-bold btn-sm flex-fill py-2">
@@ -238,7 +238,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                     <a href="incidents.php" class="btn btn-white border shadow-sm py-2 rounded-3 text-secondary fw-semibold">
                                         <i class="fas fa-list me-1"></i> Back to Incidents List
                                     </a>
-                                    <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-teal text-white py-2 rounded-3 fw-bold">
+                                    <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-dark text-white py-2 rounded-3 fw-bold">
                                         <i class="fab fa-google me-1"></i> Open in Google Maps
                                     </a>
                                     <a href="https://waze.com/ul?ll=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>&navigate=yes" target="_blank" class="btn btn-rose text-white py-2 rounded-3 fw-bold">
@@ -265,7 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                                     <strong class="small <?php echo $isUser ? 'text-secondary' : 'text-primary'; ?>"><?php echo $isUser ? 'You' : htmlspecialchars($msg['full_name']); ?></strong>
                                                     <span class="text-secondary" style="font-size: 0.7rem;"><?php echo date('M j, Y g:i A', strtotime($msg['created_at'])); ?></span>
                                                 </div>
-                                                <div class="p-3 rounded-4 shadow-sm <?php echo $isUser ? 'bg-teal-50 text-teal-800' : 'bg-light text-dark'; ?>" 
+                                                <div class="p-3 rounded-4 shadow-sm <?php echo $isUser ? 'bg-dark bg-opacity-10 text-dark' : 'bg-light text-dark'; ?>" 
                                                      style="font-size: 0.9rem; border-top-<?php echo $isUser ? 'right' : 'left'; ?>-radius: 0;">
                                                     <?php echo nl2br(htmlspecialchars($msg['message'])); ?>
                                                 </div>
@@ -297,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                         <div class="flex-grow-1">
                                             <textarea name="message" class="form-control border-0 bg-light rounded-4 shadow-none small" rows="2" placeholder="Send a message..." required style="resize: none;"></textarea>
                                         </div>
-                                        <button type="submit" class="btn btn-teal text-white rounded-circle shadow-sm" style="width: 40px; height: 40px; padding: 0;">
+                                        <button type="submit" class="btn btn-dark text-white rounded-circle shadow-sm" style="width: 40px; height: 40px; padding: 0;">
                                             <i class="fas fa-paper-plane px-1"></i>
                                         </button>
                                     </form>
@@ -323,12 +323,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                 .status-canceled { background-color: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
                 .status-closed { background-color: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
 
-                .btn-teal { background-color: #0d9488; border-color: #0d9488; }
-                .btn-teal:hover { background-color: #0f766e; border-color: #0f766e; }
+                .btn-dark { background-color: #1e293b; border-color: #1e293b; }
+                .btn-dark:hover { background-color: #0f172a; border-color: #0f172a; }
                 .btn-rose { background-color: #e11d48; border-color: #e11d48; }
                 .btn-rose:hover { background-color: #be123c; border-color: #be123c; }
-                .bg-teal-50 { background-color: #f0fdfa; }
-                .text-teal-800 { color: #115e59; }
+                .bg-dark-50 { background-color: #f8fafc; }
+                .text-dark-800 { color: #1e293b; }
                 </style>
 
                 <script>
