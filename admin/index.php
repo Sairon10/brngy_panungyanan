@@ -1,7 +1,7 @@
 <?php 
 require_once __DIR__ . '/../config.php';
 if (!is_admin()) redirect('../index.php');
-$page_title = 'Admin Dashboard';
+$page_title = ($_SESSION['user_id'] == 1) ? 'Admin Dashboard' : 'Sub-Admin Dashboard';
 
 require_once __DIR__ . '/header.php'; 
 ?>
