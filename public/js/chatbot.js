@@ -538,7 +538,7 @@
 				if (status) {
 					status.textContent = data.assigned_admin_id 
 						 ? 'Connected to Agent • Active'
-						: 'Waiting for Agent...';
+						: 'Waiting for Administrator...';
 					status.className = data.assigned_admin_id 
 						? 'text-success' 
 						: 'text-warning';
