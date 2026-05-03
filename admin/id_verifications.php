@@ -15,49 +15,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!csrf_validate()) {
         $errors[] = 'Invalid CSRF token. Please refresh the page and try again.';
     } else {
-        $resident_id = (int) ($_POST['resident_id'] ?? 0);
+        $target_id = (int) ($_POST['target_id'] ?? 0);
+        $target_type = $_POST['target_type'] ?? 'resident';
         $action = $_POST['action'];
 
-        if ($resident_id <= 0) {
-            $errors[] = 'Invalid resident ID';
+        if ($target_id <= 0) {
+            $errors[] = 'Invalid ID';
         } else {
             try {
-                // Get resident and user information
-                $resident_stmt = $pdo->prepare('
-                    SELECT r.*, u.full_name, u.email, r.phone, r.user_id 
-                    FROM residents r 
-                    JOIN users u ON r.user_id = u.id 
-                    WHERE r.id = ?
-                ');
-                $resident_stmt->execute([$resident_id]);
-                $resident_data = $resident_stmt->fetch();
+                if ($target_type === 'resident') {
+                    $resident_stmt = $pdo->prepare('SELECT r.*, u.full_name, u.email, r.phone, r.user_id FROM residents r JOIN users u ON r.user_id = u.id WHERE r.id = ?');
+                    $resident_stmt->execute([$target_id]);
+                    $data = $resident_stmt->fetch();
+                    $table = 'residents';
+                } else {
+                    $fm_stmt = $pdo->prepare('SELECT fm.*, u.email, u.full_name as head_name, fm.user_id FROM family_members fm JOIN users u ON fm.user_id = u.id WHERE fm.id = ?');
+                    $fm_stmt->execute([$target_id]);
+                    $data = $fm_stmt->fetch();
+                    $table = 'family_members';
+                }
 
-                if (!$resident_data) {
-                    $errors[] = 'Resident not found';
+                if (!$data) {
+                    $errors[] = 'Record not found';
                 } else {
                     if ($action === 'verify') {
-                        $stmt = $pdo->prepare('UPDATE residents SET verification_status = \'verified\', verified_at = NOW(), verified_by = ? WHERE id = ?');
-                        $stmt->execute([$_SESSION['user_id'], $resident_id]);
-                        $success = 'Resident verified successfully';
+                        $stmt = $pdo->prepare("UPDATE {$table} SET verification_status = 'verified', verified_at = NOW(), verified_by = ? WHERE id = ?");
+                        $stmt->execute([$_SESSION['user_id'], $target_id]);
+                        $success = 'Verification approved successfully';
 
                         // In-app notification
-                        $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "ID Verification Approved", "Your ID verification has been approved!")')
-                            ->execute([$resident_data['user_id']]);
+                        $notif_msg = ($target_type === 'resident') ? "Your ID verification has been approved!" : "The ID verification for family member " . $data['full_name'] . " has been approved!";
+                        $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "ID Verification Approved", ?)')
+                            ->execute([$data['user_id'], $notif_msg]);
 
-                        if (function_exists('send_id_verification_email')) {
-                            send_id_verification_email($resident_data['email'], 'verified', ['full_name' => $resident_data['full_name']]);
+                        if (!empty($data['email']) && function_exists('send_id_verification_email')) {
+                            send_id_verification_email($data['email'], 'verified', ['full_name' => $data['full_name']]);
                         }
                     } elseif ($action === 'reject') {
                         $notes = trim($_POST['rejection_notes'] ?? '');
                         if ($notes === '') {
                             $errors[] = 'Rejection notes are required';
                         } else {
-                            $stmt = $pdo->prepare('UPDATE residents SET verification_status = \'rejected\', verification_notes = ?, verified_at = NOW(), verified_by = ? WHERE id = ?');
-                            $stmt->execute([$notes, $_SESSION['user_id'], $resident_id]);
-                            $success = 'Resident verification rejected';
+                            $stmt = $pdo->prepare("UPDATE {$table} SET verification_status = 'rejected', verification_notes = ?, verified_at = NOW(), verified_by = ? WHERE id = ?");
+                            $stmt->execute([$notes, $_SESSION['user_id'], $target_id]);
+                            $success = 'Verification rejected';
 
+                            $notif_msg = ($target_type === 'resident') ? "Your ID verification was rejected. Reason: " . $notes : "The ID verification for family member " . $data['full_name'] . " was rejected. Reason: " . $notes;
                             $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "ID Verification Rejected", ?)')
-                                ->execute([$resident_data['user_id'], 'Your ID verification was rejected. Reason: ' . $notes]);
+                                ->execute([$data['user_id'], $notif_msg]);
                         }
                     }
                 }
@@ -78,25 +83,65 @@ if ($page < 1) $page = 1;
 $offset = ($page - 1) * $limit;
 
 // Base query for data
-$query = "SELECT r.*, u.full_name, u.email, u.role FROM residents r JOIN users u ON r.user_id = u.id WHERE u.role = 'resident'";
-$params = [];
+// Base query for data using UNION
+$base_query = "
+    SELECT 
+        'resident' as target_type,
+        r.id, 
+        u.full_name, 
+        u.email, 
+        r.phone, 
+        r.address,
+        r.verification_status,
+        r.id_front_path,
+        r.id_back_path,
+        r.id_document_path,
+        r.address_on_id,
+        r.id_type,
+        r.user_id,
+        u.created_at
+    FROM residents r 
+    JOIN users u ON r.user_id = u.id 
+    WHERE u.role = 'resident'
 
+    UNION ALL
+
+    SELECT 
+        'family_member' as target_type,
+        fm.id,
+        fm.full_name,
+        u.email as email,
+        r_head.phone as phone,
+        r_head.address as address,
+        fm.verification_status,
+        fm.id_front_path,
+        fm.id_back_path,
+        NULL as id_document_path,
+        '' as address_on_id,
+        fm.id_type as id_type,
+        fm.user_id,
+        fm.created_at
+    FROM family_members fm
+    JOIN users u ON fm.user_id = u.id
+    LEFT JOIN residents r_head ON fm.user_id = r_head.user_id
+";
+
+$params = [];
+$filter_sql = "";
 if ($status_filter !== 'all') {
-    $query .= ' AND r.verification_status = ?';
+    $filter_sql = " WHERE verification_status = ? ";
     $params[] = $status_filter;
 }
 
-// Get total count for pagination
-$count_query = "SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE u.role = 'resident'";
-if ($status_filter !== 'all') {
-    $count_query .= " AND r.verification_status = " . $pdo->quote($status_filter);
-}
-$total_records = $pdo->query($count_query)->fetchColumn();
+$count_query = "SELECT COUNT(*) FROM ({$base_query}) as combined {$filter_sql}";
+$total_records = $pdo->prepare($count_query);
+$total_records->execute($params);
+$total_records = $total_records->fetchColumn();
+
 $total_pages = ceil($total_records / $limit);
 
-$query .= " ORDER BY r.id DESC LIMIT $limit OFFSET $offset";
-
-$residents = $pdo->prepare($query);
+$final_query = "SELECT * FROM ({$base_query}) as combined {$filter_sql} ORDER BY created_at DESC LIMIT $limit OFFSET $offset";
+$residents = $pdo->prepare($final_query);
 $residents->execute($params);
 $residents_data = $residents->fetchAll();
 ?>
@@ -178,6 +223,9 @@ $residents_data = $residents->fetchAll();
                             <div class="d-flex align-items-center">
                                 <div>
                                     <h6 class="mb-0 text-dark small"><?php echo htmlspecialchars($res['full_name']); ?></h6>
+                                    <span class="text-muted" style="font-size: 0.65rem;">
+                                        <?php echo $res['target_type'] === 'resident' ? 'Account Owner' : 'Family Member'; ?>
+                                    </span>
                                 </div>
                             </div>
                         </td>
@@ -224,7 +272,8 @@ $residents_data = $residents->fetchAll();
                                     <form method="post" class="d-inline">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="action" value="verify">
-                                        <input type="hidden" name="resident_id" value="<?php echo $res['id']; ?>">
+                                        <input type="hidden" name="target_id" value="<?php echo $res['id']; ?>">
+                                        <input type="hidden" name="target_type" value="<?php echo $res['target_type']; ?>">
                                         <button type="button" class="btn btn-action btn-outline-success" title="Approve" 
                                                 onclick="confirmVerification(this.form)">
                                             <i class="fas fa-check"></i>
@@ -232,7 +281,7 @@ $residents_data = $residents->fetchAll();
                                     </form>
 
                                     <button type="button" class="btn btn-action btn-outline-danger" 
-                                            onclick="rejectID(<?php echo $res['id']; ?>)" title="Reject">
+                                            onclick="rejectID(<?php echo $res['id']; ?>, '<?php echo $res['target_type']; ?>')" title="Reject">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 <?php endif; ?>
@@ -309,7 +358,8 @@ $residents_data = $residents->fetchAll();
             <form method="post" id="rejectForm">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="reject">
-                <input type="hidden" name="resident_id" id="rejectResidentID">
+                <input type="hidden" name="target_id" id="rejectTargetID">
+                <input type="hidden" name="target_type" id="rejectTargetType">
                 <div class="modal-body p-4">
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-uppercase text-muted">Reason for Rejection <span class="text-danger">*</span></label>
@@ -387,8 +437,9 @@ function addImage(path, label) {
     document.getElementById('modalImagesContainer').appendChild(col);
 }
 
-function rejectID(id) {
-    document.getElementById('rejectResidentID').value = id;
+function rejectID(id, type) {
+    document.getElementById('rejectTargetID').value = id;
+    document.getElementById('rejectTargetType').value = type;
     new bootstrap.Modal(document.getElementById('rejectIDModal')).show();
 }
 

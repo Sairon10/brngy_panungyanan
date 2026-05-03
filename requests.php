@@ -63,10 +63,15 @@ $clearance_purposes_list = [
     'Other\'s'
 ];
 
-// Fetch user's active family members for "Request For" selector
-$fm_stmt = $pdo->prepare('SELECT * FROM family_members WHERE user_id = ? AND is_active = 1 ORDER BY full_name ASC');
+// Fetch user's active AND VERIFIED family members for "Request For" selector
+$fm_stmt = $pdo->prepare('SELECT * FROM family_members WHERE user_id = ? AND is_active = 1 AND verification_status = "verified" ORDER BY full_name ASC');
 $fm_stmt->execute([$_SESSION['user_id']]);
 $family_members = $fm_stmt->fetchAll();
+
+// Also check if there are pending ones to show a notice
+$pending_fm_stmt = $pdo->prepare('SELECT COUNT(*) FROM family_members WHERE user_id = ? AND is_active = 1 AND verification_status != "verified"');
+$pending_fm_stmt->execute([$_SESSION['user_id']]);
+$pending_fm_count = $pending_fm_stmt->fetchColumn();
 
 // Handle form submission
 $was_cancel = false;
@@ -131,12 +136,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $requestor_type = $_POST['requestor_type'] ?? 'self';
             $family_member_id = ($requestor_type === 'family_member') ? (int)($_POST['family_member_id'] ?? 0) : null;
 
-            // Critical security check: Is the family member active and belongs to the user?
+            // Critical security check: Is the family member active, belongs to the user, and VERIFIED?
             if ($family_member_id) {
-                $fm_check = $pdo->prepare('SELECT id FROM family_members WHERE id = ? AND user_id = ? AND is_active = 1 LIMIT 1');
+                $fm_check = $pdo->prepare('SELECT id, verification_status FROM family_members WHERE id = ? AND user_id = ? AND is_active = 1 LIMIT 1');
                 $fm_check->execute([$family_member_id, $_SESSION['user_id']]);
-                if (!$fm_check->fetch()) {
+                $fm_data = $fm_check->fetch();
+                if (!$fm_data) {
                     $message = 'Error: Selected family member is inactive or unauthorized.';
+                    goto skip_request;
+                }
+                if ($fm_data['verification_status'] !== 'verified') {
+                    $message = 'Error: Selected family member is not yet verified. Please wait for admin approval.';
                     goto skip_request;
                 }
 
@@ -296,6 +306,12 @@ $documents = $documents_stmt->fetchAll();
                             <?php endif; ?>
                             <option value="add_new_fm" class="text-primary fw-bold">+ Add Family Member</option>
                         </select>
+                        <?php if ($pending_fm_count > 0): ?>
+                            <div class="form-text small text-amber-600 mt-2">
+                                <i class="fas fa-info-circle me-1"></i> 
+                                <?php echo $pending_fm_count; ?> family member(s) are hidden because they are still pending verification.
+                            </div>
+                        <?php endif; ?>
                     </div>
 
                     <div class="mb-3">

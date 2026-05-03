@@ -3,7 +3,9 @@ $page_title = 'Family Members';
 require_once __DIR__ . '/partials/user_dashboard_header.php';
 
 if (!is_logged_in()) redirect('login.php');
-
+?>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<?php
 $pdo = get_db_connection();
 $user_id = $_SESSION['user_id'];
 
@@ -32,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
             $fm_occupation = trim($_POST['fm_occupation'] ?? '');
             $fm_edu = trim($_POST['fm_educational_attainment'] ?? '');
             $fm_edu_status = trim($_POST['fm_educational_status'] ?? '');
+            $fm_id_type = trim($_POST['fm_id_type'] ?? '');
             
             // Boolean flags
             $fm_is_pwd = isset($_POST['fm_is_pwd']) ? 1 : 0;
@@ -51,36 +54,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
                 $family_msg = 'First name, last name, and relationship are required.';
             } else {
                 if ($family_action === 'add_family_member') {
-                    $id_photo_path = null;
-                    if (isset($_FILES['fm_id_photo']) && $_FILES['fm_id_photo']['error'] === UPLOAD_ERR_OK) {
-                        $uploadDir = __DIR__ . '/uploads/ids/';
-                        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                        $ext = pathinfo($_FILES['fm_id_photo']['name'], PATHINFO_EXTENSION);
-                        if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'pdf'])) {
-                            $filename = 'fm_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-                            if (move_uploaded_file($_FILES['fm_id_photo']['tmp_name'], $uploadDir . $filename)) {
-                                $id_photo_path = 'uploads/ids/' . $filename;
+                    $id_front_path = null;
+                    $id_back_path = null;
+                    $uploadDir = __DIR__ . '/uploads/id_documents/';
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+                    // Front ID
+                    if (isset($_FILES['fm_id_front']) && $_FILES['fm_id_front']['error'] === UPLOAD_ERR_OK) {
+                        $ext = pathinfo($_FILES['fm_id_front']['name'], PATHINFO_EXTENSION);
+                        if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png'])) {
+                            $filename = 'fm_front_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                            if (move_uploaded_file($_FILES['fm_id_front']['tmp_name'], $uploadDir . $filename)) {
+                                $id_front_path = $filename;
+                            }
+                        }
+                    }
+                    // Back ID
+                    if (isset($_FILES['fm_id_back']) && $_FILES['fm_id_back']['error'] === UPLOAD_ERR_OK) {
+                        $ext = pathinfo($_FILES['fm_id_back']['name'], PATHINFO_EXTENSION);
+                        if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png'])) {
+                            $filename = 'fm_back_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                            if (move_uploaded_file($_FILES['fm_id_back']['tmp_name'], $uploadDir . $filename)) {
+                                $id_back_path = $filename;
                             }
                         }
                     }
 
-                    $pdo->prepare('INSERT INTO family_members (user_id, first_name, middle_name, last_name, suffix, full_name, relationship, birthdate, sex, civil_status, birth_place, citizenship, philsys_card_no, religion, occupation, educational_attainment, educational_status, classification, id_photo_path, is_pwd, is_senior, is_solo_parent, is_others) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-                        ->execute([$user_id, $fname, $mname, $lname, $fmsuffix, $fm_name, $fm_relationship, $fm_birthdate ?: null, $fm_sex ?: null, $fm_civil_status, $fm_birth_place, $fm_citizenship, $fm_philsys, $fm_religion, $fm_occupation, $fm_edu, $fm_edu_status, $classification_json, $id_photo_path, $fm_is_pwd, $fm_is_senior, $fm_is_solo_parent, $fm_is_others]);
-                    $family_msg = 'Family member added successfully.';
+                    $pdo->prepare('INSERT INTO family_members (user_id, first_name, middle_name, last_name, suffix, full_name, relationship, birthdate, sex, civil_status, birth_place, citizenship, philsys_card_no, religion, occupation, educational_attainment, educational_status, classification, id_front_path, id_back_path, id_type, verification_status, is_pwd, is_senior, is_solo_parent, is_others) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+                        ->execute([$user_id, $fname, $mname, $lname, $fmsuffix, $fm_name, $fm_relationship, $fm_birthdate ?: null, $fm_sex ?: null, $fm_civil_status, $fm_birth_place, $fm_citizenship, $fm_philsys, $fm_religion, $fm_occupation, $fm_edu, $fm_edu_status, $classification_json, $id_front_path, $id_back_path, $fm_id_type, 'pending', $fm_is_pwd, $fm_is_senior, $fm_is_solo_parent, $fm_is_others]);
+                    $family_msg = 'Family member added successfully. Verification is pending.';
                 } else {
                     $fm_id = (int)($_POST['fm_id'] ?? 0);
-                    $id_photo_update = "";
-                    $params = [$fname, $mname, $lname, $fmsuffix, $fm_name, $fm_relationship, $fm_birthdate ?: null, $fm_sex ?: null, $fm_civil_status, $fm_birth_place, $fm_citizenship, $fm_philsys, $fm_religion, $fm_occupation, $fm_edu, $fm_edu_status, $classification_json, $fm_is_pwd, $fm_is_senior, $fm_is_solo_parent, $fm_is_others];
+                    $id_updates = "";
+                    $params = [$fname, $mname, $lname, $fmsuffix, $fm_name, $fm_relationship, $fm_birthdate ?: null, $fm_sex ?: null, $fm_civil_status, $fm_birth_place, $fm_citizenship, $fm_philsys, $fm_religion, $fm_occupation, $fm_edu, $fm_edu_status, $fm_id_type, $classification_json, $fm_is_pwd, $fm_is_senior, $fm_is_solo_parent, $fm_is_others];
 
-                    if (isset($_FILES['fm_id_photo']) && $_FILES['fm_id_photo']['error'] === UPLOAD_ERR_OK) {
-                        $uploadDir = __DIR__ . '/uploads/ids/';
-                        if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                        $ext = pathinfo($_FILES['fm_id_photo']['name'], PATHINFO_EXTENSION);
-                        if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png', 'pdf'])) {
-                            $filename = 'fm_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-                            if (move_uploaded_file($_FILES['fm_id_photo']['tmp_name'], $uploadDir . $filename)) {
-                                $id_photo_update = ", id_photo_path=?";
-                                $params[] = 'uploads/ids/' . $filename;
+                    $uploadDir = __DIR__ . '/uploads/id_documents/';
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+                    $has_new_id = false;
+                    if (isset($_FILES['fm_id_front']) && $_FILES['fm_id_front']['error'] === UPLOAD_ERR_OK) {
+                        $ext = pathinfo($_FILES['fm_id_front']['name'], PATHINFO_EXTENSION);
+                        if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png'])) {
+                            $filename = 'fm_front_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                            if (move_uploaded_file($_FILES['fm_id_front']['tmp_name'], $uploadDir . $filename)) {
+                                $id_updates .= ", id_front_path=?, verification_status='pending'";
+                                $params[] = $filename;
+                                $has_new_id = true;
+                            }
+                        }
+                    }
+                    if (isset($_FILES['fm_id_back']) && $_FILES['fm_id_back']['error'] === UPLOAD_ERR_OK) {
+                        $ext = pathinfo($_FILES['fm_id_back']['name'], PATHINFO_EXTENSION);
+                        if (in_array(strtolower($ext), ['jpg', 'jpeg', 'png'])) {
+                            $filename = 'fm_back_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                            if (move_uploaded_file($_FILES['fm_id_back']['tmp_name'], $uploadDir . $filename)) {
+                                $id_updates .= ", id_back_path=?, verification_status='pending'";
+                                $params[] = $filename;
+                                $has_new_id = true;
                             }
                         }
                     }
@@ -88,9 +118,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
                     $params[] = $fm_id;
                     $params[] = $user_id;
 
-                    $pdo->prepare("UPDATE family_members SET first_name=?, middle_name=?, last_name=?, suffix=?, full_name=?, relationship=?, birthdate=?, sex=?, civil_status=?, birth_place=?, citizenship=?, philsys_card_no=?, religion=?, occupation=?, educational_attainment=?, educational_status=?, classification=?, is_pwd=?, is_senior=?, is_solo_parent=?, is_others=? {$id_photo_update} WHERE id=? AND user_id=?")
+                    $pdo->prepare("UPDATE family_members SET first_name=?, middle_name=?, last_name=?, suffix=?, full_name=?, relationship=?, birthdate=?, sex=?, civil_status=?, birth_place=?, citizenship=?, philsys_card_no=?, religion=?, occupation=?, educational_attainment=?, educational_status=?, id_type=?, classification=?, is_pwd=?, is_senior=?, is_solo_parent=?, is_others=? {$id_updates} WHERE id=? AND user_id=?")
                         ->execute($params);
-                    $family_msg = 'Family member updated successfully.';
+                    $family_msg = 'Family member updated successfully.' . ($has_new_id ? ' ID re-verification pending.' : '');
                 }
             }
         } elseif ($family_action === 'delete_family_member') {
@@ -109,6 +139,7 @@ $family_members = $fm_stmt->fetchAll();
 $relationship_options = ['Spouse', 'Child', 'Parent', 'Sibling', 'Grandparent', 'Grandchild'];
 $civil_status_options = ['Single', 'Married', 'Widowed', 'Separated', 'Annulled'];
 $edu_options = ['No Formal Education', 'Elementary Level', 'Elementary Graduate', 'High School Level', 'High School Graduate', 'Vocational', 'College Level', 'College Graduate', 'Post Graduate'];
+$id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", 'Passport', 'SSS / GSIS ID', 'Postal ID', 'Student ID', 'Other Government ID'];
 ?>
 
 <div class="row justify-content-center animate__animated animate__fadeInUp">
@@ -161,13 +192,29 @@ $edu_options = ['No Formal Education', 'Elementary Level', 'Elementary Graduate'
                                         </div>
                                         <div class="overflow-hidden">
                                             <h6 class="fw-bold text-dark mb-0 text-truncate"><?php echo htmlspecialchars($fm['full_name']); ?></h6>
-                                            <div class="d-flex align-items-center gap-1 mt-1">
+                                            <div class="d-flex align-items-center gap-1 mt-1 flex-wrap">
                                                 <span class="badge bg-teal-100 text-teal-700 rounded-pill small"><?php echo htmlspecialchars($fm['relationship']); ?></span>
+                                                <?php
+                                                $vs = $fm['verification_status'] ?? 'pending';
+                                                $vs_class = 'bg-warning-subtle text-warning border-warning-subtle';
+                                                if ($vs === 'verified') $vs_class = 'bg-success-subtle text-success border-success-subtle';
+                                                if ($vs === 'rejected') $vs_class = 'bg-danger-subtle text-danger border-danger-subtle';
+                                                ?>
+                                                <span class="badge <?php echo $vs_class; ?> border rounded-pill" style="font-size: 0.6rem; padding: 2px 8px; cursor: <?php echo $vs === 'rejected' ? 'help' : 'default'; ?>;" 
+                                                      <?php if($vs === 'rejected'): ?> 
+                                                        title="Reason: <?php echo htmlspecialchars($fm['verification_notes'] ?? 'No reason provided'); ?>" 
+                                                      <?php endif; ?>>
+                                                    <?php echo ucfirst($vs); ?>
+                                                </span>
                                                 <?php if ($fm['is_active']): ?>
                                                     <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" style="font-size: 0.6rem; padding: 2px 8px;">Active</span>
                                                 <?php else: ?>
                                                     <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size: 0.6rem; padding: 2px 8px;">Inactive</span>
                                                 <?php endif; ?>
+                                            </div>
+                                            <?php if ($vs === 'rejected' && !empty($fm['verification_notes'])): ?>
+                                                <div class="text-danger mt-1 fw-bold" style="font-size: 0.6rem;"><i class="fas fa-exclamation-circle me-1"></i> Re-upload ID required</div>
+                                            <?php endif; ?>
                                             </div>
                                         </div>
                                     </div>
@@ -179,11 +226,13 @@ $edu_options = ['No Formal Education', 'Elementary Level', 'Elementary Graduate'
                                             <li><a class="dropdown-item py-2" href="#" onclick='prepareEditModal(<?php echo json_encode($fm); ?>)'><i class="fas fa-pen me-2 text-muted small"></i> Update Details</a></li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <form method="post" onsubmit="return confirmDelete()">
+                                                <form method="post">
                                                     <?php echo csrf_field(); ?>
                                                     <input type="hidden" name="family_action" value="delete_family_member">
                                                     <input type="hidden" name="fm_id" value="<?php echo $fm['id']; ?>">
-                                                    <button type="submit" class="dropdown-item py-2 text-danger"><i class="fas fa-trash-alt me-2 small"></i> Unregister Member</button>
+                                                    <button type="button" class="dropdown-item py-2 text-danger" onclick="confirmDelete(this.form)">
+                                                        <i class="fas fa-trash-alt me-2 small"></i> Unregister Member
+                                                    </button>
                                                 </form>
                                             </li>
                                         </ul>
@@ -409,12 +458,30 @@ $edu_options = ['No Formal Education', 'Elementary Level', 'Elementary Graduate'
                                     </div>
                                 </div>
                                 <div class="col-md-12 mt-3">
-                                    <label class="form-label rbi-label">Attach Identification (Required for Special Classes)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-camera text-muted"></i></span>
-                                        <input type="file" name="fm_id_photo" class="form-control rbi-input" accept="image/*,.pdf">
+                                    <label class="form-label rbi-label">Select ID Type <span class="text-danger">*</span></label>
+                                    <select name="fm_id_type" id="fm_id_type" class="form-select rbi-input mb-3" required>
+                                        <option value="" selected disabled>-- SELECT ID TYPE --</option>
+                                        <?php foreach ($id_type_options as $opt): ?>
+                                            <option value="<?php echo $opt; ?>"><?php echo $opt; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+
+                                    <label class="form-label rbi-label">Attach Identification (Required for Verification) <span class="text-danger">*</span></label>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light border-end-0 small"><i class="fas fa-id-card text-muted me-2"></i> FRONT</span>
+                                                <input type="file" name="fm_id_front" id="fm_id_front" class="form-control rbi-input" accept="image/*" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="input-group">
+                                                <span class="input-group-text bg-light border-end-0 small"><i class="fas fa-id-card text-muted me-2"></i> BACK</span>
+                                                <input type="file" name="fm_id_back" id="fm_id_back" class="form-control rbi-input" accept="image/*" required>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <small class="text-muted mt-1 d-block"><i class="fas fa-info-circle me-1"></i> Max size 2MB. Format: JPG, PNG, or PDF.</small>
+                                    <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle me-1"></i> Upload front and back images of a valid government ID. Max size 2MB per image.</small>
                                 </div>
                             </div>
                         </div>
@@ -464,6 +531,8 @@ function prepareAddModal() {
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus me-2 text-primary"></i>Member Registration';
     document.getElementById('modalAction').value = 'add_family_member';
     document.getElementById('fm_id').value = '';
+    document.getElementById('fm_id_front').required = true;
+    document.getElementById('fm_id_back').required = true;
 }
 
 function prepareEditModal(fm) {
@@ -488,6 +557,7 @@ function prepareEditModal(fm) {
     document.getElementById('fm_occupation').value = fm.occupation || '';
     document.getElementById('fm_educational_attainment').value = fm.educational_attainment || '';
     document.getElementById('fm_educational_status').value = fm.educational_status || '';
+    document.getElementById('fm_id_type').value = fm.id_type || '';
     
     // Checkboxes
     document.getElementById('fm_is_pwd').checked = fm.is_pwd == 1;
@@ -495,11 +565,30 @@ function prepareEditModal(fm) {
     document.getElementById('fm_is_solo_parent').checked = fm.is_solo_parent == 1;
     document.getElementById('fm_is_others').checked = fm.is_others == 1;
     
+    // IDs are optional on edit unless re-uploading
+    document.getElementById('fm_id_front').required = false;
+    document.getElementById('fm_id_back').required = false;
+    
     new bootstrap.Modal(document.getElementById('familyModal')).show();
 }
 
-function confirmDelete() {
-    return confirm("Are you sure you want to unregister this member? This action will remove them from your household and RBI records.");
+function confirmDelete(form) {
+    Swal.fire({
+        title: 'Unregister Member?',
+        text: "This action will remove them from your household and RBI records. Are you sure?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#e11d48',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Yes, Unregister',
+        cancelButtonText: 'Cancel',
+        reverseButtons: true,
+        borderRadius: '15px'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            form.submit();
+        }
+    });
 }
 </script>
 
