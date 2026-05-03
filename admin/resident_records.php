@@ -443,7 +443,8 @@ if ($user_owners) {
                 'is_active' => $fm['is_active'],
                 'created_by_name' => $row['full_name'] ?? 'N/A',
                 'user_id' => $u['user_id'],
-                'created_at' => $fm['created_at'] ?? ($row['created_at'] ?? date('Y-m-d H:i:s'))
+                'created_at' => $fm['created_at'] ?? ($row['created_at'] ?? date('Y-m-d H:i:s')),
+                'verification_status' => 'verified'
             ];
         }
     }
@@ -454,6 +455,7 @@ foreach ($all_resident_records as $rr) {
     if (!in_array($rr['id'], $matched_record_ids)) {
         $rr['resident_type'] = 'OWNER';
         $rr['user_id'] = 0;
+        $rr['verification_status'] = 'verified';
         $unified_records[] = $rr;
     }
 }
@@ -558,7 +560,7 @@ $display_records = array_slice($unified_records, $offset, $limit);
                         <td class="ps-4">
                             <input type="checkbox" class="form-check-input resident-checkbox" data-id="<?php echo $row['id']; ?>" data-user-id="<?php echo $row['user_id'] ?? 0; ?>" data-type="<?php echo $row['resident_type']; ?>" data-fm-id="<?php echo $row['fm_id'] ?? 0; ?>">
                         </td>
-                        <td class="text-secondary small fw-bold"><?php echo $counter++; ?></td>
+                        <td class="text-muted small fw-bold"><?php echo $counter++; ?></td>
                         <td>
                             <div class="fw-bold text-dark"><?php echo htmlspecialchars($row['full_name']); ?></div>
                         </td>
@@ -571,17 +573,17 @@ $display_records = array_slice($unified_records, $offset, $limit);
                                     style="font-size: 0.7rem;">MEMBER</span>
                             <?php endif; ?>
                         </td>
-                        <td class="small text-secondary"><?php echo htmlspecialchars($row['address'] ?? 'N/A'); ?></td>
-                        <td class="small text-secondary"><?php echo htmlspecialchars($row['phone'] ?? 'N/A'); ?></td>
+                        <td class="small text-muted"><?php echo htmlspecialchars($row['address'] ?? 'N/A'); ?></td>
+                        <td class="small text-muted"><?php echo htmlspecialchars($row['phone'] ?? 'N/A'); ?></td>
                         <td>
-                            <?php if ($row['is_active']): ?>
+                            <?php if (($row['verification_status'] ?? '') === 'verified'): ?>
                                 <span
                                     class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1"
-                                    style="font-size: 0.75rem;">Active</span>
+                                    style="font-size: 0.75rem;">Verified</span>
                             <?php else: ?>
                                 <span
                                     class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-1"
-                                    style="font-size: 0.75rem;">Inactive</span>
+                                    style="font-size: 0.75rem;">Hindi Verified</span>
                             <?php endif; ?>
                         </td>
                         <td class="text-center">
@@ -623,7 +625,7 @@ $display_records = array_slice($unified_records, $offset, $limit);
     <!-- Pagination Links -->
     <?php if ($total_pages > 1): ?>
         <div class="px-4 py-3 border-top bg-light d-flex justify-content-between align-items-center">
-            <div class="text-secondary small font-monospace">
+            <div class="text-muted small font-monospace">
                 Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $limit, $total_records); ?> of
                 <?php echo $total_records; ?> records
             </div>

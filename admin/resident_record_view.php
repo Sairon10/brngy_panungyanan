@@ -395,80 +395,83 @@ document.addEventListener('DOMContentLoaded', function () {
                 <h3 class="text-white fw-bold mb-1 position-relative z-1">
                     <?php echo htmlspecialchars($display_data['full_name']); ?></h3>
                 <p class="text-white-50 mb-0 position-relative z-1">
-                    <span class="badge <?php echo (!$is_family_member && !$record['is_active']) ? 'bg-secondary' : 'bg-success'; ?>">
-                        <?php echo (!$is_family_member && !$record['is_active']) ? 'Inactive' : 'Active'; ?>
+                    <?php
+                    $is_verified = ($is_family_member || ($record['id'] ?? 0) > 0 || (($linked_resident['verification_status'] ?? '') === 'verified'));
+                    ?>
+                    <span class="badge <?php echo $is_verified ? 'bg-success' : 'bg-danger'; ?>">
+                        <?php echo $is_verified ? 'Verified' : 'Hindi Verified'; ?>
                     </span>
                 </p>
             </div>
 
             <div class="card-body p-5">
                 <div class="row g-4">
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12">
                         Personal Information <?php echo $is_family_member ? '<span class="badge bg-secondary ms-2">Family Member</span>' : ''; ?>
                     </h6>
 
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">First Name</label>
+                        <label class="form-label fw-semibold text-muted small">First Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['first_name']) ? '-' : $display_data['first_name']); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Last Name</label>
+                        <label class="form-label fw-semibold text-muted small">Last Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['last_name']) ? '-' : $display_data['last_name']); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Middle Name</label>
+                        <label class="form-label fw-semibold text-muted small">Middle Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['middle_name']) ? '-' : $display_data['middle_name']); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Suffix</label>
+                        <label class="form-label fw-semibold text-muted small">Suffix</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['suffix']) ? '-' : $display_data['suffix']); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Full Name</label>
+                        <label class="form-label fw-semibold text-muted small">Full Name</label>
                         <div class="form-control-plaintext border-bottom pb-2 fw-bold">
                             <?php echo htmlspecialchars($display_data['full_name'] ?? '-'); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Email Address</label>
+                        <label class="form-label fw-semibold text-muted small">Email Address</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['email']) ? '-' : $display_data['email']); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Phone Number</label>
+                        <label class="form-label fw-semibold text-muted small">Phone Number</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['phone']) ? '-' : $display_data['phone']); ?>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-secondary small">Birth Date</label>
+                        <label class="form-label fw-semibold text-muted small">Birth Date</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo empty($display_data['birthdate']) ? '-' : date('F j, Y', strtotime($display_data['birthdate'])); ?>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-secondary small">Gender</label>
+                        <label class="form-label fw-semibold text-muted small">Gender</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['sex']) ? '-' : $display_data['sex']); ?>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-secondary small">Citizenship</label>
+                        <label class="form-label fw-semibold text-muted small">Citizenship</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['citizenship']) ? '-' : $display_data['citizenship']); ?>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Civil Status</label>
+                        <label class="form-label fw-semibold text-muted small">Civil Status</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['civil_status']) ? '-' : $display_data['civil_status']); ?>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Religion</label>
+                        <label class="form-label fw-semibold text-muted small">Religion</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $religion = !empty($display_data['religion']) ? $display_data['religion'] : ($is_family_member ? null : ($linked_resident['religion'] ?? null));
@@ -477,7 +480,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Profession / Occupation</label>
+                        <label class="form-label fw-semibold text-muted small">Profession / Occupation</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $occupation = !empty($display_data['occupation']) ? $display_data['occupation'] : ($is_family_member ? null : ($linked_resident['occupation'] ?? null));
@@ -486,7 +489,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Educational Attainment</label>
+                        <label class="form-label fw-semibold text-muted small">Educational Attainment</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $edu = !empty($display_data['educational_attainment']) ? $display_data['educational_attainment'] : ($is_family_member ? null : ($linked_resident['educational_attainment'] ?? null));
@@ -495,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">PhilSys Card No.</label>
+                        <label class="form-label fw-semibold text-muted small">PhilSys Card No.</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $philsys = !empty($display_data['philsys_card_no']) ? $display_data['philsys_card_no'] : ($is_family_member ? null : ($linked_resident['philsys_card_no'] ?? null));
@@ -505,7 +508,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
 
                     <div class="col-md-12">
-                        <label class="form-label fw-semibold text-secondary small">Special Classification</label>
+                        <label class="form-label fw-semibold text-muted small">Special Classification</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             // Try JSON classification first
@@ -540,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
                     <div class="col-12">
-                        <label class="form-label fw-semibold text-secondary small">Complete Address</label>
+                        <label class="form-label fw-semibold text-muted small">Complete Address</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             // Prioritize the user's profile address over the resident record
@@ -550,10 +553,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
 
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12 mt-4">Barangay Records</h6>
+                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-4">Barangay Records</h6>
 
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Barangay ID</label>
+                        <label class="form-label fw-semibold text-muted small">Barangay ID</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $barangay_id = $record['barangay_id'] ?? ($linked_resident['barangay_id'] ?? null);
@@ -562,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Purok</label>
+                        <label class="form-label fw-semibold text-muted small">Purok</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $purok = $record['purok'] ?? ($linked_resident['purok'] ?? null);
@@ -571,10 +574,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
 
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12 mt-4">Account Information</h6>
+                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-4">Account Information</h6>
 
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Account Status</label>
+                        <label class="form-label fw-semibold text-muted small">Account Status</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php if ($linked_user): ?>
                                 <span class="badge bg-success"><i class="fas fa-check-circle"></i> Registered Account</span>
@@ -679,34 +682,37 @@ document.addEventListener('DOMContentLoaded', function () {
                             </div>
                         </div>
                         <div class="col-md-6 mt-2">
-                            <label class="form-label fw-semibold text-secondary small">Account Created</label>
+                            <label class="form-label fw-semibold text-muted small">Account Created</label>
                             <div class="form-control-plaintext border-bottom pb-2">
                                 <?php echo date('F j, Y g:i A', strtotime($linked_user['user_created_at'])); ?></div>
                         </div>
                     <?php endif; ?>
 
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12 mt-4">System Information</h6>
+                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-4">System Information</h6>
 
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Record Status</label>
+                        <label class="form-label fw-semibold text-muted small">Record Status</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <span class="badge <?php echo $record['is_active'] ? 'bg-success' : 'bg-secondary'; ?>">
-                                <?php echo $record['is_active'] ? 'Active' : 'Inactive'; ?>
+                            <?php
+                            $is_verified = ($is_family_member || ($record['id'] ?? 0) > 0 || (($linked_resident['verification_status'] ?? '') === 'verified'));
+                            ?>
+                            <span class="badge <?php echo $is_verified ? 'bg-success' : 'bg-danger'; ?>">
+                                <?php echo $is_verified ? 'Verified' : 'Hindi Verified'; ?>
                             </span>
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Created By</label>
+                        <label class="form-label fw-semibold text-muted small">Created By</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars($record['created_by_name'] ?? 'Unknown'); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Created At</label>
+                        <label class="form-label fw-semibold text-muted small">Created At</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo date('F j, Y g:i A', strtotime($record['created_at'])); ?></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold text-secondary small">Updated At</label>
+                        <label class="form-label fw-semibold text-muted small">Updated At</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo $record['updated_at'] ? date('F j, Y g:i A', strtotime($record['updated_at'])) : '-'; ?>
                         </div>
@@ -718,7 +724,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="row g-4 mt-2">
                         <?php if (!empty($all_requests)): ?>
                             <div class="col-12">
-                                <h6 class="text-uppercase text-secondary fw-bold small mb-3">Document Requests
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">Document Requests
                                     (<?php echo count($all_requests); ?>)</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered">
@@ -760,7 +766,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <?php if (!empty($incidents)): ?>
                             <div class="col-12">
-                                <h6 class="text-uppercase text-secondary fw-bold small mb-3">Incident Reports
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">Incident Reports
                                     (<?php echo count($incidents); ?>)</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered">
@@ -795,7 +801,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <?php if (!empty($family_members)): ?>
                             <div class="col-12 mt-2">
-                                <h6 class="text-uppercase text-secondary fw-bold small mb-3">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
                                     <i class="fas fa-users me-1"></i>Family Members (<?php echo count($family_members); ?>)
                                 </h6>
                                 <div class="table-responsive">
@@ -874,17 +880,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 <?php if ($is_family_member): ?>
                 <div class="mt-4 pt-4 border-top">
-                    <h6 class="text-uppercase text-secondary fw-bold small mb-3">
+                    <h6 class="text-uppercase text-muted fw-bold small mb-3">
                         <i class="fas fa-home me-2"></i>Household Head Information
                     </h6>
                     <div class="bg-light p-4 rounded-3 border">
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Full Name</label>
+                                <label class="form-label fw-semibold text-muted small mb-1">Full Name</label>
                                 <div class="fw-bold text-dark"><?php echo htmlspecialchars($edit_data['full_name'] ?? '-'); ?></div>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Phone Number</label>
+                                <label class="form-label fw-semibold text-muted small mb-1">Phone Number</label>
                                 <div class="text-dark"><?php echo htmlspecialchars(empty($edit_data['phone']) ? '-' : $edit_data['phone']); ?></div>
                             </div>
                             <div class="col-md-4 d-flex align-items-center">
@@ -893,7 +899,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </a>
                             </div>
                             <div class="col-12">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Complete Address</label>
+                                <label class="form-label fw-semibold text-muted small mb-1">Complete Address</label>
                                 <div class="text-dark">
                                     <?php 
                                     $head_address = !empty($linked_resident['address']) ? $linked_resident['address'] : ($record['address'] ?? null);
@@ -971,7 +977,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <input type="hidden" name="user_id" id="edit_user_id">
                 <div class="modal-body">
                     <div class="row g-3">
-                        <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12">Personal Information</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12">Personal Information</h6>
 
                         <div class="col-md-6">
                             <label class="form-label">First Name *</label>
@@ -1038,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="col-12 mt-2">
                             <div class="row g-3">
                                 <div class="col-md-6 border-end pe-4">
-                                    <label class="form-label text-uppercase small fw-bold text-secondary">Highest Educational Attainment</label>
+                                    <label class="form-label text-uppercase small fw-bold text-muted">Highest Educational Attainment</label>
                                     <div class="d-flex flex-column gap-2" id="edit_edu_base_options">
                                         <?php
                                         $edu_opts = ['Elementary', 'High School', 'College', 'Post Grad', 'Vocational'];
@@ -1054,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     </div>
                                 </div>
                                 <div class="col-md-6 ps-4">
-                                    <label class="form-label text-uppercase small fw-bold text-secondary">Please Specify</label>
+                                    <label class="form-label text-uppercase small fw-bold text-muted">Please Specify</label>
                                     <div class="d-flex flex-column gap-2">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="edu_status"
@@ -1072,13 +1078,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label text-uppercase small fw-bold text-secondary">Complete Address *</label>
+                            <label class="form-label text-uppercase small fw-bold text-muted">Complete Address *</label>
                             <input type="text" name="address" id="edit_address" class="form-control" required 
                                 placeholder="e.g. 106, Panungyanan, City of General Trias, Cavite">
                             <div class="form-text small">Please include House No., Street, Barangay, etc.</div>
                         </div>
 
-                        <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12 mt-3">Barangay Records</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-3">Barangay Records</h6>
 
                         <div class="col-md-6">
                             <label class="form-label">Barangay ID</label>
@@ -1090,7 +1096,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <input type="text" name="purok" id="edit_purok" class="form-control" placeholder="e.g. Purok 1, Purok 2">
                         </div>
 
-                        <h6 class="text-uppercase text-secondary fw-bold small mb-3 col-12 mt-3">Special Classification (Multiple Selection)</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-3">Special Classification (Multiple Selection)</h6>
                         <div class="col-12">
                             <div class="row g-2">
                                 <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_0" value="Labor/Employed"><label class="form-check-label small fw-semibold" for="ecls_0">Labor/Employed</label></div></div>

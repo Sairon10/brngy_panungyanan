@@ -291,11 +291,11 @@ $display_rows = array_slice($rows, $offset, $limit);
 				?>
 				<tr>
 					<td class="ps-3"><input type="checkbox" class="form-check-input resident-checkbox"></td>
-					<td class="text-secondary small fw-bold"><?php echo $counter++; ?></td>
+					<td class="text-muted small fw-bold"><?php echo $counter++; ?></td>
 					<td class="fw-bold text-dark"><?php echo htmlspecialchars($r['full_name']); ?></td>
-					<td class="small text-secondary"><?php echo htmlspecialchars($r['address'] ?? 'N/A'); ?></td>
-					<td class="small text-secondary"><?php echo htmlspecialchars($r['phone'] ?? 'N/A'); ?></td>
-					<td class="small text-secondary"><?php echo htmlspecialchars($r['email'] ?? 'N/A'); ?></td>
+					<td class="small text-muted"><?php echo htmlspecialchars($r['address'] ?? 'N/A'); ?></td>
+					<td class="small text-muted"><?php echo htmlspecialchars($r['phone'] ?? 'N/A'); ?></td>
+					<td class="small text-muted"><?php echo htmlspecialchars($r['email'] ?? 'N/A'); ?></td>
 					<td>
 						<?php if ($r['verification_status'] === 'verified'): ?>
 							<span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Verified</span>
@@ -339,7 +339,7 @@ $display_rows = array_slice($rows, $offset, $limit);
 <!-- Pagination Links -->
 <?php if ($total_pages > 1): ?>
 	<div class="px-4 py-3 border-top bg-light d-flex justify-content-between align-items-center">
-		<div class="text-secondary small font-monospace">
+		<div class="text-muted small font-monospace">
 			Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $limit, $total_records); ?> of
 			<?php echo $total_records; ?> accounts
 		</div>
