@@ -57,7 +57,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         // DEBUG: Log phone number status
                         $debug_phone = $data['phone'] ?? 'NULL';
-                        file_put_contents(__DIR__ . '/../sms_debug.log', date('[Y-m-d H:i:s] ') . "Checking SMS trigger. Phone: '$debug_phone', Type: $target_type, ID: $target_id\n", FILE_APPEND);
+                        $log_entry = date('[Y-m-d H:i:s] ') . "Checking SMS trigger. Phone: '$debug_phone', Type: $target_type, ID: $target_id\n";
+                        if (@file_put_contents(__DIR__ . '/../sms_debug.log', $log_entry, FILE_APPEND) === false) {
+                            $success .= " [Warning: Server cannot write to sms_debug.log]";
+                        }
 
                         if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
                             $sms_result = send_id_verification_sms($data['phone'], 'verified', [
@@ -65,12 +68,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'verification_notes' => ''
                             ]);
                             if (!$sms_result['success']) {
-                                $success .= " (Email sent, but SMS failed: " . $sms_result['message'] . ")";
+                                $success .= " | SMS FAILED: " . $sms_result['message'];
                             } else {
-                                $success .= " (Email and SMS sent)";
+                                $success .= " | SMS SENT SUCCESS";
                             }
                         } else {
-                            $success .= " (Email sent, no phone number for SMS)";
+                            $success .= " | SMS SKIPPED (Empty phone or missing function)";
                         }
                     } elseif ($action === 'reject') {
                         $notes = trim($_POST['rejection_notes'] ?? '');
