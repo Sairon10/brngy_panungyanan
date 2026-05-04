@@ -11,8 +11,11 @@ $errors = [];
 $success = '';
 
 // Handle verification actions
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if (!csrf_validate()) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    file_put_contents(__DIR__ . '/../sms_debug.log', date('[Y-m-d H:i:s] ') . "POST Request Received. Action: " . ($_POST['action'] ?? 'NONE') . "\n", FILE_APPEND);
+    if (!isset($_POST['action'])) {
+        // Just log and continue
+    } elseif (!csrf_validate()) {
         $errors[] = 'Invalid CSRF token. Please refresh the page and try again.';
     } else {
         $target_id = (int) ($_POST['target_id'] ?? 0);
