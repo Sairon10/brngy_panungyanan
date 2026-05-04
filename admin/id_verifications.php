@@ -194,7 +194,7 @@ $residents_data = $residents->fetchAll();
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <div>
-                <h4 class="fw-bold text-dark mb-1">ID Verification</h4>
+                <h4 class="fw-bold text-dark mb-1">ID Verification <small class="text-danger" style="font-size: 0.6rem;">(SMS Debug Active)</small></h4>
                 <p class="text-muted small mb-0">Manage and review resident identity documents</p>
             </div>
             <div class="btn-group shadow-sm bg-white rounded-3 p-1">
