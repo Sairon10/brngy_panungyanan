@@ -45,13 +45,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                 if ($rd) {
                     if ($_POST['action'] === 'verify') {
                         $pdo->prepare('UPDATE residents SET verification_status = \'verified\', verified_at = NOW(), verified_by = ? WHERE id = ?')->execute([$_SESSION['user_id'], $resident_id]);
-                        if (!empty($rd['email']))
+                        
+                        $sms_feedback = "";
+                        if (!empty($rd['email'])) {
                             send_id_verification_email($rd['email'], 'verified', ['full_name' => $rd['full_name'], 'verification_notes' => null]);
+                        }
+
+                        if (!empty($rd['phone']) && function_exists('send_id_verification_sms')) {
+                            $sms_res = send_id_verification_sms($rd['phone'], 'verified', ['full_name' => $rd['full_name'], 'verification_notes' => '']);
+                            $sms_feedback = $sms_res['success'] ? " (SMS Sent)" : " (SMS Failed: " . $sms_res['message'] . ")";
+                        }
+
                         $redirect_url = 'resident_record_view.php?id=' . $record_id;
                         if ($record_id <= 0 && $user_id > 0) {
                             $redirect_url .= '&user_id=' . $user_id;
                         }
-                        header('Location: ' . $redirect_url . '&msg=' . urlencode('Resident has been verified successfully.'));
+                        header('Location: ' . $redirect_url . '&msg=' . urlencode('Resident has been verified successfully.' . $sms_feedback));
                         exit;
                     } elseif ($_POST['action'] === 'reject') {
                         $notes = trim($_POST['rejection_notes'] ?? '');
@@ -59,14 +68,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                             $errors[] = 'Rejection reason is required.';
                         } else {
                             $pdo->prepare('UPDATE residents SET verification_status = \'rejected\', verification_notes = ?, verified_at = NOW(), verified_by = ? WHERE id = ?')->execute([$notes, $_SESSION['user_id'], $resident_id]);
-                            if (!empty($rd['email']))
+                            
+                            $sms_feedback = "";
+                            if (!empty($rd['email'])) {
                                 send_id_verification_email($rd['email'], 'rejected', ['full_name' => $rd['full_name'], 'verification_notes' => $notes]);
+                            }
+
+                            if (!empty($rd['phone']) && function_exists('send_id_verification_sms')) {
+                                $sms_res = send_id_verification_sms($rd['phone'], 'rejected', ['full_name' => $rd['full_name'], 'verification_notes' => $notes]);
+                                $sms_feedback = $sms_res['success'] ? " (SMS Sent)" : " (SMS Failed: " . $sms_res['message'] . ")";
+                            }
 
                             $redirect_url = 'resident_record_view.php?id=' . $record_id;
                             if ($record_id <= 0 && $user_id > 0) {
                                 $redirect_url .= '&user_id=' . $user_id;
                             }
-                            header('Location: ' . $redirect_url . '&msg=' . urlencode('Resident verification has been rejected.'));
+                            header('Location: ' . $redirect_url . '&msg=' . urlencode('Resident verification has been rejected.' . $sms_feedback));
                             exit;
                         }
                     }
