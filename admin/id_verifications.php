@@ -52,6 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             send_id_verification_email($data['email'], 'verified', ['full_name' => $data['full_name']]);
                         }
 
+                        // DEBUG: Log phone number status
+                        $debug_phone = $data['phone'] ?? 'NULL';
+                        file_put_contents(__DIR__ . '/../sms_debug.log', date('[Y-m-d H:i:s] ') . "Checking SMS trigger. Phone: '$debug_phone', Type: $target_type, ID: $target_id\n", FILE_APPEND);
+
                         if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
                             $sms_result = send_id_verification_sms($data['phone'], 'verified', [
                                 'full_name' => $data['full_name'],
