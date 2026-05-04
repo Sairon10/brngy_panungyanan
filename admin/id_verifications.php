@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                     $data = $resident_stmt->fetch();
                     $table = 'residents';
                 } else {
-                    $fm_stmt = $pdo->prepare('SELECT fm.*, u.email, u.full_name as head_name, fm.user_id FROM family_members fm JOIN users u ON fm.user_id = u.id WHERE fm.id = ?');
+                    $fm_stmt = $pdo->prepare('SELECT fm.*, u.email, u.full_name as head_name, fm.user_id, r.phone FROM family_members fm JOIN users u ON fm.user_id = u.id LEFT JOIN residents r ON r.user_id = u.id WHERE fm.id = ?');
                     $fm_stmt->execute([$target_id]);
                     $data = $fm_stmt->fetch();
                     $table = 'family_members';
@@ -51,6 +51,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         if (!empty($data['email']) && function_exists('send_id_verification_email')) {
                             send_id_verification_email($data['email'], 'verified', ['full_name' => $data['full_name']]);
                         }
+
+                        if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
+                            send_id_verification_sms($data['phone'], 'verified', [
+                                'full_name' => $data['full_name'],
+                                'verification_notes' => ''
+                            ]);
+                        }
                     } elseif ($action === 'reject') {
                         $notes = trim($_POST['rejection_notes'] ?? '');
                         if ($notes === '') {
@@ -63,6 +70,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             $notif_msg = ($target_type === 'resident') ? "Your ID verification was rejected. Reason: " . $notes : "The ID verification for family member " . $data['full_name'] . " was rejected. Reason: " . $notes;
                             $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "ID Verification Rejected", ?)')
                                 ->execute([$data['user_id'], $notif_msg]);
+
+                            if (!empty($data['email']) && function_exists('send_id_verification_email')) {
+                                send_id_verification_email($data['email'], 'rejected', [
+                                    'full_name' => $data['full_name'],
+                                    'rejection_notes' => $notes
+                                ]);
+                            }
+
+                            if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
+                                send_id_verification_sms($data['phone'], 'rejected', [
+                                    'full_name' => $data['full_name'],
+                                    'verification_notes' => $notes
+                                ]);
+                            }
                         }
                     }
                 }
