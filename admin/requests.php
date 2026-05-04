@@ -156,10 +156,12 @@ function admin_requests_apply_status(
 	];
 }
 
-function admin_requests_notification_alerts(?string $userEmail, $userPhone, string $status, ?array $requestData): array {
+function admin_requests_notification_alerts(?string $userEmail, $userPhone, string $status, ?array $requestData): array
+{
 	$results = ['email' => null, 'sms' => null];
-	if (!$requestData) return $results;
-	
+	if (!$requestData)
+		return $results;
+
 	if ($userEmail && !empty($userEmail)) {
 		$emailResult = send_request_status_email($userEmail, $status, $requestData);
 		$results['email'] = $emailResult['success'];
@@ -182,8 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (!empty($_POST['walkin_action'])) {
 			$wi_resident_id = (int) ($_POST['wi_resident_id'] ?? 0);
 			$wi_requestor_name = trim($_POST['wi_requestor_name'] ?? '');
-			$wi_doc_type    = trim($_POST['wi_doc_type'] ?? '');
-			$wi_purpose     = trim($_POST['wi_purpose'] ?? '');
+			$wi_doc_type = trim($_POST['wi_doc_type'] ?? '');
+			$wi_purpose = trim($_POST['wi_purpose'] ?? '');
 
 			if ($wi_doc_type && ($wi_resident_id || $wi_requestor_name)) {
 				$wi_user_id = $admin_uid; // default to admin
@@ -212,13 +214,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 				$_SESSION['action_success'] = [
 					'title' => 'Walk-in Request Added',
-					'text'  => $wi_doc_type . ' request for ' . ($wi_requestor_name ? $wi_requestor_name : 'the selected resident') . ' has been created and is now pending.',
+					'text' => $wi_doc_type . ' request for ' . ($wi_requestor_name ? $wi_requestor_name : 'the selected resident') . ' has been created and is now pending.',
 				];
 				redirect('requests.php');
 			} else {
 				$_SESSION['action_error'] = [
 					'title' => 'Incomplete Form',
-					'text'  => 'Please provide a Requestor Name and select a Document Type.'
+					'text' => 'Please provide a Requestor Name and select a Document Type.'
 				];
 				redirect('requests.php');
 			}
@@ -273,10 +275,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$expected = $page_st;
 					// Safety: if on 'All' page, only target sensible current statuses
 					if ($page_st === null) {
-						if ($bulk_action === 'mark_ready') $expected = 'pending';
-						elseif ($bulk_action === 'mark_released') $expected = 'approved';
-						elseif ($bulk_action === 'undo_release') $expected = 'released';
-						elseif ($bulk_action === 'undo_reject') $expected = 'rejected';
+						if ($bulk_action === 'mark_ready')
+							$expected = 'pending';
+						elseif ($bulk_action === 'mark_released')
+							$expected = 'approved';
+						elseif ($bulk_action === 'undo_release')
+							$expected = 'released';
+						elseif ($bulk_action === 'undo_reject')
+							$expected = 'rejected';
 					}
 					$ok_count = 0;
 					$skip_count = 0;
@@ -286,46 +292,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					if (count($selected) === 0) {
 						$email_status_message = '<div class="alert alert-warning alert-dismissible fade show" role="alert"><i class="fas fa-exclamation-circle me-2"></i>Select at least one request using the checkboxes.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
 					} else {
-					$skipped_details = [];
-					foreach ($selected as $token) {
-						if (!is_string($token) || !preg_match('/^(clearance|document)_(\d+)$/', $token, $m)) {
-							$skip_count++;
-							$skipped_details[] = ['id' => $token, 'reason' => 'Invalid ID format'];
-							continue;
-						}
-						$rtype = $m[1];
-						$rid = (int) $m[2];
-						$res = admin_requests_apply_status($pdo, $rid, $rtype, $target_status, $bulk_notes, $admin_uid, $expected);
-						if (!$res['ok']) {
-							$skip_count++;
-							$info_label = ($rtype === 'clearance' ? 'Clearance #' : 'Request #') . $rid;
-							// Try to get more info for the skip report
-							if ($rtype === 'clearance') {
-								$st = $pdo->prepare("SELECT u.full_name, status FROM barangay_clearances bc JOIN users u ON u.id=bc.user_id WHERE bc.id=?");
-							} else {
-								$st = $pdo->prepare("SELECT u.full_name, status FROM document_requests dr JOIN users u ON u.id=dr.user_id WHERE dr.id=?");
+						$skipped_details = [];
+						foreach ($selected as $token) {
+							if (!is_string($token) || !preg_match('/^(clearance|document)_(\d+)$/', $token, $m)) {
+								$skip_count++;
+								$skipped_details[] = ['id' => $token, 'reason' => 'Invalid ID format'];
+								continue;
 							}
-							$st->execute([$rid]);
-							$row = $st->fetch(PDO::FETCH_ASSOC);
-							$reason_msg = ($res['reason'] === 'status_mismatch') ? 'Current status (' . ($row['status'] ?? 'unknown') . ') does not match required status' : 'Request not found';
-							$skipped_details[] = [
-								'name' => $row['full_name'] ?? 'Unknown',
-								'label' => $info_label,
-								'reason' => $reason_msg
-							];
-							continue;
+							$rtype = $m[1];
+							$rid = (int) $m[2];
+							$res = admin_requests_apply_status($pdo, $rid, $rtype, $target_status, $bulk_notes, $admin_uid, $expected);
+							if (!$res['ok']) {
+								$skip_count++;
+								$info_label = ($rtype === 'clearance' ? 'Clearance #' : 'Request #') . $rid;
+								// Try to get more info for the skip report
+								if ($rtype === 'clearance') {
+									$st = $pdo->prepare("SELECT u.full_name, status FROM barangay_clearances bc JOIN users u ON u.id=bc.user_id WHERE bc.id=?");
+								} else {
+									$st = $pdo->prepare("SELECT u.full_name, status FROM document_requests dr JOIN users u ON u.id=dr.user_id WHERE dr.id=?");
+								}
+								$st->execute([$rid]);
+								$row = $st->fetch(PDO::FETCH_ASSOC);
+								$reason_msg = ($res['reason'] === 'status_mismatch') ? 'Current status (' . ($row['status'] ?? 'unknown') . ') does not match required status' : 'Request not found';
+								$skipped_details[] = [
+									'name' => $row['full_name'] ?? 'Unknown',
+									'label' => $info_label,
+									'reason' => $reason_msg
+								];
+								continue;
+							}
+							$ok_count++;
+							if (!empty($res['requestData'])) {
+								$n = admin_requests_notification_alerts($res['userEmail'] ?? null, $res['userPhone'] ?? null, $res['status'], $res['requestData']);
+							}
 						}
-						$ok_count++;
-						if (!empty($res['requestData'])) {
-							$n = admin_requests_notification_alerts($res['userEmail'] ?? null, $res['userPhone'] ?? null, $res['status'], $res['requestData']);
-						}
-					}
-					$_SESSION['bulk_result'] = [
-						'ok' => (int) $ok_count,
-						'skip' => (int) $skip_count,
-						'skipped_items' => $skipped_details
-					];
-					$email_status_message = '';
+						$_SESSION['bulk_result'] = [
+							'ok' => (int) $ok_count,
+							'skip' => (int) $skip_count,
+							'skipped_items' => $skipped_details
+						];
+						$email_status_message = '';
 					}
 				}
 			}
@@ -386,23 +392,23 @@ $wi_doc_types = $pdo->query('SELECT name FROM document_types ORDER BY name')->fe
 
 // Define available purposes for Indigency certificates
 $indigency_purposes_list = [
-    'Financial/Medical Assistance',
-    'Burial Assistance',
-    'Senior Citizen Social Pension',
-    'Vaccination Requirements',
-    'Educational Assistance',
-    'Other\'s'
+	'Financial/Medical Assistance',
+	'Burial Assistance',
+	'Senior Citizen Social Pension',
+	'Vaccination Requirements',
+	'Educational Assistance',
+	'Other\'s'
 ];
 
 // Define available purposes for Clearance certificates
 $clearance_purposes_list = [
-    'Local Employment',
-    'Postal ID Application',
-    'Medical/Financial Assistance',
-    'Bank Requirements',
-    'Scholarship Program',
-    'Water/Electric Connection',
-    'Educational Assistance',
+	'Local Employment',
+	'Postal ID Application',
+	'Medical/Financial Assistance',
+	'Bank Requirements',
+	'Scholarship Program',
+	'Water/Electric Connection',
+	'Educational Assistance',
 	'Other\'s'
 ];
 
@@ -452,42 +458,63 @@ require_once __DIR__ . '/header.php';
 ?>
 
 <style>
-.btn-action {
-	width: 32px;
-	height: 32px;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0;
-	font-size: 0.8rem;
-	border-radius: 50%;
-}
-.admin-table .dropdown-toggle-actions::after { display: none; }
-.admin-table td .dropdown-menu { z-index: 1055; min-width: 12rem; }
-.badge[role="button"] { transition: all 0.2s ease; border: 1px solid transparent !important; }
-.badge[role="button"]:hover { opacity: 0.85; transform: translateY(-1px); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.1) !important; }
+	.btn-action {
+		width: 32px;
+		height: 32px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0;
+		font-size: 0.8rem;
+		border-radius: 50%;
+	}
+
+	.admin-table .dropdown-toggle-actions::after {
+		display: none;
+	}
+
+	.admin-table td .dropdown-menu {
+		z-index: 1055;
+		min-width: 12rem;
+	}
+
+	.badge[role="button"] {
+		transition: all 0.2s ease;
+		border: 1px solid transparent !important;
+	}
+
+	.badge[role="button"]:hover {
+		opacity: 0.85;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+		border-color: rgba(0, 0, 0, 0.1) !important;
+	}
 </style>
 
 <div class="admin-table">
 	<div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
 		<div>
-			<h5 class="mb-0"><i class="fas fa-file-alt me-2"></i><?php echo htmlspecialchars($rv_meta['heading']); ?></h5>
+			<h5 class="mb-0"><i class="fas fa-file-alt me-2"></i><?php echo htmlspecialchars($rv_meta['heading']); ?>
+			</h5>
 			<p class="text-muted mb-0"><?php echo htmlspecialchars($rv_meta['sub']); ?></p>
 		</div>
 		<div class="d-flex align-items-center gap-2 flex-nowrap">
-			<button type="button" class="btn btn-primary btn-sm rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#walkinRequestModal">
+			<button type="button" class="btn btn-primary btn-sm rounded-pill px-3 text-nowrap" data-bs-toggle="modal"
+				data-bs-target="#walkinRequestModal">
 				<i class="fas fa-plus me-1"></i> Walk-in Request
 			</button>
 			<form action="" method="GET" class="input-group" style="max-width: 260px; min-width: 180px;">
 				<?php if (isset($_GET['status_filter'])): ?>
-					<input type="hidden" name="status_filter" value="<?php echo htmlspecialchars($_GET['status_filter']); ?>">
+					<input type="hidden" name="status_filter"
+						value="<?php echo htmlspecialchars($_GET['status_filter']); ?>">
 				<?php endif; ?>
 				<span class="input-group-text"><i class="fas fa-search"></i></span>
-				<input type="text" name="search" class="form-control" placeholder="Search requests..." value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
+				<input type="text" name="search" class="form-control" placeholder="Search requests..."
+					value="<?php echo htmlspecialchars($_GET['search'] ?? ''); ?>">
 			</form>
 		</div>
 	</div>
-	
+
 	<?php $show_request_checkboxes = ($admin_requests_page_status !== 'canceled'); ?>
 	<form method="post" id="bulkActionForm" class="d-none" action="">
 		<?php echo csrf_field(); ?>
@@ -502,12 +529,14 @@ require_once __DIR__ . '/header.php';
 				<thead class="bg-light text-uppercase">
 					<tr>
 						<?php if ($show_request_checkboxes): ?>
-						<th class="py-3 ps-3" style="width: 40px;">
-							<input type="checkbox" class="form-check-input" id="selectAllRequests" onclick="toggleSelectAll(this)">
-						</th>
+							<th class="py-3 ps-3" style="width: 40px;">
+								<input type="checkbox" class="form-check-input" id="selectAllRequests"
+									onclick="toggleSelectAll(this)">
+							</th>
 						<?php endif; ?>
 
-						<th class="py-3 <?php echo $show_request_checkboxes ? '' : 'ps-3'; ?>" style="width: 50px;">#</th>
+						<th class="py-3 <?php echo $show_request_checkboxes ? '' : 'ps-3'; ?>" style="width: 50px;">#
+						</th>
 						<th class="py-3">Name</th>
 						<th class="py-3">Status</th>
 						<th class="py-3">Date</th>
@@ -515,77 +544,92 @@ require_once __DIR__ . '/header.php';
 							<div class="d-flex align-items-center justify-content-center gap-2">
 								Action
 								<?php if ($show_request_checkboxes): ?>
-								<div class="dropdown">
-									<button class="btn btn-sm btn-light border-0 text-secondary p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Actions" style="width: 24px; height: 24px;">
-										<i class="fas fa-ellipsis-v" style="font-size: 0.85rem;"></i>
-									</button>
-									<ul class="dropdown-menu shadow border-0 py-2 small text-none">
-										<?php if ($admin_requests_page_status === 'pending'): ?>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('mark_ready');">
-													Ready to pick up
-												</button>
-											</li>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkRejectOpen();">
-													Rejected
-												</button>
-											</li>
-										<?php elseif ($admin_requests_page_status === 'approved'): ?>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('mark_released');">
-													Released
-												</button>
-											</li>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkRejectOpen();">
-													Rejected
-												</button>
-											</li>
-										<?php elseif ($admin_requests_page_status === 'released'): ?>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('undo_release');">
-													Undo Release
-												</button>
-											</li>
-										<?php elseif ($admin_requests_page_status === 'rejected'): ?>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('undo_reject');">
-													Undo Reject
-												</button>
-											</li>
-										<?php elseif ($admin_requests_page_status === null): ?>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('mark_ready');">
-													Ready to pick up
-												</button>
-											</li>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('mark_released');">
-													Released
-												</button>
-											</li>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkRejectOpen();">
-													Rejected
-												</button>
-											</li>
-											<li><hr class="dropdown-divider"></li>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('undo_release');">
-													Undo Release
-												</button>
-											</li>
-											<li>
-												<button type="button" class="dropdown-item rounded-0 py-2" onclick="adminBulkSubmit('undo_reject');">
-													Undo Reject
-												</button>
-											</li>
-										<?php else: ?>
-											<li class="px-3 py-2 text-muted small">Select items to manage</li>
-										<?php endif; ?>
-									</ul>
-								</div>
+									<div class="dropdown">
+										<button class="btn btn-sm btn-light border-0 text-secondary p-0" type="button"
+											data-bs-toggle="dropdown" aria-expanded="false" title="Actions"
+											style="width: 24px; height: 24px;">
+											<i class="fas fa-ellipsis-v" style="font-size: 0.85rem;"></i>
+										</button>
+										<ul class="dropdown-menu shadow border-0 py-2 small text-none">
+											<?php if ($admin_requests_page_status === 'pending'): ?>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('mark_ready');">
+														Ready to pick up
+													</button>
+												</li>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkRejectOpen();">
+														Rejected
+													</button>
+												</li>
+											<?php elseif ($admin_requests_page_status === 'approved'): ?>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('mark_released');">
+														Released
+													</button>
+												</li>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkRejectOpen();">
+														Rejected
+													</button>
+												</li>
+											<?php elseif ($admin_requests_page_status === 'released'): ?>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('undo_release');">
+														Undo Release
+													</button>
+												</li>
+											<?php elseif ($admin_requests_page_status === 'rejected'): ?>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('undo_reject');">
+														Undo Reject
+													</button>
+												</li>
+											<?php elseif ($admin_requests_page_status === null): ?>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('mark_ready');">
+														Ready to pick up
+													</button>
+												</li>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('mark_released');">
+														Released
+													</button>
+												</li>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkRejectOpen();">
+														Rejected
+													</button>
+												</li>
+												<li>
+													<hr class="dropdown-divider">
+												</li>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('undo_release');">
+														Undo Release
+													</button>
+												</li>
+												<li>
+													<button type="button" class="dropdown-item rounded-0 py-2"
+														onclick="adminBulkSubmit('undo_reject');">
+														Undo Reject
+													</button>
+												</li>
+											<?php else: ?>
+												<li class="px-3 py-2 text-muted small">Select items to manage</li>
+											<?php endif; ?>
+										</ul>
+									</div>
 								<?php endif; ?>
 							</div>
 						</th>
@@ -631,7 +675,7 @@ require_once __DIR__ . '/header.php';
 								$stored_purpose = $d['indigency_purposes'];
 							}
 						}
-						
+
 						$all_requests[] = [
 							'type' => 'document',
 							'id' => $d['id'],
@@ -654,13 +698,13 @@ require_once __DIR__ . '/header.php';
 							'fm_birthdate' => $d['fm_birthdate'] ?? null
 						];
 					}
-					usort($all_requests, function($a, $b) {
+					usort($all_requests, function ($a, $b) {
 						return strtotime($b['date']) - strtotime($a['date']);
 					});
 					// Apply status filter if set (dedicated page or legacy ?status_filter= on requests.php)
 					$status_filter = $admin_requests_page_status ?? '';
 					if (!empty($status_filter)) {
-						$all_requests = array_filter($all_requests, function($r) use ($status_filter) {
+						$all_requests = array_filter($all_requests, function ($r) use ($status_filter) {
 							return $r['status'] === $status_filter;
 						});
 					}
@@ -668,25 +712,27 @@ require_once __DIR__ . '/header.php';
 					// Search filter
 					$search = trim($_GET['search'] ?? '');
 					if ($search !== '') {
-						$all_requests = array_filter($all_requests, function($r) use ($search) {
+						$all_requests = array_filter($all_requests, function ($r) use ($search) {
 							$s = strtolower($search);
-							return stripos($r['resident'], $s) !== false || 
-							       stripos($r['details'], $s) !== false || 
-							       stripos($r['doc_type'], $s) !== false ||
-							       stripos($r['number'], $s) !== false;
+							return stripos($r['resident'], $s) !== false ||
+								stripos($r['details'], $s) !== false ||
+								stripos($r['doc_type'], $s) !== false ||
+								stripos($r['number'], $s) !== false;
 						});
 					}
 
 					// Pagination logic
-					$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-					if ($page < 1) $page = 1;
+					$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+					if ($page < 1)
+						$page = 1;
 
 					$limit = 10;
 					$total_requests = count($all_requests);
 					$total_pages = ceil($total_requests / $limit);
 
-					if ($total_pages > 0 && $page > $total_pages) $page = $total_pages;
-					
+					if ($total_pages > 0 && $page > $total_pages)
+						$page = $total_pages;
+
 					$offset = ($page - 1) * $limit;
 					$paginated_requests = array_slice($all_requests, $offset, $limit);
 
@@ -701,8 +747,10 @@ require_once __DIR__ . '/header.php';
 					<?php else: ?>
 						<?php foreach ($paginated_requests as $req): ?>
 							<?php
-							$statusClass = ''; $statusLabel = ''; $statusIcon = '';
-							switch($req['status']) {
+							$statusClass = '';
+							$statusLabel = '';
+							$statusIcon = '';
+							switch ($req['status']) {
 								case 'pending':
 									$statusClass = 'bg-amber-50 text-amber-600';
 									$statusLabel = 'Pending';
@@ -722,7 +770,8 @@ require_once __DIR__ . '/header.php';
 									$statusClass = 'bg-rose-50 text-rose-600';
 									$statusLabel = 'Rejected';
 									$statusIcon = 'fa-times-circle';
-									if (!empty($req['notes'])) $statusIcon = 'fa-info-circle';
+									if (!empty($req['notes']))
+										$statusIcon = 'fa-info-circle';
 									break;
 								case 'canceled':
 									$statusClass = 'bg-secondary bg-opacity-10 text-secondary';
@@ -734,10 +783,13 @@ require_once __DIR__ . '/header.php';
 									$statusLabel = ucfirst($req['status']);
 									$statusIcon = 'fa-circle';
 							}
-							
+
 							// Determine PDF link
 							$pdf_link = '';
-							$is_indigency = false; $is_good_moral = false; $is_resident_id = false; $is_cohabitation = false;
+							$is_indigency = false;
+							$is_good_moral = false;
+							$is_resident_id = false;
+							$is_cohabitation = false;
 							if ($req['type'] === 'document' && isset($req['doc_type'])) {
 								$is_indigency = (stripos($req['doc_type'], 'Indigency') !== false);
 								$is_good_moral = (stripos($req['doc_type'], 'Good Moral') !== false);
@@ -745,15 +797,15 @@ require_once __DIR__ . '/header.php';
 								$is_cohabitation = (stripos($req['doc_type'], 'Cohabitation') !== false);
 							}
 							if ($req['type'] === 'clearance') {
-								$pdf_link = '../generate_clearance_pdf.php?id=' . (int)$req['id'];
+								$pdf_link = '../generate_clearance_pdf.php?id=' . (int) $req['id'];
 							} elseif ($is_indigency) {
-								$pdf_link = '../generate_indigency_cert.php?id=' . (int)$req['id'];
+								$pdf_link = '../generate_indigency_cert.php?id=' . (int) $req['id'];
 							} elseif ($is_good_moral) {
-								$pdf_link = '../generate_good_moral_cert.php?id=' . (int)$req['id'];
+								$pdf_link = '../generate_good_moral_cert.php?id=' . (int) $req['id'];
 							} elseif ($is_cohabitation) {
-								$pdf_link = '../generate_cohabitation_cert.php?id=' . (int)$req['id'];
+								$pdf_link = '../generate_cohabitation_cert.php?id=' . (int) $req['id'];
 							} elseif ($is_resident_id) {
-								$pdf_link = '../generate_resident_id_card.php?id=' . (int)$req['id'];
+								$pdf_link = '../generate_resident_id_card.php?id=' . (int) $req['id'];
 							} elseif (!empty($req['pdf_template_path'])) {
 								$pdf_link = '../' . $req['pdf_template_path'];
 							}
@@ -768,7 +820,7 @@ require_once __DIR__ . '/header.php';
 								if ($endBracket !== false) {
 									$requesterName = trim(substr($purposeText, $tagStart + 20, $endBracket - ($tagStart + 20)));
 									$purposeText = trim(substr_replace($purposeText, '', $tagStart, $endBracket - $tagStart + 1));
-									
+
 									// Clean up any double colons or spaces left over
 									$purposeText = trim(str_replace(':  ', ': ', $purposeText));
 									if (str_ends_with($purposeText, ':')) {
@@ -779,12 +831,14 @@ require_once __DIR__ . '/header.php';
 							?>
 							<tr>
 								<?php if ($show_request_checkboxes): ?>
-								<td class="ps-3">
-									<input type="checkbox" class="form-check-input row-checkbox" value="<?php echo $req['type'] . '_' . $req['id']; ?>">
-								</td>
+									<td class="ps-3">
+										<input type="checkbox" class="form-check-input row-checkbox"
+											value="<?php echo $req['type'] . '_' . $req['id']; ?>">
+									</td>
 								<?php endif; ?>
 								<!-- # -->
-								<td class="<?php echo $show_request_checkboxes ? '' : 'ps-3 '; ?>text-dark fw-semibold"><?php echo $row_number++; ?></td>
+								<td class="<?php echo $show_request_checkboxes ? '' : 'ps-3 '; ?>text-dark fw-semibold">
+									<?php echo $row_number++; ?></td>
 								<!-- Name -->
 								<td>
 									<?php if ($is_fm): ?>
@@ -795,7 +849,8 @@ require_once __DIR__ . '/header.php';
 								</td>
 								<!-- Status -->
 								<td>
-									<div role="button" class="badge <?php echo $statusClass; ?> rounded-pill px-3 py-2 btn-admin-view-detail" 
+									<div role="button"
+										class="badge <?php echo $statusClass; ?> rounded-pill px-3 py-2 btn-admin-view-detail"
 										style="cursor: pointer;"
 										data-doc="<?php echo htmlspecialchars($req['doc_type'] ?? 'Barangay Clearance', ENT_QUOTES); ?>"
 										data-requester="<?php echo $is_fm ? htmlspecialchars($req['fm_name'], ENT_QUOTES) : htmlspecialchars($requesterName, ENT_QUOTES); ?>"
@@ -819,7 +874,8 @@ require_once __DIR__ . '/header.php';
 								<!-- Action: Direct Icons -->
 								<td class="pe-3 text-center">
 									<div class="d-flex justify-content-center gap-1">
-										<button type="button" class="btn btn-action btn-light text-success btn-admin-view-detail"
+										<button type="button"
+											class="btn btn-action btn-light text-success btn-admin-view-detail"
 											data-doc="<?php echo htmlspecialchars($req['doc_type'] ?? 'Barangay Clearance', ENT_QUOTES); ?>"
 											data-requester="<?php echo $is_fm ? htmlspecialchars($req['fm_name'], ENT_QUOTES) : htmlspecialchars($requesterName, ENT_QUOTES); ?>"
 											data-requester-type="<?php echo $is_fm ? 'Family Member' : 'Owner'; ?>"
@@ -835,64 +891,79 @@ require_once __DIR__ . '/header.php';
 										</button>
 
 										<?php if ($req['status'] === 'pending'): ?>
-											<form method="post" class="d-inline admin-confirm-form" data-action-name="Ready to pick up">
+											<form method="post" class="d-inline admin-confirm-form"
+												data-action-name="Ready to pick up">
 												<?php echo csrf_field(); ?>
-												<input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
-												<input type="hidden" name="request_type" value="<?php echo htmlspecialchars($req['type']); ?>">
+												<input type="hidden" name="id" value="<?php echo (int) $req['id']; ?>">
+												<input type="hidden" name="request_type"
+													value="<?php echo htmlspecialchars($req['type']); ?>">
 												<input type="hidden" name="status" value="approved">
-												<button type="button" class="btn btn-action btn-light text-success btn-confirm-submit" title="Ready to pick up">
+												<button type="button"
+													class="btn btn-action btn-light text-success btn-confirm-submit"
+													title="Ready to pick up">
 													<i class="fas fa-check"></i>
 												</button>
 											</form>
 											<button type="button" class="btn btn-action btn-light text-danger btn-admin-reject"
-												data-id="<?php echo (int)$req['id']; ?>"
-												data-type="<?php echo htmlspecialchars($req['type']); ?>"
-												title="Reject">
+												data-id="<?php echo (int) $req['id']; ?>"
+												data-type="<?php echo htmlspecialchars($req['type']); ?>" title="Reject">
 												<i class="fas fa-times"></i>
 											</button>
 										<?php elseif ($req['status'] === 'approved'): ?>
 											<?php if (!empty($pdf_link)): ?>
-												<a class="btn btn-action btn-light text-info btn-confirm-print" href="<?php echo htmlspecialchars($pdf_link); ?>" target="_blank" rel="noopener" title="Print/Download">
+												<a class="btn btn-action btn-light text-info btn-confirm-print"
+													href="<?php echo htmlspecialchars($pdf_link); ?>" target="_blank" rel="noopener"
+													title="Print/Download">
 													<i class="fas fa-print"></i>
 												</a>
 											<?php endif; ?>
 											<form method="post" class="d-inline admin-confirm-form" data-action-name="Released">
 												<?php echo csrf_field(); ?>
-												<input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
-												<input type="hidden" name="request_type" value="<?php echo htmlspecialchars($req['type']); ?>">
+												<input type="hidden" name="id" value="<?php echo (int) $req['id']; ?>">
+												<input type="hidden" name="request_type"
+													value="<?php echo htmlspecialchars($req['type']); ?>">
 												<input type="hidden" name="status" value="released">
-												<button type="button" class="btn btn-action btn-light text-success btn-confirm-submit" title="Mark as Released">
+												<button type="button"
+													class="btn btn-action btn-light text-success btn-confirm-submit"
+													title="Mark as Released">
 													<i class="fas fa-hand-holding"></i>
 												</button>
 											</form>
 											<button type="button" class="btn btn-action btn-light text-danger btn-admin-reject"
-												data-id="<?php echo (int)$req['id']; ?>"
-												data-type="<?php echo htmlspecialchars($req['type']); ?>"
-												title="Reject">
+												data-id="<?php echo (int) $req['id']; ?>"
+												data-type="<?php echo htmlspecialchars($req['type']); ?>" title="Reject">
 												<i class="fas fa-times"></i>
 											</button>
 										<?php elseif ($req['status'] === 'released'): ?>
 											<?php if (!empty($pdf_link)): ?>
-												<a class="btn btn-action btn-light text-info btn-confirm-print" href="<?php echo htmlspecialchars($pdf_link); ?>" target="_blank" rel="noopener" title="Print/Download">
+												<a class="btn btn-action btn-light text-info btn-confirm-print"
+													href="<?php echo htmlspecialchars($pdf_link); ?>" target="_blank" rel="noopener"
+													title="Print/Download">
 													<i class="fas fa-print"></i>
 												</a>
 											<?php endif; ?>
 											<form method="post" class="d-inline admin-confirm-form" data-action-name="Undo Release">
 												<?php echo csrf_field(); ?>
-												<input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
-												<input type="hidden" name="request_type" value="<?php echo htmlspecialchars($req['type']); ?>">
+												<input type="hidden" name="id" value="<?php echo (int) $req['id']; ?>">
+												<input type="hidden" name="request_type"
+													value="<?php echo htmlspecialchars($req['type']); ?>">
 												<input type="hidden" name="status" value="approved">
-												<button type="button" class="btn btn-action btn-light text-warning btn-confirm-submit" title="Undo Release">
+												<button type="button"
+													class="btn btn-action btn-light text-warning btn-confirm-submit"
+													title="Undo Release">
 													<i class="fas fa-undo"></i>
 												</button>
 											</form>
 										<?php elseif ($req['status'] === 'rejected'): ?>
 											<form method="post" class="d-inline admin-confirm-form" data-action-name="Undo Reject">
 												<?php echo csrf_field(); ?>
-												<input type="hidden" name="id" value="<?php echo (int)$req['id']; ?>">
-												<input type="hidden" name="request_type" value="<?php echo htmlspecialchars($req['type']); ?>">
+												<input type="hidden" name="id" value="<?php echo (int) $req['id']; ?>">
+												<input type="hidden" name="request_type"
+													value="<?php echo htmlspecialchars($req['type']); ?>">
 												<input type="hidden" name="status" value="pending">
-												<button type="button" class="btn btn-action btn-light text-warning btn-confirm-submit" title="Undo Reject">
+												<button type="button"
+													class="btn btn-action btn-light text-warning btn-confirm-submit"
+													title="Undo Reject">
 													<i class="fas fa-undo"></i>
 												</button>
 											</form>
@@ -909,49 +980,54 @@ require_once __DIR__ . '/header.php';
 
 		<!-- Pagination UI -->
 		<?php if ($total_pages > 1): ?>
-		<div class="d-flex justify-content-between align-items-center p-3 border-top bg-light-subtle">
-			<div class="text-muted small">
-				Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $limit, $total_requests); ?> of <?php echo $total_requests; ?> entries
-			</div>
-			<nav>
-				<ul class="pagination pagination-sm mb-0">
-					<?php 
-					$params = $_GET;
-					unset($params['page']);
-					$query_string = http_build_query($params);
-					$base_url = '?' . ($query_string ? $query_string . '&' : '');
-					?>
-					
-					<li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-						<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page - 1; ?>">Previous</a>
-					</li>
-					
-					<?php
-					$start_loop = max(1, $page - 2);
-					$end_loop = min($total_pages, $page + 2);
-					
-					if ($start_loop > 1) {
-						echo '<li class="page-item"><a class="page-link" href="' . $base_url . 'page=1">1</a></li>';
-						if ($start_loop > 2) echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-					}
-					
-					for($i = $start_loop; $i <= $end_loop; $i++): ?>
-						<li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
-							<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $i; ?>"><?php echo $i; ?></a>
+			<div class="d-flex justify-content-between align-items-center p-3 border-top bg-light-subtle">
+				<div class="text-muted small">
+					Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $limit, $total_requests); ?> of
+					<?php echo $total_requests; ?> entries
+				</div>
+				<nav>
+					<ul class="pagination pagination-sm mb-0">
+						<?php
+						$params = $_GET;
+						unset($params['page']);
+						$query_string = http_build_query($params);
+						$base_url = '?' . ($query_string ? $query_string . '&' : '');
+						?>
+
+						<li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+							<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page - 1; ?>">Previous</a>
 						</li>
-					<?php endfor; ?>
-					
-					<?php if ($end_loop < $total_pages): ?>
-						<?php if ($end_loop < $total_pages - 1) echo '<li class="page-item disabled"><span class="page-link">...</span></li>'; ?>
-						<li class="page-item"><a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a></li>
-					<?php endif; ?>
-					
-					<li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-						<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page + 1; ?>">Next</a>
-					</li>
-				</ul>
-			</nav>
-		</div>
+
+						<?php
+						$start_loop = max(1, $page - 2);
+						$end_loop = min($total_pages, $page + 2);
+
+						if ($start_loop > 1) {
+							echo '<li class="page-item"><a class="page-link" href="' . $base_url . 'page=1">1</a></li>';
+							if ($start_loop > 2)
+								echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+						}
+
+						for ($i = $start_loop; $i <= $end_loop; $i++): ?>
+							<li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
+								<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $i; ?>"><?php echo $i; ?></a>
+							</li>
+						<?php endfor; ?>
+
+						<?php if ($end_loop < $total_pages): ?>
+							<?php if ($end_loop < $total_pages - 1)
+								echo '<li class="page-item disabled"><span class="page-link">...</span></li>'; ?>
+							<li class="page-item"><a class="page-link"
+									href="<?php echo $base_url; ?>page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a>
+							</li>
+						<?php endif; ?>
+
+						<li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+							<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page + 1; ?>">Next</a>
+						</li>
+					</ul>
+				</nav>
+			</div>
 		<?php endif; ?>
 	</div>
 </div>
@@ -962,7 +1038,8 @@ require_once __DIR__ . '/header.php';
 		<div class="modal-content border-0 shadow-lg rounded-4">
 			<div class="modal-header border-0 pb-0 px-4 pt-4">
 				<div class="d-flex align-items-center gap-3">
-					<div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+					<div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
+						style="width:44px;height:44px;">
 						<i class="fas fa-walking fa-lg"></i>
 					</div>
 					<div>
@@ -980,10 +1057,14 @@ require_once __DIR__ . '/header.php';
 					<!-- Resident Search -->
 					<div class="mb-3">
 						<label class="form-label fw-semibold small text-uppercase text-secondary">Requestor Name</label>
-						<input type="text" id="wiResidentSearch" name="wi_requestor_name" class="form-control" placeholder="Search resident or enter full name..." autocomplete="off">
-						<div id="wiResidentDropdown" class="list-group mt-1 shadow-sm" style="display:none; max-height:180px; overflow-y:auto; position:absolute; z-index:9999; width:calc(100% - 3rem);"></div>
+						<input type="text" id="wiResidentSearch" name="wi_requestor_name" class="form-control"
+							placeholder="Search resident or enter full name..." autocomplete="off">
+						<div id="wiResidentDropdown" class="list-group mt-1 shadow-sm"
+							style="display:none; max-height:180px; overflow-y:auto; position:absolute; z-index:9999; width:calc(100% - 3rem);">
+						</div>
 						<input type="hidden" name="wi_resident_id" id="wiResidentId">
-						<div id="wiResidentSelected" class="mt-2 small text-success fw-semibold" style="display:none;"></div>
+						<div id="wiResidentSelected" class="mt-2 small text-success fw-semibold" style="display:none;">
+						</div>
 					</div>
 
 					<!-- Document Type -->
@@ -993,7 +1074,8 @@ require_once __DIR__ . '/header.php';
 							<option value="">-- Select document --</option>
 							<option value="Barangay Clearance">Barangay Clearance</option>
 							<?php foreach ($wi_doc_types as $dt): ?>
-							<option value="<?php echo htmlspecialchars($dt); ?>"><?php echo htmlspecialchars($dt); ?></option>
+								<option value="<?php echo htmlspecialchars($dt); ?>"><?php echo htmlspecialchars($dt); ?>
+								</option>
 							<?php endforeach; ?>
 						</select>
 					</div>
@@ -1004,11 +1086,13 @@ require_once __DIR__ . '/header.php';
 						<select name="wi_purpose" id="wiPurposeSelect" class="form-select" style="display:none;">
 							<option value="">-- Select purpose --</option>
 						</select>
-						<input type="text" name="wi_purpose_text" id="wiPurposeText" class="form-control" placeholder="State purpose...">
+						<input type="text" name="wi_purpose_text" id="wiPurposeText" class="form-control"
+							placeholder="State purpose...">
 					</div>
 
 					<div class="d-flex gap-2 justify-content-end pt-2">
-						<button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+						<button type="button" class="btn btn-light rounded-pill px-4"
+							data-bs-dismiss="modal">Cancel</button>
 						<button type="submit" class="btn btn-primary rounded-pill px-4">
 							<i class="fas fa-plus me-1"></i> Add Request
 						</button>
@@ -1021,453 +1105,478 @@ require_once __DIR__ . '/header.php';
 
 <!-- Admin View Detail Modal -->
 <div class="modal fade" id="adminViewDetailModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-body p-4">
-                <div class="d-flex align-items-center gap-3 mb-4">
-                    <div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                        <i class="fas fa-file-alt fa-lg"></i>
-                    </div>
-                    <h5 class="fw-bold mb-0 text-dark">Request Details</h5>
-                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <table class="table table-borderless mb-0">
-                    <tr><td class="text-secondary fw-semibold small" style="width: 130px;">Document</td><td class="fw-bold" id="admin_detail_doc"></td></tr>
-                    <tr><td class="text-secondary fw-semibold small">Requester</td><td id="admin_detail_requester"></td></tr>
-                    <tr id="admin_detail_family_row" style="display: none;"><td class="text-secondary fw-semibold small">Family of</td><td id="admin_detail_family"></td></tr>
-                    <tr><td class="text-secondary fw-semibold small">Purpose</td><td id="admin_detail_purpose"></td></tr>
-                    <tr><td class="text-secondary fw-semibold small">Status</td><td id="admin_detail_status"></td></tr>
-                    <tr><td class="text-secondary fw-semibold small" style="width: 130px;">Date Filed</td><td id="admin_detail_date"></td></tr>
-                </table>
-            </div>
-        </div>
-    </div>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content border-0 shadow-lg rounded-4">
+			<div class="modal-body p-4">
+				<div class="d-flex align-items-center gap-3 mb-4">
+					<div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
+						style="width: 48px; height: 48px;">
+						<i class="fas fa-file-alt fa-lg"></i>
+					</div>
+					<h5 class="fw-bold mb-0 text-dark">Request Details</h5>
+					<button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<table class="table table-borderless mb-0">
+					<tr>
+						<td class="text-secondary fw-semibold small" style="width: 130px;">Document</td>
+						<td class="fw-bold" id="admin_detail_doc"></td>
+					</tr>
+					<tr>
+						<td class="text-secondary fw-semibold small">Requester</td>
+						<td id="admin_detail_requester"></td>
+					</tr>
+					<tr id="admin_detail_family_row" style="display: none;">
+						<td class="text-secondary fw-semibold small">Family of</td>
+						<td id="admin_detail_family"></td>
+					</tr>
+					<tr>
+						<td class="text-secondary fw-semibold small">Purpose</td>
+						<td id="admin_detail_purpose"></td>
+					</tr>
+					<tr>
+						<td class="text-secondary fw-semibold small">Status</td>
+						<td id="admin_detail_status"></td>
+					</tr>
+					<tr>
+						<td class="text-secondary fw-semibold small" style="width: 130px;">Date Filed</td>
+						<td id="admin_detail_date"></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
 </div>
 
 <!-- Admin Reject Modal -->
 <div class="modal fade" id="adminRejectModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-body text-center p-5">
-                <div class="mb-4">
-                    <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
-                        <i class="fas fa-times-circle fa-2x text-danger"></i>
-                    </div>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Reject Request?</h5>
-                <p class="text-secondary mb-3">Please provide a reason for rejecting this request.</p>
-                <form method="post" id="adminRejectForm">
-                    <?php echo csrf_field(); ?>
-                    <input type="hidden" name="id" id="reject_req_id">
-                    <input type="hidden" name="request_type" id="reject_req_type">
-                    <input type="hidden" name="status" value="rejected">
-                    <div class="mb-4 text-start">
-                        <textarea name="notes" id="rejectReasonInput" class="form-control bg-light border-0" rows="3" placeholder="State reason for rejection..." required></textarea>
-                        <div id="rejectReasonError" class="text-danger small mt-1" style="display: none;">Please provide a reason.</div>
-                    </div>
-                    <div class="d-flex gap-3 justify-content-center">
-                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
-                            <i class="fas fa-arrow-left me-2"></i>Go Back
-                        </button>
-                        <button type="submit" class="btn btn-danger rounded-pill px-4">
-                            <i class="fas fa-times me-2"></i>Yes, Reject It
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content border-0 shadow-lg rounded-4">
+			<div class="modal-body text-center p-5">
+				<div class="mb-4">
+					<div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mx-auto"
+						style="width: 80px; height: 80px;">
+						<i class="fas fa-times-circle fa-2x text-danger"></i>
+					</div>
+				</div>
+				<h5 class="fw-bold text-dark mb-2">Reject Request?</h5>
+				<p class="text-secondary mb-3">Please provide a reason for rejecting this request.</p>
+				<form method="post" id="adminRejectForm">
+					<?php echo csrf_field(); ?>
+					<input type="hidden" name="id" id="reject_req_id">
+					<input type="hidden" name="request_type" id="reject_req_type">
+					<input type="hidden" name="status" value="rejected">
+					<div class="mb-4 text-start">
+						<textarea name="notes" id="rejectReasonInput" class="form-control bg-light border-0" rows="3"
+							placeholder="State reason for rejection..." required></textarea>
+						<div id="rejectReasonError" class="text-danger small mt-1" style="display: none;">Please provide
+							a reason.</div>
+					</div>
+					<div class="d-flex gap-3 justify-content-center">
+						<button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+							<i class="fas fa-arrow-left me-2"></i>Go Back
+						</button>
+						<button type="submit" class="btn btn-danger rounded-pill px-4">
+							<i class="fas fa-times me-2"></i>Yes, Reject It
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
 </div>
 
 <!-- Bulk reject (applies reason to all selected rows) -->
 <div class="modal fade" id="adminBulkRejectModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <div class="modal-body text-center p-5">
-                <div class="mb-4">
-                    <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
-                        <i class="fas fa-times-circle fa-2x text-danger"></i>
-                    </div>
-                </div>
-                <h5 class="fw-bold text-dark mb-2">Reject selected requests?</h5>
-                <p class="text-secondary mb-3">This reason will be saved for every selected request.</p>
-                <div class="mb-4 text-start">
-                    <textarea id="bulkRejectReasonInput" class="form-control bg-light border-0" rows="3" placeholder="State reason for rejection..." required></textarea>
-                    <div id="bulkRejectReasonError" class="text-danger small mt-1" style="display: none;">Please provide a reason.</div>
-                </div>
-                <div class="d-flex gap-3 justify-content-center">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
-                        <i class="fas fa-arrow-left me-2"></i>Cancel
-                    </button>
-                    <button type="button" class="btn btn-danger rounded-pill px-4" id="adminBulkRejectConfirmBtn">
-                        <i class="fas fa-times me-2"></i>Reject selected
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+	<div class="modal-dialog modal-dialog-centered">
+		<div class="modal-content border-0 shadow-lg rounded-4">
+			<div class="modal-body text-center p-5">
+				<div class="mb-4">
+					<div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mx-auto"
+						style="width: 80px; height: 80px;">
+						<i class="fas fa-times-circle fa-2x text-danger"></i>
+					</div>
+				</div>
+				<h5 class="fw-bold text-dark mb-2">Reject selected requests?</h5>
+				<p class="text-secondary mb-3">This reason will be saved for every selected request.</p>
+				<div class="mb-4 text-start">
+					<textarea id="bulkRejectReasonInput" class="form-control bg-light border-0" rows="3"
+						placeholder="State reason for rejection..." required></textarea>
+					<div id="bulkRejectReasonError" class="text-danger small mt-1" style="display: none;">Please provide
+						a reason.</div>
+				</div>
+				<div class="d-flex gap-3 justify-content-center">
+					<button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">
+						<i class="fas fa-arrow-left me-2"></i>Cancel
+					</button>
+					<button type="button" class="btn btn-danger rounded-pill px-4" id="adminBulkRejectConfirmBtn">
+						<i class="fas fa-times me-2"></i>Reject selected
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
 
 <script>
-// Search JS (Ignored because search was moved to server-side)
-/*
-(function() {
-    const searchInput = document.getElementById('requestsSearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            const query = this.value.toLowerCase();
-            const table = searchInput.closest('.admin-table');
-            if (!table) return;
-            table.querySelectorAll('tbody tr').forEach(function(row) {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(query) ? '' : 'none';
-            });
-        });
-    }
-})();
-*/
+	// Search JS (Ignored because search was moved to server-side)
+	/*
+	(function() {
+		const searchInput = document.getElementById('requestsSearch');
+		if (searchInput) {
+			searchInput.addEventListener('input', function() {
+				const query = this.value.toLowerCase();
+				const table = searchInput.closest('.admin-table');
+				if (!table) return;
+				table.querySelectorAll('tbody tr').forEach(function(row) {
+					const text = row.textContent.toLowerCase();
+					row.style.display = text.includes(query) ? '' : 'none';
+				});
+			});
+		}
+	})();
+	*/
 
-function toggleSelectAll(master) {
-    document.querySelectorAll('.row-checkbox').forEach(function(cb) {
-        cb.checked = master.checked;
-    });
-}
+	function toggleSelectAll(master) {
+		document.querySelectorAll('.row-checkbox').forEach(function (cb) {
+			cb.checked = master.checked;
+		});
+	}
 
-function adminBulkGetSelectedValues() {
-    return Array.prototype.map.call(document.querySelectorAll('.row-checkbox:checked'), function(cb) { return cb.value; });
-}
+	function adminBulkGetSelectedValues() {
+		return Array.prototype.map.call(document.querySelectorAll('.row-checkbox:checked'), function (cb) { return cb.value; });
+	}
 
-function adminBulkSubmit(action) {
-    var vals = adminBulkGetSelectedValues();
-    if (!vals.length) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'No Selection',
-            text: 'Please select at least one request using the checkboxes.',
-            confirmButtonColor: '#0f766e'
-        });
-        return;
-    }
+	function adminBulkSubmit(action) {
+		var vals = adminBulkGetSelectedValues();
+		if (!vals.length) {
+			Swal.fire({
+				icon: 'warning',
+				title: 'No Selection',
+				text: 'Please select at least one request using the checkboxes.',
+				confirmButtonColor: '#0f766e'
+			});
+			return;
+		}
 
-    // Determine readable action name for confirmation
-    var actionName = '';
-    var confirmText = 'Yes, Proceed';
-    var confirmColor = '#0f766e';
+		// Determine readable action name for confirmation
+		var actionName = '';
+		var confirmText = 'Yes, Proceed';
+		var confirmColor = '#0f766e';
 
-    if (action === 'mark_ready') { actionName = 'Ready to Pick Up'; }
-    else if (action === 'mark_released') { actionName = 'Mark as Released'; }
-    else if (action === 'undo_release') { actionName = 'Undo Release'; confirmColor = '#d97706'; }
-    else if (action === 'undo_reject') { actionName = 'Undo Reject'; confirmColor = '#d97706'; }
-    else if (action === 'reject') { actionName = 'Reject'; confirmColor = '#dc3545'; }
+		if (action === 'mark_ready') { actionName = 'Ready to Pick Up'; }
+		else if (action === 'mark_released') { actionName = 'Mark as Released'; }
+		else if (action === 'undo_release') { actionName = 'Undo Release'; confirmColor = '#d97706'; }
+		else if (action === 'undo_reject') { actionName = 'Undo Reject'; confirmColor = '#d97706'; }
+		else if (action === 'reject') { actionName = 'Reject'; confirmColor = '#dc3545'; }
 
-    Swal.fire({
-        title: 'Confirm',
-        text: 'Are you sure you want to perform "' + actionName + '" on ' + vals.length + ' selected item(s)?',
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: confirmColor,
-        cancelButtonColor: '#6c757d',
-        confirmButtonText: confirmText
-    }).then((result) => {
-        if (result.isConfirmed) {
-            document.getElementById('bulkActionField').value = action;
-            if (action !== 'reject') {
-                document.getElementById('bulkNotesField').value = '';
-            }
-            var wrap = document.getElementById('bulkSelectedFields');
-            wrap.innerHTML = '';
-            vals.forEach(function(v) {
-                var inp = document.createElement('input');
-                inp.type = 'hidden';
-                inp.name = 'selected[]';
-                inp.value = v;
-                wrap.appendChild(inp);
-            });
-            document.getElementById('bulkActionForm').submit();
-        }
-    });
-}
+		Swal.fire({
+			title: 'Confirm',
+			text: 'Are you sure you want to perform "' + actionName + '" on ' + vals.length + ' selected item(s)?',
+			icon: 'question',
+			showCancelButton: true,
+			confirmButtonColor: confirmColor,
+			cancelButtonColor: '#6c757d',
+			confirmButtonText: confirmText
+		}).then((result) => {
+			if (result.isConfirmed) {
+				document.getElementById('bulkActionField').value = action;
+				if (action !== 'reject') {
+					document.getElementById('bulkNotesField').value = '';
+				}
+				var wrap = document.getElementById('bulkSelectedFields');
+				wrap.innerHTML = '';
+				vals.forEach(function (v) {
+					var inp = document.createElement('input');
+					inp.type = 'hidden';
+					inp.name = 'selected[]';
+					inp.value = v;
+					wrap.appendChild(inp);
+				});
+				document.getElementById('bulkActionForm').submit();
+			}
+		});
+	}
 
-function adminBulkRejectOpen() {
-    if (!adminBulkGetSelectedValues().length) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'No Selection',
-            text: 'Please select at least one request using the checkboxes.',
-            confirmButtonColor: '#0f766e'
-        });
-        return;
-    }
-    document.getElementById('bulkRejectReasonInput').value = '';
-    document.getElementById('bulkRejectReasonError').style.display = 'none';
-    var el = document.getElementById('adminBulkRejectModal');
-    new bootstrap.Modal(el).show();
-}
+	function adminBulkRejectOpen() {
+		if (!adminBulkGetSelectedValues().length) {
+			Swal.fire({
+				icon: 'warning',
+				title: 'No Selection',
+				text: 'Please select at least one request using the checkboxes.',
+				confirmButtonColor: '#0f766e'
+			});
+			return;
+		}
+		document.getElementById('bulkRejectReasonInput').value = '';
+		document.getElementById('bulkRejectReasonError').style.display = 'none';
+		var el = document.getElementById('adminBulkRejectModal');
+		new bootstrap.Modal(el).show();
+	}
 
-(function() {
-    var bulkConfirm = document.getElementById('adminBulkRejectConfirmBtn');
-    if (!bulkConfirm) return;
-    bulkConfirm.addEventListener('click', function() {
-        var reason = document.getElementById('bulkRejectReasonInput').value.trim();
-        if (!reason) {
-            document.getElementById('bulkRejectReasonError').style.display = 'block';
-            document.getElementById('bulkRejectReasonInput').focus();
-            return;
-        }
-        document.getElementById('bulkRejectReasonError').style.display = 'none';
-        document.getElementById('bulkNotesField').value = reason;
-        var modalEl = document.getElementById('adminBulkRejectModal');
-        var modal = bootstrap.Modal.getInstance(modalEl);
-        if (modal) modal.hide();
-        adminBulkSubmit('reject');
-    });
-})();
+	(function () {
+		var bulkConfirm = document.getElementById('adminBulkRejectConfirmBtn');
+		if (!bulkConfirm) return;
+		bulkConfirm.addEventListener('click', function () {
+			var reason = document.getElementById('bulkRejectReasonInput').value.trim();
+			if (!reason) {
+				document.getElementById('bulkRejectReasonError').style.display = 'block';
+				document.getElementById('bulkRejectReasonInput').focus();
+				return;
+			}
+			document.getElementById('bulkRejectReasonError').style.display = 'none';
+			document.getElementById('bulkNotesField').value = reason;
+			var modalEl = document.getElementById('adminBulkRejectModal');
+			var modal = bootstrap.Modal.getInstance(modalEl);
+			if (modal) modal.hide();
+			adminBulkSubmit('reject');
+		});
+	})();
 
-// View Detail Modal populator and opener
-document.addEventListener('click', function(e) {
-    var btn = e.target.closest('.btn-admin-view-detail');
-    if (!btn) return;
-    
-    document.getElementById('admin_detail_doc').textContent = btn.dataset.doc;
-    document.getElementById('admin_detail_requester').innerHTML = btn.dataset.requester + ' <span class="badge bg-light text-secondary">' + btn.dataset.requesterType + '</span>';
-    document.getElementById('admin_detail_purpose').textContent = btn.dataset.purpose;
-    const statusLower = btn.dataset.statusLabel.toLowerCase();
-    const isReasonable = (statusLower === 'rejected' || statusLower === 'cancelled' || statusLower === 'canceled');
-    document.getElementById('admin_detail_status').innerHTML = '<span class="badge ' + btn.dataset.statusClass + ' rounded-pill px-3 py-2"><i class="fas ' + btn.dataset.icon + ' me-1"></i>' + btn.dataset.statusLabel + '</span>' + 
-        (isReasonable && btn.dataset.notes && btn.dataset.notes.trim() !== '' ? 
-        ' <a href="javascript:void(0)" class="text-primary ms-2 small fw-bold btn-show-reason" title="View Reason"><i class="fas fa-eye"></i> View Details</a>' : '');
-    document.getElementById('admin_detail_date').textContent = btn.dataset.date;
-    
-    // Store notes for the "show reason" link
-    var reasonLink = document.querySelector('#adminViewDetailModal .btn-show-reason');
-    if (reasonLink) {
-        reasonLink.onclick = function() { showRejectionReason(btn.dataset.notes, btn.dataset.statusLabel); };
-    }
-    
-    // Show family of row if it's a family member
-    var familyRow = document.getElementById('admin_detail_family_row');
-    if (btn.dataset.family && btn.dataset.family.trim() !== '') {
-        document.getElementById('admin_detail_family').textContent = btn.dataset.family;
-        familyRow.style.display = '';
-    } else {
-        if (familyRow) familyRow.style.display = 'none';
-    }
+	// View Detail Modal populator and opener
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest('.btn-admin-view-detail');
+		if (!btn) return;
 
-    // Initial modal setup
-    var mainModalEl = document.getElementById('adminViewDetailModal');
-    var modal = bootstrap.Modal.getOrCreateInstance(mainModalEl);
-    modal.show();
-});
+		document.getElementById('admin_detail_doc').textContent = btn.dataset.doc;
+		document.getElementById('admin_detail_requester').innerHTML = btn.dataset.requester + ' <span class="badge bg-light text-secondary">' + btn.dataset.requesterType + '</span>';
+		document.getElementById('admin_detail_purpose').textContent = btn.dataset.purpose;
+		const statusLower = btn.dataset.statusLabel.toLowerCase();
+		const isReasonable = (statusLower === 'rejected' || statusLower === 'cancelled' || statusLower === 'canceled');
+		document.getElementById('admin_detail_status').innerHTML = '<span class="badge ' + btn.dataset.statusClass + ' rounded-pill px-3 py-2"><i class="fas ' + btn.dataset.icon + ' me-1"></i>' + btn.dataset.statusLabel + '</span>' +
+			(isReasonable && btn.dataset.notes && btn.dataset.notes.trim() !== '' ?
+				' <a href="javascript:void(0)" class="text-primary ms-2 small fw-bold btn-show-reason" title="View Reason"><i class="fas fa-eye"></i> View Details</a>' : '');
+		document.getElementById('admin_detail_date').textContent = btn.dataset.date;
 
-function showRejectionReason(notes, status) {
-    const statusLower = (status || '').toLowerCase();
-    const isCancellation = statusLower === 'cancelled' || statusLower === 'canceled';
-    const titleText = isCancellation ? 'Reason for Cancellation' : 'Reason for Rejection';
-    const titleColor = isCancellation ? 'text-secondary' : 'text-rose-600';
-    const borderColor = isCancellation ? 'border-secondary' : 'border-rose-500';
-    const btnColor = isCancellation ? '#6c757d' : '#e11d48';
+		// Store notes for the "show reason" link
+		var reasonLink = document.querySelector('#adminViewDetailModal .btn-show-reason');
+		if (reasonLink) {
+			reasonLink.onclick = function () { showRejectionReason(btn.dataset.notes, btn.dataset.statusLabel); };
+		}
 
-    Swal.fire({
-        title: '<div class="' + titleColor + ' fw-bold">' + titleText + '</div>',
-        html: '<div class="text-start p-3 bg-light rounded border-start border-4 ' + borderColor + '" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;">' + notes + '</div>',
-        icon: 'info',
-        confirmButtonText: 'Understood',
-        confirmButtonColor: btnColor,
-        width: '600px',
-        customClass: {
-            title: 'fs-4',
-            confirmButton: 'px-4 py-2 rounded-pill fw-bold'
-        }
-    });
-}
+		// Show family of row if it's a family member
+		var familyRow = document.getElementById('admin_detail_family_row');
+		if (btn.dataset.family && btn.dataset.family.trim() !== '') {
+			document.getElementById('admin_detail_family').textContent = btn.dataset.family;
+			familyRow.style.display = '';
+		} else {
+			if (familyRow) familyRow.style.display = 'none';
+		}
 
-// Reject Modal logic
-document.addEventListener('click', function(e) {
-    var btn = e.target.closest('.btn-admin-reject');
-    if (!btn) return;
-    
-    document.getElementById('reject_req_id').value = btn.dataset.id;
-    document.getElementById('reject_req_type').value = btn.dataset.type;
-    document.getElementById('rejectReasonInput').value = '';
-    document.getElementById('rejectReasonError').style.display = 'none';
-    
-    var modal = new bootstrap.Modal(document.getElementById('adminRejectModal'));
-    modal.show();
-});
+		// Initial modal setup
+		var mainModalEl = document.getElementById('adminViewDetailModal');
+		var modal = bootstrap.Modal.getOrCreateInstance(mainModalEl);
+		modal.show();
+	});
 
-// Reject form validation
-document.getElementById('adminRejectForm').addEventListener('submit', function(e) {
-    var reason = document.getElementById('rejectReasonInput').value.trim();
-    if (!reason) {
-        e.preventDefault();
-        document.getElementById('rejectReasonError').style.display = 'block';
-        document.getElementById('rejectReasonInput').focus();
-    }
-});
+	function showRejectionReason(notes, status) {
+		const statusLower = (status || '').toLowerCase();
+		const isCancellation = statusLower === 'cancelled' || statusLower === 'canceled';
+		const titleText = isCancellation ? 'Reason for Cancellation' : 'Reason for Rejection';
+		const titleColor = isCancellation ? 'text-secondary' : 'text-rose-600';
+		const borderColor = isCancellation ? 'border-secondary' : 'border-rose-500';
+		const btnColor = isCancellation ? '#6c757d' : '#e11d48';
 
-// ── Walk-in Request Modal JS ──────────────────────────────────────────────
-(function() {
-    var residents = <?php echo json_encode(array_values($wi_residents)); ?>;
+		Swal.fire({
+			title: '<div class="' + titleColor + ' fw-bold">' + titleText + '</div>',
+			html: '<div class="text-start p-3 bg-light rounded border-start border-4 ' + borderColor + '" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;">' + notes + '</div>',
+			icon: 'info',
+			confirmButtonText: 'Understood',
+			confirmButtonColor: btnColor,
+			width: '600px',
+			customClass: {
+				title: 'fs-4',
+				confirmButton: 'px-4 py-2 rounded-pill fw-bold'
+			}
+		});
+	}
 
-    var purposeMap = {
-        'Barangay Clearance': ['Local Employment','Postal ID Application','Medical/Financial Assistance','Bank Requirements','Scholarship Program','Water/Electric Connection','Educational Assistance','Other\'s'],
-        'Barangay Indigency Certificate': ['Financial/Medical Assistance','Burial Assistance','Senior Citizen Social Pension','Vaccination Requirements','Educational Assistance','Other\'s'],
-        'Certificate of Indigency': ['Financial/Medical Assistance','Burial Assistance','Senior Citizen Social Pension','Vaccination Requirements','Educational Assistance','Other\'s']
-    };
+	// Reject Modal logic
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest('.btn-admin-reject');
+		if (!btn) return;
 
-    // Resident search
-    var searchInput = document.getElementById('wiResidentSearch');
-    var dropdown    = document.getElementById('wiResidentDropdown');
-    var hiddenId    = document.getElementById('wiResidentId');
-    var selected    = document.getElementById('wiResidentSelected');
+		document.getElementById('reject_req_id').value = btn.dataset.id;
+		document.getElementById('reject_req_type').value = btn.dataset.type;
+		document.getElementById('rejectReasonInput').value = '';
+		document.getElementById('rejectReasonError').style.display = 'none';
 
-    if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            var q = this.value.trim().toLowerCase();
-            hiddenId.value = '';
-            selected.style.display = 'none';
-            if (!q) { dropdown.style.display = 'none'; return; }
+		var modal = new bootstrap.Modal(document.getElementById('adminRejectModal'));
+		modal.show();
+	});
 
-            var matches = residents.filter(function(r) {
-                return r.full_name.toLowerCase().includes(q);
-            }).slice(0, 8);
+	// Reject form validation
+	document.getElementById('adminRejectForm').addEventListener('submit', function (e) {
+		var reason = document.getElementById('rejectReasonInput').value.trim();
+		if (!reason) {
+			e.preventDefault();
+			document.getElementById('rejectReasonError').style.display = 'block';
+			document.getElementById('rejectReasonInput').focus();
+		}
+	});
 
-            if (!matches.length) { dropdown.style.display = 'none'; return; }
+	// ── Walk-in Request Modal JS ──────────────────────────────────────────────
+	(function () {
+		var residents = <?php echo json_encode(array_values($wi_residents)); ?>;
 
-            dropdown.innerHTML = '';
-            matches.forEach(function(r) {
-                var a = document.createElement('a');
-                a.href = 'javascript:void(0)';
-                a.className = 'list-group-item list-group-item-action py-2 px-3 small';
-                a.innerHTML = '<strong>' + r.full_name + '</strong>' + (r.address ? '<span class="text-muted ms-2">' + r.address + '</span>' : '');
-                a.addEventListener('click', function() {
-                    hiddenId.value = r.id;
-                    searchInput.value = r.full_name;
-                    selected.textContent = '\u2713 ' + r.full_name + ' selected';
-                    selected.style.display = '';
-                    dropdown.style.display = 'none';
-                });
-                dropdown.appendChild(a);
-            });
-            dropdown.style.display = '';
-        });
+		var purposeMap = {
+			'Barangay Clearance': ['Local Employment', 'Postal ID Application', 'Medical/Financial Assistance', 'Bank Requirements', 'Scholarship Program', 'Water/Electric Connection', 'Educational Assistance', 'Other\'s'],
+			'Barangay Indigency Certificate': ['Financial/Medical Assistance', 'Burial Assistance', 'Senior Citizen Social Pension', 'Vaccination Requirements', 'Educational Assistance', 'Other\'s'],
+			'Certificate of Indigency': ['Financial/Medical Assistance', 'Burial Assistance', 'Senior Citizen Social Pension', 'Vaccination Requirements', 'Educational Assistance', 'Other\'s']
+		};
 
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('#walkinRequestModal')) dropdown.style.display = 'none';
-        });
-    }
+		// Resident search
+		var searchInput = document.getElementById('wiResidentSearch');
+		var dropdown = document.getElementById('wiResidentDropdown');
+		var hiddenId = document.getElementById('wiResidentId');
+		var selected = document.getElementById('wiResidentSelected');
 
-    // Purpose switcher
-    window.wiUpdatePurpose = function() {
-        var docType = document.getElementById('wiDocType').value;
-        var sel     = document.getElementById('wiPurposeSelect');
-        var txt     = document.getElementById('wiPurposeText');
+		if (searchInput) {
+			searchInput.addEventListener('input', function () {
+				var q = this.value.trim().toLowerCase();
+				hiddenId.value = '';
+				selected.style.display = 'none';
+				if (!q) { dropdown.style.display = 'none'; return; }
 
-        if (purposeMap[docType]) {
-            sel.innerHTML = '<option value="">-- Select purpose --</option>';
-            purposeMap[docType].forEach(function(p) {
-                var o = document.createElement('option');
-                o.value = p; o.textContent = p;
-                sel.appendChild(o);
-            });
-            sel.style.display = '';
-            txt.style.display = 'none';
-            sel.name = 'wi_purpose';
-            txt.name = '';
-        } else {
-            sel.style.display = 'none';
-            txt.style.display = '';
-            sel.name = '';
-            txt.name = 'wi_purpose';
-        }
-    };
-})();
+				var matches = residents.filter(function (r) {
+					return r.full_name.toLowerCase().includes(q);
+				}).slice(0, 8);
+
+				if (!matches.length) { dropdown.style.display = 'none'; return; }
+
+				dropdown.innerHTML = '';
+				matches.forEach(function (r) {
+					var a = document.createElement('a');
+					a.href = 'javascript:void(0)';
+					a.className = 'list-group-item list-group-item-action py-2 px-3 small';
+					a.innerHTML = '<strong>' + r.full_name + '</strong>' + (r.address ? '<span class="text-muted ms-2">' + r.address + '</span>' : '');
+					a.addEventListener('click', function () {
+						hiddenId.value = r.id;
+						searchInput.value = r.full_name;
+						selected.textContent = '\u2713 ' + r.full_name + ' selected';
+						selected.style.display = '';
+						dropdown.style.display = 'none';
+					});
+					dropdown.appendChild(a);
+				});
+				dropdown.style.display = '';
+			});
+
+			document.addEventListener('click', function (e) {
+				if (!e.target.closest('#walkinRequestModal')) dropdown.style.display = 'none';
+			});
+		}
+
+		// Purpose switcher
+		window.wiUpdatePurpose = function () {
+			var docType = document.getElementById('wiDocType').value;
+			var sel = document.getElementById('wiPurposeSelect');
+			var txt = document.getElementById('wiPurposeText');
+
+			if (purposeMap[docType]) {
+				sel.innerHTML = '<option value="">-- Select purpose --</option>';
+				purposeMap[docType].forEach(function (p) {
+					var o = document.createElement('option');
+					o.value = p; o.textContent = p;
+					sel.appendChild(o);
+				});
+				sel.style.display = '';
+				txt.style.display = 'none';
+				sel.name = 'wi_purpose';
+				txt.name = '';
+			} else {
+				sel.style.display = 'none';
+				txt.style.display = '';
+				sel.name = '';
+				txt.name = 'wi_purpose';
+			}
+		};
+	})();
 </script>
 
 <?php if (isset($_SESSION['bulk_result'])): ?>
-<script>
-(function() {
-    var okCount = <?php echo (int)$_SESSION['bulk_result']['ok']; ?>;
-    var skipCount = <?php echo (int)$_SESSION['bulk_result']['skip']; ?>;
-    var skippedItems = <?php echo json_encode($_SESSION['bulk_result']['skipped_items'] ?? []); ?>;
-    
-    var htmlContent = '<strong>' + okCount + '</strong> request(s) successfully updated.';
-    if (skipCount > 0) {
-        htmlContent += '<br><div class="mt-2 small text-muted">(' + skipCount + ' skipped — wrong status or not found.)</div>';
-        htmlContent += '<div class="mt-3"><a href="javascript:void(0)" id="viewSkipDetails" class="text-primary fw-bold" style="text-decoration: none;"><i class="fas fa-info-circle me-1"></i>View Details</a></div>';
-    }
+	<script>
+		(function () {
+			var okCount = <?php echo (int) $_SESSION['bulk_result']['ok']; ?>;
+			var skipCount = <?php echo (int) $_SESSION['bulk_result']['skip']; ?>;
+			var skippedItems = <?php echo json_encode($_SESSION['bulk_result']['skipped_items'] ?? []); ?>;
 
-    Swal.fire({
-        title: 'Update Complete',
-        html: htmlContent,
-        icon: 'success',
-        confirmButtonColor: '#0f766e',
-        confirmButtonText: 'Great!',
-        didOpen: () => {
-            const btn = document.getElementById('viewSkipDetails');
-            if (btn) {
-                btn.onclick = () => {
-                    let detailsHtml = '<div class="text-start small" style="max-height: 300px; overflow-y: auto;">';
-                    detailsHtml += '<table class="table table-sm table-bordered">';
-                    detailsHtml += '<thead class="bg-light"><tr><th>ID/Type</th><th>Resident</th><th>Reason</th></tr></thead><tbody>';
-                    skippedItems.forEach(item => {
-                        detailsHtml += '<tr>';
-                        detailsHtml += '<td>' + (item.label || item.id) + '</td>';
-                        detailsHtml += '<td>' + (item.name || 'N/A') + '</td>';
-                        detailsHtml += '<td class="text-danger">' + item.reason + '</td>';
-                        detailsHtml += '</tr>';
-                    });
-                    detailsHtml += '</tbody></table></div>';
-                    
-                    Swal.fire({
-                        title: 'Skipped Requests Details',
-                        html: detailsHtml,
-                        icon: 'info',
-                        width: '600px',
-                        confirmButtonColor: '#0f766e'
-                    });
-                };
-            }
-        }
-    });
-})();
-</script>
-<?php unset($_SESSION['bulk_result']); ?>
+			var htmlContent = '<strong>' + okCount + '</strong> request(s) successfully updated.';
+			if (skipCount > 0) {
+				htmlContent += '<br><div class="mt-2 small text-muted">(' + skipCount + ' skipped — wrong status or not found.)</div>';
+				htmlContent += '<div class="mt-3"><a href="javascript:void(0)" id="viewSkipDetails" class="text-primary fw-bold" style="text-decoration: none;"><i class="fas fa-info-circle me-1"></i>View Details</a></div>';
+			}
+
+			Swal.fire({
+				title: 'Update Complete',
+				html: htmlContent,
+				icon: 'success',
+				confirmButtonColor: '#0f766e',
+				confirmButtonText: 'Great!',
+				didOpen: () => {
+					const btn = document.getElementById('viewSkipDetails');
+					if (btn) {
+						btn.onclick = () => {
+							let detailsHtml = '<div class="text-start small" style="max-height: 300px; overflow-y: auto;">';
+							detailsHtml += '<table class="table table-sm table-bordered">';
+							detailsHtml += '<thead class="bg-light"><tr><th>ID/Type</th><th>Resident</th><th>Reason</th></tr></thead><tbody>';
+							skippedItems.forEach(item => {
+								detailsHtml += '<tr>';
+								detailsHtml += '<td>' + (item.label || item.id) + '</td>';
+								detailsHtml += '<td>' + (item.name || 'N/A') + '</td>';
+								detailsHtml += '<td class="text-danger">' + item.reason + '</td>';
+								detailsHtml += '</tr>';
+							});
+							detailsHtml += '</tbody></table></div>';
+
+							Swal.fire({
+								title: 'Skipped Requests Details',
+								html: detailsHtml,
+								icon: 'info',
+								width: '600px',
+								confirmButtonColor: '#0f766e'
+							});
+						};
+					}
+				}
+			});
+		})();
+	</script>
+	<?php unset($_SESSION['bulk_result']); ?>
 <?php endif; ?>
 <?php if (isset($_SESSION['action_success'])): ?>
-<script>
-(function() {
-    var title = <?php echo json_encode($_SESSION['action_success']['title']); ?>;
-    var text = <?php echo json_encode($_SESSION['action_success']['text']); ?>;
-    var smsError = <?php echo json_encode($_SESSION['action_success']['sms_error'] ?? null); ?>;
-    
-    Swal.fire({
-        title: title,
-        text: text,
-        icon: 'success',
-        footer: smsError ? '<div class="text-danger small w-100 text-center"><i class="fas fa-exclamation-triangle me-1"></i> SMS Not Sent: ' + smsError + '</div>' : null,
-        confirmButtonColor: '#0f766e'
-    });
-})();
-</script>
-<?php unset($_SESSION['action_success']); ?>
+	<script>
+		(function () {
+			var title = <?php echo json_encode($_SESSION['action_success']['title']); ?>;
+			var text = <?php echo json_encode($_SESSION['action_success']['text']); ?>;
+			var smsError = <?php echo json_encode($_SESSION['action_success']['sms_error'] ?? null); ?>;
+
+			Swal.fire({
+				title: title,
+				text: text,
+				icon: 'success',
+				footer: smsError ? '<div class="text-danger small w-100 text-center"><i class="fas fa-exclamation-triangle me-1"></i> SMS Not Sent: ' + smsError + '</div>' : null,
+				confirmButtonColor: '#0f766e'
+			});
+		})();
+	</script>
+	<?php unset($_SESSION['action_success']); ?>
 <?php endif; ?>
 
 <?php if (isset($_SESSION['action_error'])): ?>
-<script>
-(function() {
-    var title = <?php echo json_encode($_SESSION['action_error']['title']); ?>;
-    var text = <?php echo json_encode($_SESSION['action_error']['text']); ?>;
-    
-    Swal.fire({
-        title: title,
-        text: text,
-        icon: 'error',
-        confirmButtonColor: '#e11d48'
-    });
-})();
-</script>
-<?php unset($_SESSION['action_error']); ?>
+	<script>
+		(function () {
+			var title = <?php echo json_encode($_SESSION['action_error']['title']); ?>;
+			var text = <?php echo json_encode($_SESSION['action_error']['text']); ?>;
+
+			Swal.fire({
+				title: title,
+				text: text,
+				icon: 'error',
+				confirmButtonColor: '#e11d48'
+			});
+		})();
+	</script>
+	<?php unset($_SESSION['action_error']); ?>
 <?php endif; ?>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

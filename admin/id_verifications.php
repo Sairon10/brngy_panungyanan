@@ -78,8 +78,9 @@ $status_filter = $_GET['status'] ?? 'all';
 
 // Pagination logic
 $limit = 10;
-$page = (int)($_GET['page'] ?? 1);
-if ($page < 1) $page = 1;
+$page = (int) ($_GET['page'] ?? 1);
+if ($page < 1)
+    $page = 1;
 $offset = ($page - 1) * $limit;
 
 // Base query for data
@@ -155,10 +156,14 @@ $residents_data = $residents->fetchAll();
                 <p class="text-muted small mb-0">Manage and review resident identity documents</p>
             </div>
             <div class="btn-group shadow-sm bg-white rounded-3 p-1">
-                <a href="?status=all" class="btn btn-sm px-3 <?php echo $status_filter === 'all' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">All</a>
-                <a href="?status=pending" class="btn btn-sm px-3 <?php echo $status_filter === 'pending' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">Pending</a>
-                <a href="?status=verified" class="btn btn-sm px-3 <?php echo $status_filter === 'verified' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">Verified</a>
-                <a href="?status=rejected" class="btn btn-sm px-3 <?php echo $status_filter === 'rejected' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">Rejected</a>
+                <a href="?status=all"
+                    class="btn btn-sm px-3 <?php echo $status_filter === 'all' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">All</a>
+                <a href="?status=pending"
+                    class="btn btn-sm px-3 <?php echo $status_filter === 'pending' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">Pending</a>
+                <a href="?status=verified"
+                    class="btn btn-sm px-3 <?php echo $status_filter === 'verified' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">Verified</a>
+                <a href="?status=rejected"
+                    class="btn btn-sm px-3 <?php echo $status_filter === 'rejected' ? 'btn-primary shadow-sm' : 'btn-light border-0'; ?>">Rejected</a>
             </div>
         </div>
     </div>
@@ -173,7 +178,8 @@ $residents_data = $residents->fetchAll();
 <?php if ($errors): ?>
     <div class="alert alert-danger border-0 shadow-sm rounded-3 mb-4">
         <ul class="mb-0">
-            <?php foreach ($errors as $e): ?><li><?php echo htmlspecialchars($e); ?></li><?php endforeach; ?>
+            <?php foreach ($errors as $e): ?>
+                <li><?php echo htmlspecialchars($e); ?></li><?php endforeach; ?>
         </ul>
     </div>
 <?php endif; ?>
@@ -183,7 +189,8 @@ $residents_data = $residents->fetchAll();
         <h5 class="fw-bold mb-0 text-dark">Resident List</h5>
         <div class="input-group" style="max-width: 250px;">
             <span class="input-group-text bg-light border-0"><i class="fas fa-search text-muted small"></i></span>
-            <input type="text" id="tableSearch" class="form-control bg-light border-0 small" placeholder="Search residents...">
+            <input type="text" id="tableSearch" class="form-control bg-light border-0 small"
+                placeholder="Search residents...">
         </div>
     </div>
     <div class="table-responsive">
@@ -198,9 +205,12 @@ $residents_data = $residents->fetchAll();
                     <th class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem;">Name</th>
                     <th class="text-uppercase small fw-bold text-muted text-center" style="font-size: 0.7rem;">Type</th>
                     <th class="text-uppercase small fw-bold text-muted" style="font-size: 0.7rem;">Address</th>
-                    <th class="text-uppercase small fw-bold text-muted text-center" style="font-size: 0.7rem;">Contact Number</th>
-                    <th class="text-uppercase small fw-bold text-muted text-center" style="font-size: 0.7rem;">Status</th>
-                    <th class="text-uppercase small fw-bold text-muted text-center pe-4" style="font-size: 0.7rem;">Action</th>
+                    <th class="text-uppercase small fw-bold text-muted text-center" style="font-size: 0.7rem;">Contact
+                        Number</th>
+                    <th class="text-uppercase small fw-bold text-muted text-center" style="font-size: 0.7rem;">Status
+                    </th>
+                    <th class="text-uppercase small fw-bold text-muted text-center pe-4" style="font-size: 0.7rem;">
+                        Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -216,7 +226,8 @@ $residents_data = $residents->fetchAll();
                     <tr>
                         <td class="ps-4">
                             <div class="form-check">
-                                <input class="form-check-input row-checkbox" type="checkbox" value="<?php echo $res['id']; ?>">
+                                <input class="form-check-input row-checkbox" type="checkbox"
+                                    value="<?php echo $res['id']; ?>">
                             </div>
                         </td>
                         <td>
@@ -231,40 +242,45 @@ $residents_data = $residents->fetchAll();
                         </td>
                         <td class="text-center">
                             <div class="d-flex flex-column gap-1 align-items-center">
-                                <span class="badge bg-light text-dark border-0 fw-medium px-2 py-1" style="font-size: 0.7rem; background-color: #f3f4f6 !important;">
+                                <span class="badge bg-light text-dark border-0 fw-medium px-2 py-1"
+                                    style="font-size: 0.7rem; background-color: #f3f4f6 !important;">
                                     <?php echo htmlspecialchars($res['id_type'] ?? 'Unknown ID'); ?>
                                 </span>
                             </div>
                         </td>
                         <td>
-                            <div class="text-truncate text-muted small" style="max-width: 200px;" title="<?php echo htmlspecialchars($res['address']); ?>">
+                            <div class="text-truncate text-muted small" style="max-width: 200px;"
+                                title="<?php echo htmlspecialchars($res['address']); ?>">
                                 <?php echo htmlspecialchars($res['address']); ?>
                             </div>
                         </td>
                         <td class="text-center">
-                            <span class="text-dark fw-medium small"><?php echo htmlspecialchars($res['phone'] ?: '---'); ?></span>
+                            <span
+                                class="text-dark fw-medium small"><?php echo htmlspecialchars($res['phone'] ?: '---'); ?></span>
                         </td>
                         <td class="text-center">
                             <?php
                             $status = $res['verification_status'];
                             $badge_class = 'bg-warning-subtle text-warning border-warning-subtle';
-                            if ($status === 'verified') $badge_class = 'bg-success-subtle text-success border-success-subtle';
-                            if ($status === 'rejected') $badge_class = 'bg-danger-subtle text-danger border-danger-subtle';
+                            if ($status === 'verified')
+                                $badge_class = 'bg-success-subtle text-success border-success-subtle';
+                            if ($status === 'rejected')
+                                $badge_class = 'bg-danger-subtle text-danger border-danger-subtle';
                             ?>
-                            <span class="badge rounded-pill border px-3 py-1 <?php echo $badge_class; ?>" style="font-size: 0.7rem;">
+                            <span class="badge rounded-pill border px-3 py-1 <?php echo $badge_class; ?>"
+                                style="font-size: 0.7rem;">
                                 <?php echo ucfirst($status); ?>
                             </span>
                         </td>
                         <td class="text-center pe-4">
                             <div class="d-flex gap-2 justify-content-center align-items-center">
-                                <button type="button" class="btn btn-action btn-outline-primary" 
-                                        onclick="viewID(<?php echo htmlspecialchars(json_encode([
-                                            'name' => $res['full_name'],
-                                            'front' => ($res['id_front_path'] ?? '') ? '../uploads/id_documents/' . $res['id_front_path'] : null,
-                                            'back' => ($res['id_back_path'] ?? '') ? '../uploads/id_documents/' . $res['id_back_path'] : null,
-                                            'legacy' => ($res['id_document_path'] ?? '') ? '../uploads/id_documents/' . $res['id_document_path'] : null,
-                                            'address_on_id' => $res['address_on_id'] ?? ''
-                                        ])); ?>)" title="View Details">
+                                <button type="button" class="btn btn-action btn-outline-primary" onclick="viewID(<?php echo htmlspecialchars(json_encode([
+                                    'name' => $res['full_name'],
+                                    'front' => ($res['id_front_path'] ?? '') ? '../uploads/id_documents/' . $res['id_front_path'] : null,
+                                    'back' => ($res['id_back_path'] ?? '') ? '../uploads/id_documents/' . $res['id_back_path'] : null,
+                                    'legacy' => ($res['id_document_path'] ?? '') ? '../uploads/id_documents/' . $res['id_document_path'] : null,
+                                    'address_on_id' => $res['address_on_id'] ?? ''
+                                ])); ?>)" title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
 
@@ -274,14 +290,15 @@ $residents_data = $residents->fetchAll();
                                         <input type="hidden" name="action" value="verify">
                                         <input type="hidden" name="target_id" value="<?php echo $res['id']; ?>">
                                         <input type="hidden" name="target_type" value="<?php echo $res['target_type']; ?>">
-                                        <button type="button" class="btn btn-action btn-outline-success" title="Approve" 
-                                                onclick="confirmVerification(this.form)">
+                                        <button type="button" class="btn btn-action btn-outline-success" title="Approve"
+                                            onclick="confirmVerification(this.form)">
                                             <i class="fas fa-check"></i>
                                         </button>
                                     </form>
 
-                                    <button type="button" class="btn btn-action btn-outline-danger" 
-                                            onclick="rejectID(<?php echo $res['id']; ?>, '<?php echo $res['target_type']; ?>')" title="Reject">
+                                    <button type="button" class="btn btn-action btn-outline-danger"
+                                        onclick="rejectID(<?php echo $res['id']; ?>, '<?php echo $res['target_type']; ?>')"
+                                        title="Reject">
                                         <i class="fas fa-times"></i>
                                     </button>
                                 <?php endif; ?>
@@ -302,15 +319,20 @@ $residents_data = $residents->fetchAll();
                 <nav aria-label="Page navigation">
                     <ul class="pagination pagination-sm mb-0 gap-1">
                         <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                            <a class="page-link border-0 rounded-circle shadow-sm" href="?status=<?php echo $status_filter; ?>&page=<?php echo $page - 1; ?>"><i class="fas fa-chevron-left"></i></a>
+                            <a class="page-link border-0 rounded-circle shadow-sm"
+                                href="?status=<?php echo $status_filter; ?>&page=<?php echo $page - 1; ?>"><i
+                                    class="fas fa-chevron-left"></i></a>
                         </li>
                         <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                             <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
-                                <a class="page-link border-0 rounded-circle shadow-sm px-3" href="?status=<?php echo $status_filter; ?>&page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                <a class="page-link border-0 rounded-circle shadow-sm px-3"
+                                    href="?status=<?php echo $status_filter; ?>&page=<?php echo $i; ?>"><?php echo $i; ?></a>
                             </li>
                         <?php endfor; ?>
                         <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                            <a class="page-link border-0 rounded-circle shadow-sm" href="?status=<?php echo $status_filter; ?>&page=<?php echo $page + 1; ?>"><i class="fas fa-chevron-right"></i></a>
+                            <a class="page-link border-0 rounded-circle shadow-sm"
+                                href="?status=<?php echo $status_filter; ?>&page=<?php echo $page + 1; ?>"><i
+                                    class="fas fa-chevron-right"></i></a>
                         </li>
                     </ul>
                 </nav>
@@ -324,7 +346,8 @@ $residents_data = $residents->fetchAll();
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-id-card me-2 text-primary"></i>ID Verification Details</h5>
+                <h5 class="modal-title fw-bold text-dark"><i class="fas fa-id-card me-2 text-primary"></i>ID
+                    Verification Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
@@ -352,7 +375,8 @@ $residents_data = $residents->fetchAll();
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-bold text-danger"><i class="fas fa-times-circle me-2"></i>Reject Verification</h5>
+                <h5 class="modal-title fw-bold text-danger"><i class="fas fa-times-circle me-2"></i>Reject Verification
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" id="rejectForm">
@@ -362,14 +386,19 @@ $residents_data = $residents->fetchAll();
                 <input type="hidden" name="target_type" id="rejectTargetType">
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-uppercase text-muted">Reason for Rejection <span class="text-danger">*</span></label>
-                        <textarea name="rejection_notes" id="rejectionNotes" class="form-control rounded-3 bg-light border-0 p-3" rows="4" placeholder="Why is this being rejected?" required></textarea>
+                        <label class="form-label fw-bold small text-uppercase text-muted">Reason for Rejection <span
+                                class="text-danger">*</span></label>
+                        <textarea name="rejection_notes" id="rejectionNotes"
+                            class="form-control rounded-3 bg-light border-0 p-3" rows="4"
+                            placeholder="Why is this being rejected?" required></textarea>
                         <div class="form-text small mt-2">The resident will see this message.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0 pt-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" onclick="confirmRejection()">Confirm Rejection</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold"
+                        onclick="confirmRejection()">Confirm Rejection</button>
                 </div>
             </form>
         </div>
@@ -377,54 +406,54 @@ $residents_data = $residents->fetchAll();
 </div>
 
 <script>
-function confirmVerification(form) {
-    Swal.fire({
-        title: 'Verify Resident?',
-        text: "Are you sure you want to verify this resident's identity?",
-        icon: 'question',
-        showCancelButton: true,
-        confirmButtonColor: '#16a34a',
-        cancelButtonColor: '#64748b',
-        confirmButtonText: 'Yes, Verify',
-        reverseButtons: true
-    }).then((result) => {
-        if (result.isConfirmed) {
-            form.submit();
+    function confirmVerification(form) {
+        Swal.fire({
+            title: 'Verify Resident?',
+            text: "Are you sure you want to verify this resident's identity?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Verify',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                form.submit();
+            }
+        });
+    }
+
+    function confirmRejection() {
+        const notes = document.getElementById('rejectionNotes').value;
+        if (notes.trim() === '') {
+            Swal.fire('Error', 'Rejection notes are required', 'error');
+            return;
         }
-    });
-}
-
-function confirmRejection() {
-    const notes = document.getElementById('rejectionNotes').value;
-    if (notes.trim() === '') {
-        Swal.fire('Error', 'Rejection notes are required', 'error');
-        return;
+        document.getElementById('rejectForm').submit();
     }
-    document.getElementById('rejectForm').submit();
-}
 
-function viewID(data) {
-    document.getElementById('modalResidentName').textContent = data.name;
-    document.getElementById('modalAddressOnID').textContent = data.address_on_id || 'Not provided';
-    
-    const container = document.getElementById('modalImagesContainer');
-    container.innerHTML = '';
-    
-    if (data.front) addImage(data.front, 'Front ID View');
-    if (data.back) addImage(data.back, 'Back ID View');
-    if (!data.front && !data.back && data.legacy) addImage(data.legacy, 'Uploaded ID Document');
-    
-    if (container.innerHTML === '') {
-        container.innerHTML = '<div class="col-12 text-center py-4 text-muted">No document images found.</div>';
+    function viewID(data) {
+        document.getElementById('modalResidentName').textContent = data.name;
+        document.getElementById('modalAddressOnID').textContent = data.address_on_id || 'Not provided';
+
+        const container = document.getElementById('modalImagesContainer');
+        container.innerHTML = '';
+
+        if (data.front) addImage(data.front, 'Front ID View');
+        if (data.back) addImage(data.back, 'Back ID View');
+        if (!data.front && !data.back && data.legacy) addImage(data.legacy, 'Uploaded ID Document');
+
+        if (container.innerHTML === '') {
+            container.innerHTML = '<div class="col-12 text-center py-4 text-muted">No document images found.</div>';
+        }
+
+        new bootstrap.Modal(document.getElementById('viewIDModal')).show();
     }
-    
-    new bootstrap.Modal(document.getElementById('viewIDModal')).show();
-}
 
-function addImage(path, label) {
-    const col = document.createElement('div');
-    col.className = 'col-md-6';
-    col.innerHTML = `
+    function addImage(path, label) {
+        const col = document.createElement('div');
+        col.className = 'col-md-6';
+        col.innerHTML = `
         <div class="bg-light p-2 rounded-3 border h-100 text-center">
             <label class="small fw-bold text-uppercase text-muted mb-2 d-block" style="font-size: 0.65rem;">${label}</label>
             <div class="position-relative overflow-hidden rounded-2" style="height: 200px;">
@@ -434,108 +463,152 @@ function addImage(path, label) {
             <a href="${path}" download class="btn btn-link btn-sm text-decoration-none mt-2 small"><i class="fas fa-download me-1"></i>Download</a>
         </div>
     `;
-    document.getElementById('modalImagesContainer').appendChild(col);
-}
+        document.getElementById('modalImagesContainer').appendChild(col);
+    }
 
-function rejectID(id, type) {
-    document.getElementById('rejectTargetID').value = id;
-    document.getElementById('rejectTargetType').value = type;
-    new bootstrap.Modal(document.getElementById('rejectIDModal')).show();
-}
+    function rejectID(id, type) {
+        document.getElementById('rejectTargetID').value = id;
+        document.getElementById('rejectTargetType').value = type;
+        new bootstrap.Modal(document.getElementById('rejectIDModal')).show();
+    }
 
-// Select All
-document.getElementById('selectAll')?.addEventListener('change', function() {
-    document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
-});
-
-// Search
-document.getElementById('tableSearch')?.addEventListener('keyup', function() {
-    const value = this.value.toLowerCase();
-    const rows = document.querySelectorAll('#idVerificationsTable tbody tr');
-    rows.forEach(row => {
-        if (row.cells.length > 1) {
-            row.style.display = row.textContent.toLowerCase().includes(value) ? '' : 'none';
-        }
+    // Select All
+    document.getElementById('selectAll')?.addEventListener('change', function () {
+        document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
     });
-});
 
-<?php if ($success): ?>
-Swal.fire({
-    title: 'Success!',
-    text: '<?php echo htmlspecialchars($success); ?>',
-    icon: 'success',
-    confirmButtonColor: '#0f766e',
-    borderRadius: '15px'
-});
-<?php endif; ?>
+    // Search
+    document.getElementById('tableSearch')?.addEventListener('keyup', function () {
+        const value = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#idVerificationsTable tbody tr');
+        rows.forEach(row => {
+            if (row.cells.length > 1) {
+                row.style.display = row.textContent.toLowerCase().includes(value) ? '' : 'none';
+            }
+        });
+    });
 
-<?php if ($errors): ?>
-Swal.fire({
-    title: 'Wait!',
-    html: '<ul class="text-start small mb-0"><?php foreach($errors as $e) echo "<li>".htmlspecialchars($e)."</li>"; ?></ul>',
-    icon: 'error',
-    confirmButtonColor: '#0f766e',
-    borderRadius: '15px'
-});
-<?php endif; ?>
+    <?php if ($success): ?>
+        Swal.fire({
+            title: 'Success!',
+            text: '<?php echo htmlspecialchars($success); ?>',
+            icon: 'success',
+            confirmButtonColor: '#0f766e',
+            borderRadius: '15px'
+        });
+    <?php endif; ?>
+
+    <?php if ($errors): ?>
+        Swal.fire({
+            title: 'Wait!',
+            html: '<ul class="text-start small mb-0"><?php foreach ($errors as $e)
+                echo "<li>" . htmlspecialchars($e) . "</li>"; ?></ul>',
+            icon: 'error',
+            confirmButtonColor: '#0f766e',
+            borderRadius: '15px'
+        });
+    <?php endif; ?>
 </script>
 
 <style>
-.cursor-pointer { cursor: pointer; }
-.object-fit-contain { object-fit: contain; }
-.avatar-sm { background-color: #f0f9ff; }
-.table thead th { vertical-align: middle; }
-.shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important; }
+    .cursor-pointer {
+        cursor: pointer;
+    }
 
-.btn-action {
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    transition: all 0.2s ease;
-    border: 1px solid #e5e7eb;
-}
+    .object-fit-contain {
+        object-fit: contain;
+    }
 
-.btn-action i {
-    font-size: 0.85rem;
-}
+    .avatar-sm {
+        background-color: #f0f9ff;
+    }
 
-.btn-action:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
+    .table thead th {
+        vertical-align: middle;
+    }
 
-.btn-outline-primary { color: #2563eb; border-color: #e5e7eb; background: white; }
-.btn-outline-primary:hover { background: #2563eb; color: white; border-color: #2563eb; }
+    .shadow-sm {
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+    }
 
-.btn-outline-success { color: #16a34a; border-color: #e5e7eb; background: white; }
-.btn-outline-success:hover { background: #16a34a; color: white; border-color: #16a34a; }
+    .btn-action {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+        border: 1px solid #e5e7eb;
+    }
 
-.btn-outline-danger { color: #dc2626; border-color: #e5e7eb; background: white; }
-.btn-outline-danger:hover { background: #dc2626; color: white; border-color: #dc2626; }
+    .btn-action i {
+        font-size: 0.85rem;
+    }
 
-/* Pagination styling */
-.pagination .page-link {
-    color: #4b5563;
-    font-weight: 500;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 2px;
-}
-.pagination .page-item.active .page-link {
-    background-color: #0f766e;
-    color: white;
-}
-.pagination .page-item.disabled .page-link {
-    background-color: #f9fafb;
-    color: #9ca3af;
-}
+    .btn-action:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-outline-primary {
+        color: #2563eb;
+        border-color: #e5e7eb;
+        background: white;
+    }
+
+    .btn-outline-primary:hover {
+        background: #2563eb;
+        color: white;
+        border-color: #2563eb;
+    }
+
+    .btn-outline-success {
+        color: #16a34a;
+        border-color: #e5e7eb;
+        background: white;
+    }
+
+    .btn-outline-success:hover {
+        background: #16a34a;
+        color: white;
+        border-color: #16a34a;
+    }
+
+    .btn-outline-danger {
+        color: #dc2626;
+        border-color: #e5e7eb;
+        background: white;
+    }
+
+    .btn-outline-danger:hover {
+        background: #dc2626;
+        color: white;
+        border-color: #dc2626;
+    }
+
+    /* Pagination styling */
+    .pagination .page-link {
+        color: #4b5563;
+        font-weight: 500;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 2px;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #0f766e;
+        color: white;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        background-color: #f9fafb;
+        color: #9ca3af;
+    }
 </style>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

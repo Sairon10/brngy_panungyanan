@@ -18,7 +18,7 @@ if (is_logged_in() && $_SESSION['role'] === 'resident') {
 $sys_stats = ['residents' => 0, 'documents' => 0, 'incidents' => 0];
 try {
 	$stat_pdo = get_db_connection();
-	$sys_stats['residents'] = (int)$stat_pdo->query("
+	$sys_stats['residents'] = (int) $stat_pdo->query("
 		SELECT 
 			(SELECT COUNT(*) FROM users WHERE role = 'resident') +
 			(SELECT COUNT(*) FROM family_members) +
@@ -303,7 +303,8 @@ require_once __DIR__ . '/partials/header.php';
 				<ul class="list-unstyled text-white-50 mb-0 d-flex flex-column gap-2">
 					<li><a href="index.php"
 							class="text-white-50 text-decoration-none hover-white transition-colors">Home</a></li>
-					<li><a href="index.php#about" class="text-white-50 text-decoration-none hover-white transition-colors">About
+					<li><a href="index.php#about"
+							class="text-white-50 text-decoration-none hover-white transition-colors">About
 							Us</a></li>
 					<li><a href="index.php#services"
 							class="text-white-50 text-decoration-none hover-white transition-colors">Services</a></li>

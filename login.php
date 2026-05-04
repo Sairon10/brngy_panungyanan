@@ -13,14 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	} else {
 		$email = trim($_POST['email'] ?? '');
 		$password = $_POST['password'] ?? '';
-		
+
 		// Validate email format
 		if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 			$error = 'Please enter a valid email address';
 		} else {
 			try {
 				$pdo = get_db_connection();
-				
+
 				// Match by email only
 				$stmt = $pdo->prepare('SELECT id, password_hash, full_name, first_name, last_name, middle_name, suffix, role FROM users WHERE email = ? LIMIT 1');
 				$stmt->execute([$email]);
@@ -129,14 +129,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 								</div>
 
 								<?php if ($info): ?>
-									<div class="alert alert-success border-0 bg-success bg-opacity-10 text-success small mb-4">
+									<div
+										class="alert alert-success border-0 bg-success bg-opacity-10 text-success small mb-4">
 										<i class="fas fa-check-circle me-2"></i><?php echo htmlspecialchars($info); ?>
 									</div>
 								<?php endif; ?>
 
 								<?php if ($error): ?>
 									<div class="alert alert-danger border-0 bg-danger bg-opacity-10 text-danger small mb-4">
-										<i class="fas fa-exclamation-circle me-2"></i><?php echo htmlspecialchars($error); ?>
+										<i
+											class="fas fa-exclamation-circle me-2"></i><?php echo htmlspecialchars($error); ?>
 									</div>
 								<?php endif; ?>
 
@@ -157,10 +159,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										</div>
 										<div class="input-group input-group-lg">
 											<input type="password" name="password" id="password"
-												class="form-control border-end-0" placeholder="••••••••"
-												required>
-											<span class="input-group-text bg-white border-start-0"
-												id="togglePassword" style="cursor: pointer;">
+												class="form-control border-end-0" placeholder="••••••••" required>
+											<span class="input-group-text bg-white border-start-0" id="togglePassword"
+												style="cursor: pointer;">
 												<i class="fas fa-eye text-muted" id="toggleIcon"></i>
 											</span>
 										</div>
@@ -170,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 											In</button>
 									</div>
 									<div class="text-center">
-										<p class="text-muted small mb-0">Don't have an account? 
+										<p class="text-muted small mb-0">Don't have an account?
 											<a href="register.php"
 												class="text-primary fw-semibold text-decoration-none">
 												Create account

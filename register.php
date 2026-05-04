@@ -26,8 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$is_solo_parent = isset($_POST['is_solo_parent']) ? 1 : 0;
 	$is_pwd = isset($_POST['is_pwd']) ? 1 : 0;
 	$is_senior = isset($_POST['is_senior']) ? 1 : 0;
-    $street = trim($_POST['street'] ?? '');
-    $address = implode(', ', array_filter([$street, $barangay, $municipality, $province]));
+	$street = trim($_POST['street'] ?? '');
+	$address = implode(', ', array_filter([$street, $barangay, $municipality, $province]));
 	$purok = trim($_POST['purok'] ?? '');
 	$password = $_POST['password'] ?? '';
 	$confirm = $_POST['confirm_password'] ?? '';
@@ -73,18 +73,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$strong = preg_match('/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/', $password);
 	if (!$strong)
 		$errors[] = 'Password must be 8+ chars with uppercase, number, and special character';
-	
+
 	// Validate birthdate format
 	if ($birthdate !== '' && !preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate)) {
 		$errors[] = 'Invalid birthdate format';
 	}
-	
+
 	// Validate age: must be between 18 and 59 years old
 	if ($birthdate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate)) {
 		$birth_date = new DateTime($birthdate);
 		$today = new DateTime();
 		$age = $today->diff($birth_date)->y;
-		
+
 		if ($age < 18) {
 			$errors[] = 'You must be at least 18 years old to register';
 		}
@@ -131,8 +131,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				$user_id = $pdo->lastInsertId();
 				$stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, citizenship, civil_status, sex, purok, verification_status, is_solo_parent, is_pwd, is_senior) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'pending\', ?, ?, ?)');
 				$stmt->execute([
-					$user_id, 
-					$address, 
+					$user_id,
+					$address,
 					$phone ?: null,
 					$birthdate ?: null,
 					$citizenship ?: null,
@@ -178,6 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			flex: 1;
 			position: relative;
 		}
+
 		.step-number {
 			width: 40px;
 			height: 40px;
@@ -191,28 +192,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			margin-bottom: 8px;
 			transition: all 0.3s ease;
 		}
+
 		.step-indicator.active .step-number {
 			background-color: #0f766e;
 			color: white;
 			box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.3);
 		}
+
 		.step-indicator.completed .step-number {
 			background-color: #10b981;
 			color: white;
 		}
+
 		.step-label {
 			font-size: 0.75rem;
 			color: #475569;
 			text-align: center;
 			font-weight: 500;
 		}
+
 		.step-indicator.active .step-label {
 			color: #0f766e;
 			font-weight: 600;
 		}
+
 		.step-indicator.completed .step-label {
 			color: #10b981;
 		}
+
 		.step-line {
 			flex: 1;
 			height: 2px;
@@ -221,61 +228,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			margin-top: 20px;
 			transition: all 0.3s ease;
 		}
+
 		.step-line.completed {
 			background-color: #10b981;
 		}
+
 		.step-content {
 			min-height: 300px;
 			animation: fadeIn 0.3s ease;
 		}
+
 		@keyframes fadeIn {
 			from {
 				opacity: 0;
 				transform: translateY(10px);
 			}
+
 			to {
 				opacity: 1;
 				transform: translateY(0);
 			}
 		}
+
 		.btn-primary {
 			background-color: #0f766e;
 			border-color: #0f766e;
 		}
+
 		.btn-primary:hover {
 			background-color: #0d5c56;
 			border-color: #0d5c56;
 		}
+
 		.btn-outline-secondary {
 			border-color: #e2e8f0;
 			color: #475569;
 		}
+
 		.btn-outline-secondary:hover {
 			background-color: #f8fafc;
 			border-color: #0f766e;
 			color: #0f766e;
 		}
-		.form-control:focus, .form-select:focus {
+
+		.form-control:focus,
+		.form-select:focus {
 			border-color: #14b8a6;
 			box-shadow: 0 0 0 0.2rem rgba(20, 184, 166, 0.25);
 		}
+
 		.text-primary {
 			color: #0f766e !important;
 		}
-		
+
 		.form-check-input:checked {
 			background-color: #0f766e;
 			border-color: #0f766e;
 		}
-		
+
 		.form-check-input.is-invalid {
 			border-color: #dc3545;
 		}
-		
+
 		.form-check-label a {
 			text-decoration: none;
 		}
-		
+
 		.form-check-label a:hover {
 			text-decoration: underline;
 		}
@@ -288,6 +306,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			align-items: center;
 			gap: 6px;
 		}
+
 		.classify-inline-check {
 			width: 16px;
 			height: 16px;
@@ -295,6 +314,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			cursor: pointer;
 			flex-shrink: 0;
 		}
+
 		.classify-inline-label {
 			display: flex;
 			align-items: center;
@@ -305,12 +325,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			cursor: pointer;
 			user-select: none;
 		}
+
 		.classify-inline-icon {
 			font-size: 1rem;
 		}
-		.icon-solo   { color: #e11d48; }
-		.icon-pwd    { color: #2563eb; }
-		.icon-senior { color: #d97706; }
+
+		.icon-solo {
+			color: #e11d48;
+		}
+
+		.icon-pwd {
+			color: #2563eb;
+		}
+
+		.icon-senior {
+			color: #d97706;
+		}
 	</style>
 </head>
 
@@ -394,26 +424,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 								<form method="post" novalidate id="registrationForm" class="mt-3">
 									<?php echo csrf_field(); ?>
-									
+
 									<!-- Step 1: Personal Information (Name) -->
 									<div class="step-content" data-step="1">
 										<h5 class="mb-4 fw-semibold text-primary">Personal Information</h5>
 										<div class="row g-3">
 											<div class="col-md-12">
-												<label class="form-label fw-semibold small text-uppercase">First Name <span class="text-danger">*</span></label>
-												<input type="text" name="first_name" id="first_name" class="form-control form-control-lg text-md" placeholder="e.g. Juan" value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>" required>
+												<label class="form-label fw-semibold small text-uppercase">First Name
+													<span class="text-danger">*</span></label>
+												<input type="text" name="first_name" id="first_name"
+													class="form-control form-control-lg text-md" placeholder="e.g. Juan"
+													value="<?php echo htmlspecialchars($_POST['first_name'] ?? ''); ?>"
+													required>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold small text-uppercase">Last Name <span class="text-danger">*</span></label>
-												<input type="text" name="last_name" id="last_name" class="form-control form-control-lg text-md" placeholder="e.g. Dela Cruz" value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>" required>
+												<label class="form-label fw-semibold small text-uppercase">Last Name
+													<span class="text-danger">*</span></label>
+												<input type="text" name="last_name" id="last_name"
+													class="form-control form-control-lg text-md"
+													placeholder="e.g. Dela Cruz"
+													value="<?php echo htmlspecialchars($_POST['last_name'] ?? ''); ?>"
+													required>
 											</div>
 											<div class="col-md-8">
-												<label class="form-label fw-semibold small text-uppercase">Middle Name</label>
-												<input type="text" name="middle_name" id="middle_name" class="form-control form-control-lg text-md" placeholder="e.g. Santos" value="<?php echo htmlspecialchars($_POST['middle_name'] ?? ''); ?>">
+												<label class="form-label fw-semibold small text-uppercase">Middle
+													Name</label>
+												<input type="text" name="middle_name" id="middle_name"
+													class="form-control form-control-lg text-md"
+													placeholder="e.g. Santos"
+													value="<?php echo htmlspecialchars($_POST['middle_name'] ?? ''); ?>">
 											</div>
 											<div class="col-md-4">
-												<label class="form-label fw-semibold small text-uppercase">Suffix</label>
-												<input type="text" name="suffix" id="suffix" class="form-control form-control-lg text-md" placeholder="e.g. Jr., Sr., III" value="<?php echo htmlspecialchars($_POST['suffix'] ?? ''); ?>">
+												<label
+													class="form-label fw-semibold small text-uppercase">Suffix</label>
+												<input type="text" name="suffix" id="suffix"
+													class="form-control form-control-lg text-md"
+													placeholder="e.g. Jr., Sr., III"
+													value="<?php echo htmlspecialchars($_POST['suffix'] ?? ''); ?>">
 											</div>
 										</div>
 									</div>
@@ -423,12 +470,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<h5 class="mb-4 fw-semibold text-primary">Personal Details</h5>
 										<div class="row g-3">
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birthdate <span class="text-danger">*</span></label>
-												<input type="date" name="birthdate" id="birthdate" class="form-control form-control-lg" value="<?php echo htmlspecialchars($_POST['birthdate'] ?? ''); ?>" required>
-												<div class="form-text small text-muted">Must be at least 18 years old</div>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birthdate
+													<span class="text-danger">*</span></label>
+												<input type="date" name="birthdate" id="birthdate"
+													class="form-control form-control-lg"
+													value="<?php echo htmlspecialchars($_POST['birthdate'] ?? ''); ?>"
+													required>
+												<div class="form-text small text-muted">Must be at least 18 years old
+												</div>
 											</div>
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Sex <span class="text-danger">*</span></label>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Sex
+													<span class="text-danger">*</span></label>
 												<select name="sex" id="sex" class="form-select form-select-lg" required>
 													<option value="">Select Sex</option>
 													<option value="Male" <?php echo (isset($_POST['sex']) && $_POST['sex'] === 'Male') ? 'selected' : ''; ?>>Male</option>
@@ -436,41 +491,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 												</select>
 											</div>
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Citizenship <span class="text-danger">*</span></label>
-												<input type="text" name="citizenship" id="citizenship" class="form-control form-control-lg" placeholder="e.g. Filipino" value="<?php echo htmlspecialchars($_POST['citizenship'] ?? ''); ?>" required>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Citizenship
+													<span class="text-danger">*</span></label>
+												<input type="text" name="citizenship" id="citizenship"
+													class="form-control form-control-lg" placeholder="e.g. Filipino"
+													value="<?php echo htmlspecialchars($_POST['citizenship'] ?? ''); ?>"
+													required>
 											</div>
 											<div class="col-md-6">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Civil Status <span class="text-danger">*</span></label>
-												<select name="civil_status" id="civil_status" class="form-select form-select-lg" required>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Civil
+													Status <span class="text-danger">*</span></label>
+												<select name="civil_status" id="civil_status"
+													class="form-select form-select-lg" required>
 													<option value="">Select Civil Status</option>
-													<option value="Single" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Single') ? 'selected' : ''; ?>>Single</option>
-													<option value="Married" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Married') ? 'selected' : ''; ?>>Married</option>
-													<option value="Widowed" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Widowed') ? 'selected' : ''; ?>>Widowed</option>
-													<option value="Divorced" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Divorced') ? 'selected' : ''; ?>>Divorced</option>
-													<option value="Separated" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Separated') ? 'selected' : ''; ?>>Separated</option>
+													<option value="Single" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Single') ? 'selected' : ''; ?>>Single
+													</option>
+													<option value="Married" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Married') ? 'selected' : ''; ?>>
+														Married</option>
+													<option value="Widowed" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Widowed') ? 'selected' : ''; ?>>
+														Widowed</option>
+													<option value="Divorced" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Divorced') ? 'selected' : ''; ?>>
+														Divorced</option>
+													<option value="Separated" <?php echo (isset($_POST['civil_status']) && $_POST['civil_status'] === 'Separated') ? 'selected' : ''; ?>>
+														Separated</option>
 												</select>
 											</div>
 											<div class="col-12 mt-2">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Special Classification (Optional)</label>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Special
+													Classification (Optional)</label>
 												<div class="d-flex flex-wrap gap-3 mt-1">
 													<div class="classify-inline-item">
-														<input type="checkbox" name="is_solo_parent" id="is_solo_parent" value="1" class="classify-inline-check" <?php echo isset($_POST['is_solo_parent']) ? 'checked' : ''; ?>>
+														<input type="checkbox" name="is_solo_parent" id="is_solo_parent"
+															value="1" class="classify-inline-check" <?php echo isset($_POST['is_solo_parent']) ? 'checked' : ''; ?>>
 														<label for="is_solo_parent" class="classify-inline-label">
-															<i class="fas fa-user-shield classify-inline-icon icon-solo"></i>
+															<i
+																class="fas fa-user-shield classify-inline-icon icon-solo"></i>
 															Solo Parent
 														</label>
 													</div>
 													<div class="classify-inline-item">
-														<input type="checkbox" name="is_pwd" id="is_pwd" value="1" class="classify-inline-check" <?php echo isset($_POST['is_pwd']) ? 'checked' : ''; ?>>
+														<input type="checkbox" name="is_pwd" id="is_pwd" value="1"
+															class="classify-inline-check" <?php echo isset($_POST['is_pwd']) ? 'checked' : ''; ?>>
 														<label for="is_pwd" class="classify-inline-label">
-															<i class="fas fa-wheelchair classify-inline-icon icon-pwd"></i>
+															<i
+																class="fas fa-wheelchair classify-inline-icon icon-pwd"></i>
 															PWD
 														</label>
 													</div>
 													<div class="classify-inline-item">
-														<input type="checkbox" name="is_senior" id="is_senior" value="1" class="classify-inline-check" <?php echo isset($_POST['is_senior']) ? 'checked' : ''; ?>>
+														<input type="checkbox" name="is_senior" id="is_senior" value="1"
+															class="classify-inline-check" <?php echo isset($_POST['is_senior']) ? 'checked' : ''; ?>>
 														<label for="is_senior" class="classify-inline-label">
-															<i class="fas fa-user-clock classify-inline-icon icon-senior"></i>
+															<i
+																class="fas fa-user-clock classify-inline-icon icon-senior"></i>
 															Senior Citizen
 														</label>
 													</div>
@@ -484,38 +560,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<h5 class="mb-4 fw-semibold text-primary">Contact Information</h5>
 										<div class="row g-3">
 											<div class="col-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Email Address <span class="text-danger">*</span></label>
-												<input type="email" name="email" id="email" class="form-control form-control-lg" placeholder="name@example.com" value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>" required>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Email
+													Address <span class="text-danger">*</span></label>
+												<input type="email" name="email" id="email"
+													class="form-control form-control-lg" placeholder="name@example.com"
+													value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+													required>
 											</div>
 											<div class="col-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Phone Number <span class="text-danger">*</span></label>
-												<input type="tel" name="phone" id="phone" class="form-control form-control-lg" placeholder="e.g. 09123456789" value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>" required maxlength="11" pattern="[0-9]{11}" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Phone
+													Number <span class="text-danger">*</span></label>
+												<input type="tel" name="phone" id="phone"
+													class="form-control form-control-lg" placeholder="e.g. 09123456789"
+													value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+													required maxlength="11" pattern="[0-9]{11}"
+													oninput="this.value = this.value.replace(/[^0-9]/g, '')">
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Province <span class="text-danger">*</span></label>
-												<select name="province" id="province" class="form-select form-select-lg" required>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Province
+													<span class="text-danger">*</span></label>
+												<select name="province" id="province" class="form-select form-select-lg"
+													required>
 													<option value="">Select Province</option>
 												</select>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Municipality <span class="text-danger">*</span></label>
-												<select name="municipality" id="municipality" class="form-select form-select-lg" required disabled>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Municipality
+													<span class="text-danger">*</span></label>
+												<select name="municipality" id="municipality"
+													class="form-select form-select-lg" required disabled>
 													<option value="">Select Municipality</option>
 												</select>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Barangay <span class="text-danger">*</span></label>
-												<select name="barangay" id="barangay" class="form-select form-select-lg" required disabled>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Barangay
+													<span class="text-danger">*</span></label>
+												<select name="barangay" id="barangay" class="form-select form-select-lg"
+													required disabled>
 													<option value="">Select Barangay</option>
 												</select>
 											</div>
 											<div class="col-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok <span class="text-danger">*</span></label>
-												<input type="text" name="purok" id="purok" class="form-control form-control-lg" placeholder="e.g. Purok 1, Purok 2" value="<?php echo htmlspecialchars($_POST['purok'] ?? ''); ?>" required>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok
+													<span class="text-danger">*</span></label>
+												<input type="text" name="purok" id="purok"
+													class="form-control form-control-lg"
+													placeholder="e.g. Purok 1, Purok 2"
+													value="<?php echo htmlspecialchars($_POST['purok'] ?? ''); ?>"
+													required>
 											</div>
 											<div class="col-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Household/Block/lot/street</label>
-												<input type="text" name="street" id="street" class="form-control form-control-lg" placeholder="e.g. Blk 1 Lot 2 Phase 3" value="<?php echo htmlspecialchars($_POST['street'] ?? ''); ?>">
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Household/Block/lot/street</label>
+												<input type="text" name="street" id="street"
+													class="form-control form-control-lg"
+													placeholder="e.g. Blk 1 Lot 2 Phase 3"
+													value="<?php echo htmlspecialchars($_POST['street'] ?? ''); ?>">
 											</div>
 										</div>
 									</div>
@@ -525,33 +631,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<h5 class="mb-4 fw-semibold text-primary">Create Password</h5>
 										<div class="row g-3">
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Password</label>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Password</label>
 												<div class="input-group input-group-lg">
-													<input type="password" name="password" id="password" class="form-control border-end-0" placeholder="••••••••" required minlength="8">
-													<span class="input-group-text bg-white border-start-0" id="togglePassword" style="cursor: pointer;">
+													<input type="password" name="password" id="password"
+														class="form-control border-end-0" placeholder="••••••••"
+														required minlength="8">
+													<span class="input-group-text bg-white border-start-0"
+														id="togglePassword" style="cursor: pointer;">
 														<i class="fas fa-eye text-muted" id="toggleIcon"></i>
 													</span>
 												</div>
 											</div>
 											<div class="col-md-12">
-												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Confirm Password</label>
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Confirm
+													Password</label>
 												<div class="input-group input-group-lg">
-													<input type="password" name="confirm_password" id="confirmPassword" class="form-control border-end-0" placeholder="••••••••" required>
-													<span class="input-group-text bg-white border-start-0" id="toggleConfirmPassword" style="cursor: pointer;">
+													<input type="password" name="confirm_password" id="confirmPassword"
+														class="form-control border-end-0" placeholder="••••••••"
+														required>
+													<span class="input-group-text bg-white border-start-0"
+														id="toggleConfirmPassword" style="cursor: pointer;">
 														<i class="fas fa-eye text-muted" id="toggleConfirmIcon"></i>
 													</span>
 												</div>
 											</div>
 											<div class="col-12">
 												<div class="form-text small text-muted">
-													Password must be at least 8 characters and include an uppercase letter, a number, and a special character.
+													Password must be at least 8 characters and include an uppercase
+													letter, a number, and a special character.
 												</div>
 											</div>
 											<div class="col-12">
 												<div class="form-check">
-													<input type="checkbox" class="form-check-input" name="terms_agreement" id="terms_agreement" required>
+													<input type="checkbox" class="form-check-input"
+														name="terms_agreement" id="terms_agreement" required>
 													<label class="form-check-label" for="terms_agreement">
-														I confirm that all information provided is accurate and I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+														I confirm that all information provided is accurate and I agree
+														to the <a href="#" class="text-primary">Terms of Service</a> and
+														<a href="#" class="text-primary">Privacy Policy</a>
 													</label>
 												</div>
 											</div>
@@ -560,21 +679,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 									<!-- Navigation Buttons -->
 									<div class="d-flex justify-content-between mt-4">
-										<button type="button" class="btn btn-outline-secondary btn-md" id="prevBtn" style="display: none;">
+										<button type="button" class="btn btn-outline-secondary btn-md" id="prevBtn"
+											style="display: none;">
 											<i class="fas fa-arrow-left me-2"></i>Previous
 										</button>
 										<button type="button" class="btn btn-primary btn-md ms-auto" id="nextBtn">
 											Next<i class="fas fa-arrow-right ms-2"></i>
 										</button>
-										<button type="submit" class="btn btn-primary btn-md ms-auto" id="submitBtn" style="display: none;">
+										<button type="submit" class="btn btn-primary btn-md ms-auto" id="submitBtn"
+											style="display: none;">
 											Create Account<i class="fas fa-check ms-2"></i>
 										</button>
 									</div>
 
 									<div class="text-center mt-3">
-										<p class="text-muted small mb-0">Already have an account? 
-											<a href="login.php" 
-												class="text-primary fw-semibold text-decoration-none">
+										<p class="text-muted small mb-0">Already have an account?
+											<a href="login.php" class="text-primary fw-semibold text-decoration-none">
 												Sign in
 											</a>
 										</p>
@@ -681,13 +801,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					const age = today.getFullYear() - date.getFullYear();
 					const monthDiff = today.getMonth() - date.getMonth();
 					const dayDiff = today.getDate() - date.getDate();
-					
+
 					// Calculate exact age
 					let exactAge = age;
 					if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
 						exactAge--;
 					}
-					
+
 					if (date >= today) {
 						isValid = false;
 						field.classList.add('is-invalid');
@@ -706,7 +826,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		// Next button handler
-		document.getElementById('nextBtn').addEventListener('click', function() {
+		document.getElementById('nextBtn').addEventListener('click', function () {
 			if (validateStep(currentStep)) {
 				if (currentStep < totalSteps) {
 					currentStep++;
@@ -723,7 +843,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		});
 
 		// Previous button handler
-		document.getElementById('prevBtn').addEventListener('click', function() {
+		document.getElementById('prevBtn').addEventListener('click', function () {
 			if (currentStep > 1) {
 				currentStep--;
 				showStep(currentStep);
@@ -763,7 +883,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		});
 
 		// Form submission validation
-		document.getElementById('registrationForm').addEventListener('submit', function(e) {
+		document.getElementById('registrationForm').addEventListener('submit', function (e) {
 			// Validate all steps before submission
 			let allValid = true;
 			for (let i = 1; i <= totalSteps; i++) {
@@ -822,11 +942,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		// Remove invalid class on input
 		document.querySelectorAll('input, select').forEach(field => {
 			if (field.type === 'checkbox') {
-				field.addEventListener('change', function() {
+				field.addEventListener('change', function () {
 					this.classList.remove('is-invalid');
 				});
 			} else {
-				field.addEventListener('input', function() {
+				field.addEventListener('input', function () {
 					this.classList.remove('is-invalid');
 				});
 			}

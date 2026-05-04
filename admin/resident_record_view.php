@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && in_array
                             $pdo->prepare('UPDATE residents SET verification_status = \'rejected\', verification_notes = ?, verified_at = NOW(), verified_by = ? WHERE id = ?')->execute([$notes, $_SESSION['user_id'], $resident_id]);
                             if (!empty($rd['email']))
                                 send_id_verification_email($rd['email'], 'rejected', ['full_name' => $rd['full_name'], 'verification_notes' => $notes]);
-                            
+
                             $redirect_url = 'resident_record_view.php?id=' . $record_id;
                             if ($record_id <= 0 && $user_id > 0) {
                                 $redirect_url .= '&user_id=' . $user_id;
@@ -83,27 +83,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (!csrf_validate()) {
         $errors[] = 'Invalid CSRF token.';
     } else {
-        $fm_id = (int)($_POST['fm_id'] ?? 0);
+        $fm_id = (int) ($_POST['fm_id'] ?? 0);
         $fname = trim($_POST['fm_first_name'] ?? '');
         $mname = trim($_POST['fm_middle_name'] ?? '');
         $lname = trim($_POST['fm_last_name'] ?? '');
         $suffix = trim($_POST['fm_suffix'] ?? '');
         $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
-        
+
         $relationship = trim($_POST['fm_relationship'] ?? '');
         $philsys = trim($_POST['fm_philsys_card_no'] ?? '');
         $citizenship = trim($_POST['fm_citizenship'] ?? 'FILIPINO');
-        
+
         $birthdate = $_POST['fm_birthdate'] ?? null;
         $sex = $_POST['fm_sex'] ?? null;
         $civil_status = $_POST['fm_civil_status'] ?? 'Single';
         $religion = trim($_POST['fm_religion'] ?? '');
         $birth_place = trim($_POST['fm_birth_place'] ?? '');
         $occupation = trim($_POST['fm_occupation'] ?? '');
-        
+
         $edu = $_POST['fm_educational_attainment'] ?? '';
         $edu_status = $_POST['fm_educational_status'] ?? 'N/A';
-        
+
         // Boolean classifications
         $is_pwd = isset($_POST['fm_is_pwd']) ? 1 : 0;
         $is_senior = isset($_POST['fm_is_senior']) ? 1 : 0;
@@ -111,9 +111,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $is_solo_parent = isset($_POST['fm_is_solo_parent']) ? 1 : 0;
 
         $classifications = [];
-        if ($is_pwd) $classifications[] = 'PWD';
-        if ($is_senior) $classifications[] = 'Senior';
-        if ($is_solo_parent) $classifications[] = 'Solo Parent';
+        if ($is_pwd)
+            $classifications[] = 'PWD';
+        if ($is_senior)
+            $classifications[] = 'Senior';
+        if ($is_solo_parent)
+            $classifications[] = 'Solo Parent';
         $classification_json = json_encode($classifications);
 
         if ($fm_id > 0 && !empty($fname) && !empty($lname)) {
@@ -126,11 +129,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     is_pwd=?, is_senior=?, is_minor=?, is_solo_parent=?, classification=? 
                     WHERE id=?');
                 $stmt->execute([
-                    $fname, $mname, $lname, $suffix, $fullname,
-                    $relationship, $philsys, $citizenship,
-                    $birthdate ?: null, $sex ?: null, $civil_status, $religion, $birth_place, $occupation,
-                    $edu, $edu_status,
-                    $is_pwd, $is_senior, $is_minor, $is_solo_parent, $classification_json,
+                    $fname,
+                    $mname,
+                    $lname,
+                    $suffix,
+                    $fullname,
+                    $relationship,
+                    $philsys,
+                    $citizenship,
+                    $birthdate ?: null,
+                    $sex ?: null,
+                    $civil_status,
+                    $religion,
+                    $birth_place,
+                    $occupation,
+                    $edu,
+                    $edu_status,
+                    $is_pwd,
+                    $is_senior,
+                    $is_minor,
+                    $is_solo_parent,
+                    $classification_json,
                     $fm_id
                 ]);
                 $success = 'Family member details updated successfully.';
@@ -165,8 +184,10 @@ if (!$record && $user_id > 0) {
     if ($record) {
         $record['id'] = 0;
         $record['created_by_name'] = 'Self Registered';
-        if (!isset($record['created_at'])) $record['created_at'] = date('Y-m-d H:i:s');
-        if (!isset($record['updated_at'])) $record['updated_at'] = null;
+        if (!isset($record['created_at']))
+            $record['created_at'] = date('Y-m-d H:i:s');
+        if (!isset($record['updated_at']))
+            $record['updated_at'] = null;
     }
 }
 
@@ -174,7 +195,7 @@ if (!$record) {
     redirect('resident_records.php');
 }
 
-$fm_id = (int)($_GET['fm_id'] ?? 0);
+$fm_id = (int) ($_GET['fm_id'] ?? 0);
 $view_fm = null;
 if ($fm_id > 0) {
     $stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ?');
@@ -299,27 +320,47 @@ if ($linked_user) {
 $edit_data = $record;
 if ($linked_resident) {
     // Always override with user profile data if it exists (not just when empty)
-    if (!empty($linked_resident['phone']))               $edit_data['phone']                  = $linked_resident['phone'];
-    if (!empty($linked_resident['email']))               $edit_data['email']                  = $linked_resident['email'];
-    if (!empty($linked_resident['birthdate']))           $edit_data['birthdate']               = $linked_resident['birthdate'];
-    if (!empty($linked_resident['sex']))                 $edit_data['sex']                    = $linked_resident['sex'];
-    if (!empty($linked_resident['citizenship']))         $edit_data['citizenship']             = $linked_resident['citizenship'];
-    if (!empty($linked_resident['civil_status']))        $edit_data['civil_status']            = $linked_resident['civil_status'];
-    if (!empty($linked_resident['purok']))               $edit_data['purok']                   = $linked_resident['purok'];
-    if (!empty($linked_resident['address']))             $edit_data['address']                 = $linked_resident['address'];
-    if (!empty($linked_resident['religion']))            $edit_data['religion']                = $linked_resident['religion'];
-    if (!empty($linked_resident['occupation']))          $edit_data['occupation']              = $linked_resident['occupation'];
-    if (!empty($linked_resident['educational_attainment'])) $edit_data['educational_attainment'] = $linked_resident['educational_attainment'];
-    if (!empty($linked_resident['classification']))      $edit_data['classification']          = $linked_resident['classification'];
-    if (!empty($linked_resident['birth_place']))         $edit_data['birth_place']             = $linked_resident['birth_place'];
-    if (!empty($linked_resident['philsys_card_no']))     $edit_data['philsys_card_no']         = $linked_resident['philsys_card_no'];
-    if (!empty($linked_resident['barangay_id']))         $edit_data['barangay_id']             = $linked_resident['barangay_id'];
+    if (!empty($linked_resident['phone']))
+        $edit_data['phone'] = $linked_resident['phone'];
+    if (!empty($linked_resident['email']))
+        $edit_data['email'] = $linked_resident['email'];
+    if (!empty($linked_resident['birthdate']))
+        $edit_data['birthdate'] = $linked_resident['birthdate'];
+    if (!empty($linked_resident['sex']))
+        $edit_data['sex'] = $linked_resident['sex'];
+    if (!empty($linked_resident['citizenship']))
+        $edit_data['citizenship'] = $linked_resident['citizenship'];
+    if (!empty($linked_resident['civil_status']))
+        $edit_data['civil_status'] = $linked_resident['civil_status'];
+    if (!empty($linked_resident['purok']))
+        $edit_data['purok'] = $linked_resident['purok'];
+    if (!empty($linked_resident['address']))
+        $edit_data['address'] = $linked_resident['address'];
+    if (!empty($linked_resident['religion']))
+        $edit_data['religion'] = $linked_resident['religion'];
+    if (!empty($linked_resident['occupation']))
+        $edit_data['occupation'] = $linked_resident['occupation'];
+    if (!empty($linked_resident['educational_attainment']))
+        $edit_data['educational_attainment'] = $linked_resident['educational_attainment'];
+    if (!empty($linked_resident['classification']))
+        $edit_data['classification'] = $linked_resident['classification'];
+    if (!empty($linked_resident['birth_place']))
+        $edit_data['birth_place'] = $linked_resident['birth_place'];
+    if (!empty($linked_resident['philsys_card_no']))
+        $edit_data['philsys_card_no'] = $linked_resident['philsys_card_no'];
+    if (!empty($linked_resident['barangay_id']))
+        $edit_data['barangay_id'] = $linked_resident['barangay_id'];
     // Name fields from users table
-    if (!empty($linked_resident['first_name']))          $edit_data['first_name']              = $linked_resident['first_name'];
-    if (!empty($linked_resident['middle_name']))         $edit_data['middle_name']             = $linked_resident['middle_name'];
-    if (!empty($linked_resident['last_name']))           $edit_data['last_name']               = $linked_resident['last_name'];
-    if (!empty($linked_resident['suffix']))              $edit_data['suffix']                  = $linked_resident['suffix'];
-    if (!empty($linked_resident['full_name']))           $edit_data['full_name']               = $linked_resident['full_name'];
+    if (!empty($linked_resident['first_name']))
+        $edit_data['first_name'] = $linked_resident['first_name'];
+    if (!empty($linked_resident['middle_name']))
+        $edit_data['middle_name'] = $linked_resident['middle_name'];
+    if (!empty($linked_resident['last_name']))
+        $edit_data['last_name'] = $linked_resident['last_name'];
+    if (!empty($linked_resident['suffix']))
+        $edit_data['suffix'] = $linked_resident['suffix'];
+    if (!empty($linked_resident['full_name']))
+        $edit_data['full_name'] = $linked_resident['full_name'];
 }
 
 ?>
@@ -349,19 +390,19 @@ if ($linked_resident) {
 <?php endif; ?>
 
 <?php if (isset($_GET['updated']) && $_GET['updated'] == '1'): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    Swal.fire({
-        icon: 'success',
-        title: 'Record Updated!',
-        text: 'The resident record has been successfully updated.',
-        confirmButtonColor: '#0f766e',
-        confirmButtonText: 'OK',
-        timer: 4000,
-        timerProgressBar: true
-    });
-});
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                icon: 'success',
+                title: 'Record Updated!',
+                text: 'The resident record has been successfully updated.',
+                confirmButtonColor: '#0f766e',
+                confirmButtonText: 'OK',
+                timer: 4000,
+                timerProgressBar: true
+            });
+        });
+    </script>
 <?php endif; ?>
 
 <div class="row justify-content-center">
@@ -393,7 +434,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 <?php endif; ?>
 
                 <h3 class="text-white fw-bold mb-1 position-relative z-1">
-                    <?php echo htmlspecialchars($display_data['full_name']); ?></h3>
+                    <?php echo htmlspecialchars($display_data['full_name']); ?>
+                </h3>
                 <p class="text-white-50 mb-0 position-relative z-1">
                     <?php
                     $is_verified = ($is_family_member || ($record['id'] ?? 0) > 0 || (($linked_resident['verification_status'] ?? '') === 'verified'));
@@ -407,38 +449,45 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="card-body p-5">
                 <div class="row g-4">
                     <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12">
-                        Personal Information <?php echo $is_family_member ? '<span class="badge bg-secondary ms-2">Family Member</span>' : ''; ?>
+                        Personal Information
+                        <?php echo $is_family_member ? '<span class="badge bg-secondary ms-2">Family Member</span>' : ''; ?>
                     </h6>
 
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">First Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['first_name']) ? '-' : $display_data['first_name']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['first_name']) ? '-' : $display_data['first_name']); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Last Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['last_name']) ? '-' : $display_data['last_name']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['last_name']) ? '-' : $display_data['last_name']); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Middle Name</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['middle_name']) ? '-' : $display_data['middle_name']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['middle_name']) ? '-' : $display_data['middle_name']); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Suffix</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['suffix']) ? '-' : $display_data['suffix']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['suffix']) ? '-' : $display_data['suffix']); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Full Name</label>
                         <div class="form-control-plaintext border-bottom pb-2 fw-bold">
-                            <?php echo htmlspecialchars($display_data['full_name'] ?? '-'); ?></div>
+                            <?php echo htmlspecialchars($display_data['full_name'] ?? '-'); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Email Address</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['email']) ? '-' : $display_data['email']); ?></div>
+                            <?php echo htmlspecialchars(empty($display_data['email']) ? '-' : $display_data['email']); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Phone Number</label>
@@ -516,19 +565,27 @@ document.addEventListener('DOMContentLoaded', function () {
                             $classes = [];
                             if ($cls_json) {
                                 $decoded = json_decode($cls_json, true);
-                                if (is_array($decoded)) $classes = $decoded;
+                                if (is_array($decoded))
+                                    $classes = $decoded;
                             }
                             // Fallback to legacy columns
                             if (empty($classes)) {
-                                if (!empty($display_data['is_solo_parent'])) $classes[] = 'Solo Parent';
-                                if (!empty($display_data['is_pwd'])) $classes[] = 'PWD';
-                                if (!empty($display_data['is_senior'])) $classes[] = 'Senior Citizen';
+                                if (!empty($display_data['is_solo_parent']))
+                                    $classes[] = 'Solo Parent';
+                                if (!empty($display_data['is_pwd']))
+                                    $classes[] = 'PWD';
+                                if (!empty($display_data['is_senior']))
+                                    $classes[] = 'Senior Citizen';
                             }
                             $badge_colors = [
-                                'PWD' => 'bg-primary', 'Solo Parent' => 'bg-info',
-                                'Senior Citizen' => 'bg-warning text-dark', 'OFW' => 'bg-success',
-                                'Out of School Youth (OSY)' => 'bg-danger', 'Out of School Children (OSC)' => 'bg-danger',
-                                'Labor/Employed' => 'bg-teal', 'Unemployed' => 'bg-secondary',
+                                'PWD' => 'bg-primary',
+                                'Solo Parent' => 'bg-info',
+                                'Senior Citizen' => 'bg-warning text-dark',
+                                'OFW' => 'bg-success',
+                                'Out of School Youth (OSY)' => 'bg-danger',
+                                'Out of School Children (OSC)' => 'bg-danger',
+                                'Labor/Employed' => 'bg-teal',
+                                'Unemployed' => 'bg-secondary',
                                 'Indigenous People' => 'bg-dark',
                             ];
                             if (empty($classes)) {
@@ -648,7 +705,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <div class="d-flex flex-wrap gap-2 align-items-center">
                                         <?php if (!empty($linked_resident['id_front_path']) || !empty($linked_resident['id_back_path']) || !empty($linked_resident['id_document_path'])): ?>
                                             <div class="mb-2 w-100">
-                                                <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal" data-bs-target="#viewIDModal">
+                                                <button type="button" class="btn btn-sm btn-outline-dark" data-bs-toggle="modal"
+                                                    data-bs-target="#viewIDModal">
                                                     <i class="fas fa-eye me-1"></i> View ID Details
                                                 </button>
                                             </div>
@@ -684,7 +742,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="col-md-6 mt-2">
                             <label class="form-label fw-semibold text-muted small">Account Created</label>
                             <div class="form-control-plaintext border-bottom pb-2">
-                                <?php echo date('F j, Y g:i A', strtotime($linked_user['user_created_at'])); ?></div>
+                                <?php echo date('F j, Y g:i A', strtotime($linked_user['user_created_at'])); ?>
+                            </div>
                         </div>
                     <?php endif; ?>
 
@@ -704,12 +763,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Created By</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars($record['created_by_name'] ?? 'Unknown'); ?></div>
+                            <?php echo htmlspecialchars($record['created_by_name'] ?? 'Unknown'); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Created At</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo date('F j, Y g:i A', strtotime($record['created_at'])); ?></div>
+                            <?php echo date('F j, Y g:i A', strtotime($record['created_at'])); ?>
+                        </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Updated At</label>
@@ -743,7 +804,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                                         <?php echo htmlspecialchars($req['type']); ?>
                                                         <?php if ($req['detail']): ?>
                                                             <div class="text-muted small">
-                                                                <?php echo htmlspecialchars($req['detail']); ?></div>
+                                                                <?php echo htmlspecialchars($req['detail']); ?>
+                                                            </div>
                                                         <?php endif; ?>
                                                     </td>
                                                     <td><?php echo htmlspecialchars($req['purpose'] ?? '-'); ?></td>
@@ -850,8 +912,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                                                 class="badge bg-info me-1">PWD</span><?php endif; ?>
                                                         <?php if ($fm['is_senior']): ?><span
                                                                 class="badge bg-warning text-dark me-1">Senior</span><?php endif; ?>
-                                                        <?php if ($fm['is_solo_parent']): ?><span
-                                                                class="badge bg-purple me-1">Solo Parent</span><?php endif; ?>
+                                                        <?php if ($fm['is_solo_parent']): ?><span class="badge bg-purple me-1">Solo
+                                                                Parent</span><?php endif; ?>
                                                         <?php if (!$fm_is_minor && !$fm['is_pwd'] && !$fm['is_senior'] && !$fm['is_solo_parent']): ?><span
                                                                 class="text-muted">—</span><?php endif; ?>
                                                     </td>
@@ -864,7 +926,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                                         <?php else: ?><span class="text-muted small">None</span><?php endif; ?>
                                                     </td>
                                                     <td class="text-center">
-                                                        <button class="btn btn-sm btn-outline-primary shadow-sm" title="Edit Member" onclick='editFamilyMember(<?php echo htmlspecialchars(json_encode($fm), ENT_QUOTES, "UTF-8"); ?>)'>
+                                                        <button class="btn btn-sm btn-outline-primary shadow-sm" title="Edit Member"
+                                                            onclick='editFamilyMember(<?php echo htmlspecialchars(json_encode($fm), ENT_QUOTES, "UTF-8"); ?>)'>
                                                             <i class="fas fa-pen"></i>
                                                         </button>
                                                     </td>
@@ -879,37 +942,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 <?php endif; ?>
 
                 <?php if ($is_family_member): ?>
-                <div class="mt-4 pt-4 border-top">
-                    <h6 class="text-uppercase text-muted fw-bold small mb-3">
-                        <i class="fas fa-home me-2"></i>Household Head Information
-                    </h6>
-                    <div class="bg-light p-4 rounded-3 border">
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold text-muted small mb-1">Full Name</label>
-                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($edit_data['full_name'] ?? '-'); ?></div>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label fw-semibold text-muted small mb-1">Phone Number</label>
-                                <div class="text-dark"><?php echo htmlspecialchars(empty($edit_data['phone']) ? '-' : $edit_data['phone']); ?></div>
-                            </div>
-                            <div class="col-md-4 d-flex align-items-center">
-                                <a href="resident_record_view.php?id=<?php echo $record_id; ?>&user_id=<?php echo $user_id; ?>" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye me-1"></i>View Household Profile
-                                </a>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label fw-semibold text-muted small mb-1">Complete Address</label>
-                                <div class="text-dark">
-                                    <?php 
-                                    $head_address = !empty($linked_resident['address']) ? $linked_resident['address'] : ($record['address'] ?? null);
-                                    echo htmlspecialchars($head_address ?? '-'); 
-                                    ?>
+                    <div class="mt-4 pt-4 border-top">
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                            <i class="fas fa-home me-2"></i>Household Head Information
+                        </h6>
+                        <div class="bg-light p-4 rounded-3 border">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small mb-1">Full Name</label>
+                                    <div class="fw-bold text-dark">
+                                        <?php echo htmlspecialchars($edit_data['full_name'] ?? '-'); ?></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-semibold text-muted small mb-1">Phone Number</label>
+                                    <div class="text-dark">
+                                        <?php echo htmlspecialchars(empty($edit_data['phone']) ? '-' : $edit_data['phone']); ?>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 d-flex align-items-center">
+                                    <a href="resident_record_view.php?id=<?php echo $record_id; ?>&user_id=<?php echo $user_id; ?>"
+                                        class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>View Household Profile
+                                    </a>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-semibold text-muted small mb-1">Complete Address</label>
+                                    <div class="text-dark">
+                                        <?php
+                                        $head_address = !empty($linked_resident['address']) ? $linked_resident['address'] : ($record['address'] ?? null);
+                                        echo htmlspecialchars($head_address ?? '-');
+                                        ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
                 <?php endif; ?>
 
                 <div class="d-flex justify-content-between mt-5 pt-4 border-top">
@@ -917,7 +984,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <i class="fas fa-arrow-left me-2"></i> Back to <?php echo $back_label; ?>
                     </a>
                     <?php if ($is_family_member): ?>
-                        <button class="btn btn-primary" onclick='editFamilyMember(<?php echo htmlspecialchars(json_encode($view_fm), ENT_QUOTES, "UTF-8"); ?>)'>
+                        <button class="btn btn-primary"
+                            onclick='editFamilyMember(<?php echo htmlspecialchars(json_encode($view_fm), ENT_QUOTES, "UTF-8"); ?>)'>
                             <i class="fas fa-user-edit me-2"></i> Edit Family Member
                         </button>
                     <?php else: ?>
@@ -970,7 +1038,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Resident Record</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="post" action="resident_records?redirect=view&id=<?php echo $record_id; ?>&user_id=<?php echo $user_id; ?>" id="editForm">
+            <form method="post"
+                action="resident_records?redirect=view&id=<?php echo $record_id; ?>&user_id=<?php echo $user_id; ?>"
+                id="editForm">
                 <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="update">
                 <input type="hidden" name="record_id" id="edit_record_id">
@@ -1035,16 +1105,19 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Religion</label>
-                            <input type="text" name="religion" id="edit_religion" class="form-control" placeholder="e.g. Roman Catholic">
+                            <input type="text" name="religion" id="edit_religion" class="form-control"
+                                placeholder="e.g. Roman Catholic">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Profession / Occupation</label>
-                            <input type="text" name="occupation" id="edit_occupation" class="form-control" placeholder="e.g. Teacher, Farmer">
+                            <input type="text" name="occupation" id="edit_occupation" class="form-control"
+                                placeholder="e.g. Teacher, Farmer">
                         </div>
                         <div class="col-12 mt-2">
                             <div class="row g-3">
                                 <div class="col-md-6 border-end pe-4">
-                                    <label class="form-label text-uppercase small fw-bold text-muted">Highest Educational Attainment</label>
+                                    <label class="form-label text-uppercase small fw-bold text-muted">Highest
+                                        Educational Attainment</label>
                                     <div class="d-flex flex-column gap-2" id="edit_edu_base_options">
                                         <?php
                                         $edu_opts = ['Elementary', 'High School', 'College', 'Post Grad', 'Vocational'];
@@ -1052,15 +1125,17 @@ document.addEventListener('DOMContentLoaded', function () {
                                             ?>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="educational_attainment"
-                                                    value="<?php echo $opt; ?>" id="edit_edu_<?php echo str_replace(' ','_',$opt); ?>">
+                                                    value="<?php echo $opt; ?>"
+                                                    id="edit_edu_<?php echo str_replace(' ', '_', $opt); ?>">
                                                 <label class="form-check-label"
-                                                    for="edit_edu_<?php echo str_replace(' ','_',$opt); ?>"><?php echo $opt; ?></label>
+                                                    for="edit_edu_<?php echo str_replace(' ', '_', $opt); ?>"><?php echo $opt; ?></label>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
                                 <div class="col-md-6 ps-4">
-                                    <label class="form-label text-uppercase small fw-bold text-muted">Please Specify</label>
+                                    <label class="form-label text-uppercase small fw-bold text-muted">Please
+                                        Specify</label>
                                     <div class="d-flex flex-column gap-2">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="edu_status"
@@ -1079,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <div class="col-12">
                             <label class="form-label text-uppercase small fw-bold text-muted">Complete Address *</label>
-                            <input type="text" name="address" id="edit_address" class="form-control" required 
+                            <input type="text" name="address" id="edit_address" class="form-control" required
                                 placeholder="e.g. 106, Panungyanan, City of General Trias, Cavite">
                             <div class="form-text small">Please include House No., Street, Barangay, etc.</div>
                         </div>
@@ -1088,32 +1163,90 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <div class="col-md-6">
                             <label class="form-label">Barangay ID</label>
-                            <input type="text" name="barangay_id" id="edit_barangay_id" class="form-control" placeholder="Resident ID Number" readonly style="background-color: #f0f0f0; cursor: not-allowed;">
-                            <div class="form-text small" style="font-size: 0.7rem;">System-generated ID. Cannot be modified.</div>
+                            <input type="text" name="barangay_id" id="edit_barangay_id" class="form-control"
+                                placeholder="Resident ID Number" readonly
+                                style="background-color: #f0f0f0; cursor: not-allowed;">
+                            <div class="form-text small" style="font-size: 0.7rem;">System-generated ID. Cannot be
+                                modified.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Purok</label>
-                            <input type="text" name="purok" id="edit_purok" class="form-control" placeholder="e.g. Purok 1, Purok 2">
+                            <input type="text" name="purok" id="edit_purok" class="form-control"
+                                placeholder="e.g. Purok 1, Purok 2">
                         </div>
 
-                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-3">Special Classification (Multiple Selection)</h6>
+                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-3">Special Classification
+                            (Multiple Selection)</h6>
                         <div class="col-12">
                             <div class="row g-2">
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_0" value="Labor/Employed"><label class="form-check-label small fw-semibold" for="ecls_0">Labor/Employed</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_1" value="Unemployed"><label class="form-check-label small fw-semibold" for="ecls_1">Unemployed</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_2" value="PWD"><label class="form-check-label small fw-semibold" for="ecls_2">PWD</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_3" value="OFW"><label class="form-check-label small fw-semibold" for="ecls_3">OFW</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_4" value="Solo Parent"><label class="form-check-label small fw-semibold" for="ecls_4">Solo Parent</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_5" value="Out of School Youth (OSY)"><label class="form-check-label small fw-semibold" for="ecls_5">OSY</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_6" value="Out of School Children (OSC)"><label class="form-check-label small fw-semibold" for="ecls_6">OSC</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_7" value="Indigenous People"><label class="form-check-label small fw-semibold" for="ecls_7">Indigenous</label></div></div>
-                                <div class="col-md-4"><div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]" id="ecls_8" value="Senior Citizen"><label class="form-check-label small fw-semibold" for="ecls_8">Senior Citizen</label></div></div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_0" value="Labor/Employed"><label
+                                            class="form-check-label small fw-semibold"
+                                            for="ecls_0">Labor/Employed</label></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_1" value="Unemployed"><label
+                                            class="form-check-label small fw-semibold" for="ecls_1">Unemployed</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_2" value="PWD"><label
+                                            class="form-check-label small fw-semibold" for="ecls_2">PWD</label></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_3" value="OFW"><label
+                                            class="form-check-label small fw-semibold" for="ecls_3">OFW</label></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_4" value="Solo Parent"><label
+                                            class="form-check-label small fw-semibold" for="ecls_4">Solo Parent</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_5"
+                                            value="Out of School Youth (OSY)"><label
+                                            class="form-check-label small fw-semibold" for="ecls_5">OSY</label></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_6"
+                                            value="Out of School Children (OSC)"><label
+                                            class="form-check-label small fw-semibold" for="ecls_6">OSC</label></div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_7" value="Indigenous People"><label
+                                            class="form-check-label small fw-semibold" for="ecls_7">Indigenous</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
+                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
+                                            name="classifications[]" id="ecls_8" value="Senior Citizen"><label
+                                            class="form-check-label small fw-semibold" for="ecls_8">Senior
+                                            Citizen</label></div>
+                                </div>
                             </div>
                         </div>
 
                         <div class="col-12 mt-2">
                             <div class="form-check">
-                                <input type="checkbox" name="is_active" id="edit_is_active" class="form-check-input" value="1">
+                                <input type="checkbox" name="is_active" id="edit_is_active" class="form-check-input"
+                                    value="1">
                                 <label class="form-check-label fw-bold" for="edit_is_active">Record Active</label>
                             </div>
                         </div>
@@ -1136,7 +1269,8 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="modal-dialog modal-xl">
         <div class="modal-content border-0 rounded-4 shadow-lg">
             <div class="modal-header border-0 pb-0 px-4 pt-4">
-                <h5 class="modal-title fw-bold" id="fmEditModalTitle"><i class="fas fa-user-edit me-2 text-primary"></i>Update Record</h5>
+                <h5 class="modal-title fw-bold" id="fmEditModalTitle"><i
+                        class="fas fa-user-edit me-2 text-primary"></i>Update Record</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" id="adminFamilyEditForm">
@@ -1147,27 +1281,37 @@ document.addEventListener('DOMContentLoaded', function () {
                     <div class="row g-4">
                         <!-- Personal Info Section -->
                         <div class="col-lg-12">
-                            <h6 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1"><i class="fas fa-id-card me-2"></i>Personal Identification</h6>
+                            <h6
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                <i class="fas fa-id-card me-2"></i>Personal Identification</h6>
                             <div class="row g-3">
                                 <div class="col-md-3">
-                                    <label class="form-label rbi-label">First Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="fm_first_name" id="fm_edit_first_name" class="form-control rbi-input" required>
+                                    <label class="form-label rbi-label">First Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="fm_first_name" id="fm_edit_first_name"
+                                        class="form-control rbi-input" required>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Middle Name</label>
-                                    <input type="text" name="fm_middle_name" id="fm_edit_middle_name" class="form-control rbi-input">
+                                    <input type="text" name="fm_middle_name" id="fm_edit_middle_name"
+                                        class="form-control rbi-input">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label rbi-label">Last Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="fm_last_name" id="fm_edit_last_name" class="form-control rbi-input" required>
+                                    <label class="form-label rbi-label">Last Name <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="fm_last_name" id="fm_edit_last_name"
+                                        class="form-control rbi-input" required>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Suffix (Jr, III, etc)</label>
-                                    <input type="text" name="fm_suffix" id="fm_edit_suffix" class="form-control rbi-input">
+                                    <input type="text" name="fm_suffix" id="fm_edit_suffix"
+                                        class="form-control rbi-input">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label rbi-label">Relationship to Head <span class="text-danger">*</span></label>
-                                    <select name="fm_relationship" id="fm_edit_relationship" class="form-select rbi-input" required>
+                                    <label class="form-label rbi-label">Relationship to Head <span
+                                            class="text-danger">*</span></label>
+                                    <select name="fm_relationship" id="fm_edit_relationship"
+                                        class="form-select rbi-input" required>
                                         <option value="Spouse">Spouse</option>
                                         <option value="Child">Child</option>
                                         <option value="Parent">Parent</option>
@@ -1179,22 +1323,28 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label rbi-label">PhilSys Card Number</label>
-                                    <input type="text" name="fm_philsys_card_no" id="fm_edit_philsys" class="form-control rbi-input" placeholder="####-####-####-####">
+                                    <input type="text" name="fm_philsys_card_no" id="fm_edit_philsys"
+                                        class="form-control rbi-input" placeholder="####-####-####-####">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label rbi-label">Citizenship</label>
-                                    <input type="text" name="fm_citizenship" id="fm_edit_citizenship" class="form-control rbi-input">
+                                    <input type="text" name="fm_citizenship" id="fm_edit_citizenship"
+                                        class="form-control rbi-input">
                                 </div>
                             </div>
                         </div>
 
                         <!-- Demographics Section -->
                         <div class="col-lg-12">
-                            <h6 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1"><i class="fas fa-map-marker-alt me-2"></i>Demographics & Status</h6>
+                            <h6
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                <i class="fas fa-map-marker-alt me-2"></i>Demographics & Status</h6>
                             <div class="row g-3">
                                 <div class="col-md-3">
-                                    <label class="form-label rbi-label">Birthdate <span class="text-danger">*</span></label>
-                                    <input type="date" name="fm_birthdate" id="fm_edit_birthdate" class="form-control rbi-input" required>
+                                    <label class="form-label rbi-label">Birthdate <span
+                                            class="text-danger">*</span></label>
+                                    <input type="date" name="fm_birthdate" id="fm_edit_birthdate"
+                                        class="form-control rbi-input" required>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Sex <span class="text-danger">*</span></label>
@@ -1204,8 +1354,10 @@ document.addEventListener('DOMContentLoaded', function () {
                                     </select>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label rbi-label">Civil Status <span class="text-danger">*</span></label>
-                                    <select name="fm_civil_status" id="fm_edit_civil_status" class="form-select rbi-input" required>
+                                    <label class="form-label rbi-label">Civil Status <span
+                                            class="text-danger">*</span></label>
+                                    <select name="fm_civil_status" id="fm_edit_civil_status"
+                                        class="form-select rbi-input" required>
                                         <option value="Single">Single</option>
                                         <option value="Married">Married</option>
                                         <option value="Widowed">Widowed</option>
@@ -1215,26 +1367,33 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Religion</label>
-                                    <input type="text" name="fm_religion" id="fm_edit_religion" class="form-control rbi-input">
+                                    <input type="text" name="fm_religion" id="fm_edit_religion"
+                                        class="form-control rbi-input">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label rbi-label">Place of Birth <span class="text-danger">*</span></label>
-                                    <input type="text" name="fm_birth_place" id="fm_edit_birth_place" class="form-control rbi-input" required>
+                                    <label class="form-label rbi-label">Place of Birth <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" name="fm_birth_place" id="fm_edit_birth_place"
+                                        class="form-control rbi-input" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label rbi-label">Occupation</label>
-                                    <input type="text" name="fm_occupation" id="fm_edit_occupation" class="form-control rbi-input">
+                                    <input type="text" name="fm_occupation" id="fm_edit_occupation"
+                                        class="form-control rbi-input">
                                 </div>
                             </div>
                         </div>
 
                         <!-- Education Section -->
                         <div class="col-lg-12">
-                            <h6 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1"><i class="fas fa-graduation-cap me-2"></i>Educational Background</h6>
+                            <h6
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                <i class="fas fa-graduation-cap me-2"></i>Educational Background</h6>
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="form-label rbi-label">Highest Educational Attainment</label>
-                                    <select name="fm_educational_attainment" id="fm_edit_educational_attainment" class="form-select rbi-input">
+                                    <select name="fm_educational_attainment" id="fm_edit_educational_attainment"
+                                        class="form-select rbi-input">
                                         <option value="">-- SELECT --</option>
                                         <option value="No Formal Education">No Formal Education</option>
                                         <option value="Elementary Level">Elementary Level</option>
@@ -1249,7 +1408,8 @@ document.addEventListener('DOMContentLoaded', function () {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label rbi-label">Current Enrollment Status</label>
-                                    <select name="fm_educational_status" id="fm_edit_educational_status" class="form-select rbi-input">
+                                    <select name="fm_educational_status" id="fm_edit_educational_status"
+                                        class="form-select rbi-input">
                                         <option value="N/A">N/A</option>
                                         <option value="Enrolled">Currently Enrolled</option>
                                         <option value="Not Enrolled">Not Enrolled</option>
@@ -1261,30 +1421,39 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         <!-- Classifications Section -->
                         <div class="col-lg-12">
-                            <h6 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1"><i class="fas fa-tags me-2"></i>Special Classifications</h6>
+                            <h6
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                <i class="fas fa-tags me-2"></i>Special Classifications</h6>
                             <div class="row g-2">
                                 <div class="col-md-3">
                                     <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_pwd" id="fm_edit_is_pwd">
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_pwd"
+                                            id="fm_edit_is_pwd">
                                         <label class="form-check-label fw-bold small" for="fm_edit_is_pwd">PWD</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_senior" id="fm_edit_is_senior">
-                                        <label class="form-check-label fw-bold small" for="fm_edit_is_senior">Senior</label>
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_senior"
+                                            id="fm_edit_is_senior">
+                                        <label class="form-check-label fw-bold small"
+                                            for="fm_edit_is_senior">Senior</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_minor" id="fm_edit_is_minor">
-                                        <label class="form-check-label fw-bold small" for="fm_edit_is_minor">Minor</label>
+                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_minor"
+                                            id="fm_edit_is_minor">
+                                        <label class="form-check-label fw-bold small"
+                                            for="fm_edit_is_minor">Minor</label>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
                                     <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_solo_parent" id="fm_edit_is_solo_parent">
-                                        <label class="form-check-label fw-bold small" for="fm_edit_is_solo_parent">Solo Parent</label>
+                                        <input class="form-check-input ms-0 me-2" type="checkbox"
+                                            name="fm_is_solo_parent" id="fm_edit_is_solo_parent">
+                                        <label class="form-check-label fw-bold small" for="fm_edit_is_solo_parent">Solo
+                                            Parent</label>
                                     </div>
                                 </div>
                             </div>
@@ -1292,8 +1461,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 p-4 bg-light-subtle rounded-bottom-4">
-                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Discard</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm fw-bold">Save Member Record</button>
+                    <button type="button" class="btn btn-light rounded-pill px-4"
+                        data-bs-dismiss="modal">Discard</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 shadow-sm fw-bold">Save Member
+                        Record</button>
                 </div>
             </form>
         </div>
@@ -1301,8 +1472,22 @@ document.addEventListener('DOMContentLoaded', function () {
 </div>
 
 <style>
-.rbi-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #64748b; margin-bottom: 5px; }
-.rbi-input { border: 1px solid #e2e8f0; font-size: 0.9rem; padding: 0.6rem 0.75rem; border-radius: 8px; transition: all 0.2s; }
+    .rbi-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #64748b;
+        margin-bottom: 5px;
+    }
+
+    .rbi-input {
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
 </style>
 
 <script>
@@ -1451,13 +1636,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         if (classes.includes(cb.value)) cb.checked = true;
                     });
                 }
-            } catch(e) {}
+            } catch (e) { }
         }
 
         // Fallback: sync with legacy individual columns
-        if (record.is_solo_parent == 1) { const el = document.querySelector('.edit-cls-check[value="Solo Parent"]'); if(el) el.checked = true; }
-        if (record.is_pwd == 1) { const el = document.querySelector('.edit-cls-check[value="PWD"]'); if(el) el.checked = true; }
-        if (record.is_senior == 1) { const el = document.querySelector('.edit-cls-check[value="Senior Citizen"]'); if(el) el.checked = true; }
+        if (record.is_solo_parent == 1) { const el = document.querySelector('.edit-cls-check[value="Solo Parent"]'); if (el) el.checked = true; }
+        if (record.is_pwd == 1) { const el = document.querySelector('.edit-cls-check[value="PWD"]'); if (el) el.checked = true; }
+        if (record.is_senior == 1) { const el = document.querySelector('.edit-cls-check[value="Senior Citizen"]'); if (el) el.checked = true; }
 
         new bootstrap.Modal(document.getElementById('editModal')).show();
     }
@@ -1468,25 +1653,25 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('fm_edit_middle_name').value = fm.middle_name || '';
         document.getElementById('fm_edit_last_name').value = fm.last_name || '';
         document.getElementById('fm_edit_suffix').value = fm.suffix || '';
-        
+
         document.getElementById('fm_edit_relationship').value = fm.relationship || 'Child';
         document.getElementById('fm_edit_philsys').value = fm.philsys_card_no || '';
         document.getElementById('fm_edit_citizenship').value = fm.citizenship || 'FILIPINO';
-        
+
         document.getElementById('fm_edit_birthdate').value = fm.birthdate || '';
         document.getElementById('fm_edit_sex').value = fm.sex || 'Male';
         document.getElementById('fm_edit_civil_status').value = fm.civil_status || 'Single';
         document.getElementById('fm_edit_religion').value = fm.religion || '';
         document.getElementById('fm_edit_birth_place').value = fm.birth_place || '';
         document.getElementById('fm_edit_occupation').value = fm.occupation || '';
-        
+
         document.getElementById('fm_edit_educational_attainment').value = fm.educational_attainment || '';
         document.getElementById('fm_edit_educational_status').value = fm.educational_status || 'N/A';
         document.getElementById('fm_edit_is_pwd').checked = fm.is_pwd == 1;
         document.getElementById('fm_edit_is_senior').checked = fm.is_senior == 1;
         document.getElementById('fm_edit_is_minor').checked = fm.is_minor == 1;
         document.getElementById('fm_edit_is_solo_parent').checked = fm.is_solo_parent == 1;
-        
+
         new bootstrap.Modal(document.getElementById('familyMemberEditModal')).show();
     }
 </script>
@@ -1495,7 +1680,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('DOMContentLoaded', function () {
         const editForm = document.getElementById('editForm');
         if (editForm) {
-            editForm.addEventListener('submit', function(e) {
+            editForm.addEventListener('submit', function (e) {
                 Swal.fire({
                     title: 'Saving...',
                     text: 'Please wait while your changes are saved.',
@@ -1508,7 +1693,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const urlParams = new URLSearchParams(window.location.search);
-        
+
         if (urlParams.has('updated')) {
             Swal.fire({
                 icon: 'success',
@@ -1565,13 +1750,15 @@ document.addEventListener('DOMContentLoaded', function () {
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="viewIDModalLabel"><i class="fas fa-id-card me-2 text-primary"></i>Uploaded ID Documents</h5>
+                <h5 class="modal-title fw-bold" id="viewIDModalLabel"><i
+                        class="fas fa-id-card me-2 text-primary"></i>Uploaded ID Documents</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="row g-4 justify-content-center">
                     <div class="col-12 mb-2">
-                        <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
+                        <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i
+                                class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
                         <div class="p-3 bg-light rounded-3 border fw-semibold text-dark" style="font-size: 0.95rem;">
                             <?php echo !empty($linked_resident['address_on_id']) ? htmlspecialchars($linked_resident['address_on_id']) : '<i class="text-muted fw-normal">No address provided during upload.</i>'; ?>
                         </div>
@@ -1579,25 +1766,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     <?php if (!empty($linked_resident['id_front_path'])): ?>
                         <div class="col-md-6 text-center">
                             <label class="form-label fw-bold small text-uppercase text-muted mb-2">Front ID View</label>
-                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_front_path']); ?>" 
-                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
-                                 onclick="window.open(this.src, '_blank')">
+                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_front_path']); ?>"
+                                class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
                         </div>
                     <?php endif; ?>
                     <?php if (!empty($linked_resident['id_back_path'])): ?>
                         <div class="col-md-6 text-center">
                             <label class="form-label fw-bold small text-uppercase text-muted mb-2">Back ID View</label>
-                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_back_path']); ?>" 
-                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
-                                 onclick="window.open(this.src, '_blank')">
+                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_back_path']); ?>"
+                                class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
                         </div>
                     <?php endif; ?>
                     <?php if (empty($linked_resident['id_front_path']) && empty($linked_resident['id_back_path']) && !empty($linked_resident['id_document_path'])): ?>
                         <div class="col-12 text-center">
                             <label class="form-label fw-bold small text-uppercase text-muted mb-2">ID Document</label>
-                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_document_path']); ?>" 
-                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
-                                 onclick="window.open(this.src, '_blank')">
+                            <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_document_path']); ?>"
+                                class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
                         </div>
                     <?php endif; ?>
                     <div class="col-12 mt-3 text-center">

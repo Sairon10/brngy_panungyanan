@@ -129,26 +129,27 @@ if (is_logged_in()) {
 						aria-label="Close"></button>
 				</div>
 				<div class="offcanvas-body px-4 pt-lg-0 px-lg-0">
+					<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
 					<ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-1">
 						<li class="nav-item">
-							<a class="nav-link" href="index.php">Home</a>
+							<a class="nav-link <?php echo ($current_page === 'index.php') ? 'active' : ''; ?>" href="index.php">Home</a>
 						</li>
 						<li class="nav-item">
 							<a class="nav-link" href="index.php#services">Services</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link"
+							<a class="nav-link <?php echo ($current_page === 'announcements.php') ? 'active' : ''; ?>"
 								href="<?php echo (is_logged_in() && is_admin()) ? 'admin/announcements.php' : 'announcements.php'; ?>">Announcements</a>
 						</li>
 						<li class="nav-item">
-							<a class="nav-link" href="barangay_officials.php">Barangay Officials</a>
+							<a class="nav-link <?php echo ($current_page === 'barangay_officials.php') ? 'active' : ''; ?>" href="barangay_officials.php">Barangay Officials</a>
 						</li>
 						<li class="nav-item">
 							<a class="nav-link" href="index.php#about">About Us</a>
 						</li>
 						<?php if (is_logged_in() && is_admin()): ?>
 							<li class="nav-item">
-								<a class="nav-link" href="admin/index.php">Admin Panel</a>
+								<a class="nav-link <?php echo (strpos($_SERVER['PHP_SELF'], '/admin/') !== false) ? 'active' : ''; ?>" href="admin/index.php">Admin Panel</a>
 							</li>
 						<?php endif; ?>
 					</ul>

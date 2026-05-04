@@ -1,6 +1,6 @@
-<?php 
+<?php
 $page_title = 'ID Verification';
-require_once __DIR__ . '/partials/user_dashboard_header.php'; 
+require_once __DIR__ . '/partials/user_dashboard_header.php';
 ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <?php if (!is_logged_in())
@@ -42,7 +42,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
         $max_size = 5 * 1024 * 1024; // 5MB
         $upload_dir = __DIR__ . '/uploads/id_documents/';
-        if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+        if (!is_dir($upload_dir))
+            mkdir($upload_dir, 0777, true);
 
         // Handle Front ID
         if (isset($_FILES['id_front'])) {
@@ -123,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if (empty($errors)) {
             $address_note = trim($_POST['address_note']);
             $id_type = trim($_POST['id_type'] ?? '');
-            
+
             // Check if id_type column exists
             $check_id_type = $pdo->query("SHOW COLUMNS FROM residents LIKE 'id_type'");
             if ($check_id_type->rowCount() > 0) {
@@ -134,14 +135,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $stmt = $pdo->prepare('UPDATE residents SET id_front_path = ?, id_back_path = ?, address_on_id = ?, verification_status = \'pending\' WHERE user_id = ?');
                 $stmt->execute([$id_front, $id_back, $address_note, $_SESSION['user_id']]);
             }
-            
+
             // Notify all admins
             $admin_stmt = $pdo->query('SELECT id FROM users WHERE role = "admin"');
             foreach ($admin_stmt->fetchAll() as $admin) {
                 $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "New ID Verification Upload", "A resident has uploaded ID (Front & Back) for verification.")')
                     ->execute([$admin['id']]);
             }
-            
+
             $success = 'ID documents uploaded successfully. Please wait for admin verification.';
 
             // Refresh resident data
@@ -241,44 +242,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     <input type="hidden" name="action" value="upload_id">
 
                                     <div class="mb-4">
-                                        <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Select ID Type <span class="text-danger">*</span></label>
-                                        <select name="id_type" class="form-select bg-light border-0 rounded-3 p-3 focus-ring" required>
+                                        <label
+                                            class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Select
+                                            ID Type <span class="text-danger">*</span></label>
+                                        <select name="id_type"
+                                            class="form-select bg-light border-0 rounded-3 p-3 focus-ring" required>
                                             <option value="" selected disabled>Choose ID Type...</option>
-                                            <option value="National ID (Philsys)" <?php echo ($resident['id_type'] ?? '') == 'National ID (Philsys)' ? 'selected' : ''; ?>>National ID (Philsys)</option>
+                                            <option value="National ID (Philsys)" <?php echo ($resident['id_type'] ?? '') == 'National ID (Philsys)' ? 'selected' : ''; ?>>National ID (Philsys)
+                                            </option>
                                             <option value="Driver's License" <?php echo ($resident['id_type'] ?? '') == "Driver's License" ? 'selected' : ''; ?>>Driver's License</option>
                                             <option value="Voter's ID" <?php echo ($resident['id_type'] ?? '') == "Voter's ID" ? 'selected' : ''; ?>>Voter's ID</option>
                                             <option value="Passport" <?php echo ($resident['id_type'] ?? '') == 'Passport' ? 'selected' : ''; ?>>Passport</option>
                                             <option value="SSS / GSIS ID" <?php echo ($resident['id_type'] ?? '') == 'SSS / GSIS ID' ? 'selected' : ''; ?>>SSS / GSIS ID</option>
                                             <option value="Postal ID" <?php echo ($resident['id_type'] ?? '') == 'Postal ID' ? 'selected' : ''; ?>>Postal ID</option>
                                             <option value="Student ID" <?php echo ($resident['id_type'] ?? '') == 'Student ID' ? 'selected' : ''; ?>>Student ID</option>
-                                            <option value="Other Government ID" <?php echo ($resident['id_type'] ?? '') == 'Other Government ID' ? 'selected' : ''; ?>>Other Government ID</option>
+                                            <option value="Other Government ID" <?php echo ($resident['id_type'] ?? '') == 'Other Government ID' ? 'selected' : ''; ?>>Other Government ID
+                                            </option>
                                         </select>
                                     </div>
 
                                     <div class="row mb-4">
                                         <div class="col-md-6">
-                                            <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Front ID View <span class="text-danger">*</span></label>
-                                            <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2" style="height: 180px;">
-                                                <input type="file" name="id_front" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !($resident['id_front_path'] ?? '') ? 'required' : ''; ?> onchange="previewID(this, 'front')">
-                                                <div id="front_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo ($resident['id_front_path'] ?? '') ? 'd-none' : ''; ?>">
+                                            <label
+                                                class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Front
+                                                ID View <span class="text-danger">*</span></label>
+                                            <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2"
+                                                style="height: 180px;">
+                                                <input type="file" name="id_front"
+                                                    class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
+                                                    accept="image/*,.pdf" <?php echo !($resident['id_front_path'] ?? '') ? 'required' : ''; ?> onchange="previewID(this, 'front')">
+                                                <div id="front_placeholder"
+                                                    class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo ($resident['id_front_path'] ?? '') ? 'd-none' : ''; ?>">
                                                     <i class="fas fa-id-card fs-2 text-primary mb-2"></i>
                                                     <h6 class="fw-bold text-dark small mb-0">Upload Front</h6>
                                                 </div>
-                                                <div id="front_preview" class="<?php echo ($resident['id_front_path'] ?? '') ? '' : 'd-none'; ?> h-100 w-100">
-                                                    <img src="<?php echo ($resident['id_front_path'] ?? '') ? 'uploads/id_documents/' . $resident['id_front_path'] : '#'; ?>" alt="Front Preview" class="w-100 h-100 object-fit-contain rounded-3">
+                                                <div id="front_preview"
+                                                    class="<?php echo ($resident['id_front_path'] ?? '') ? '' : 'd-none'; ?> h-100 w-100">
+                                                    <img src="<?php echo ($resident['id_front_path'] ?? '') ? 'uploads/id_documents/' . $resident['id_front_path'] : '#'; ?>"
+                                                        alt="Front Preview"
+                                                        class="w-100 h-100 object-fit-contain rounded-3">
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <label class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Back ID View <span class="text-danger">*</span></label>
-                                            <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2" style="height: 180px;">
-                                                <input type="file" name="id_back" class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept="image/*,.pdf" <?php echo !($resident['id_back_path'] ?? '') ? 'required' : ''; ?> onchange="previewID(this, 'back')">
-                                                <div id="back_placeholder" class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo ($resident['id_back_path'] ?? '') ? 'd-none' : ''; ?>">
-                                                    <i class="fas fa-id-card fs-2 text-primary mb-2" style="transform: scaleX(-1);"></i>
+                                            <label
+                                                class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Back
+                                                ID View <span class="text-danger">*</span></label>
+                                            <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2"
+                                                style="height: 180px;">
+                                                <input type="file" name="id_back"
+                                                    class="form-control position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer"
+                                                    accept="image/*,.pdf" <?php echo !($resident['id_back_path'] ?? '') ? 'required' : ''; ?> onchange="previewID(this, 'back')">
+                                                <div id="back_placeholder"
+                                                    class="d-flex flex-column align-items-center justify-content-center h-100 <?php echo ($resident['id_back_path'] ?? '') ? 'd-none' : ''; ?>">
+                                                    <i class="fas fa-id-card fs-2 text-primary mb-2"
+                                                        style="transform: scaleX(-1);"></i>
                                                     <h6 class="fw-bold text-dark small mb-0">Upload Back</h6>
                                                 </div>
-                                                <div id="back_preview" class="<?php echo ($resident['id_back_path'] ?? '') ? '' : 'd-none'; ?> h-100 w-100">
-                                                    <img src="<?php echo ($resident['id_back_path'] ?? '') ? 'uploads/id_documents/' . $resident['id_back_path'] : '#'; ?>" alt="Back Preview" class="w-100 h-100 object-fit-contain rounded-3">
+                                                <div id="back_preview"
+                                                    class="<?php echo ($resident['id_back_path'] ?? '') ? '' : 'd-none'; ?> h-100 w-100">
+                                                    <img src="<?php echo ($resident['id_back_path'] ?? '') ? 'uploads/id_documents/' . $resident['id_back_path'] : '#'; ?>"
+                                                        alt="Back Preview" class="w-100 h-100 object-fit-contain rounded-3">
                                                 </div>
                                             </div>
                                         </div>
@@ -292,8 +316,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                             class="form-control bg-light border-0 rounded-3 p-3 focus-ring" rows="3"
                                             placeholder="Enter the complete address exactly as it appears on your ID document..."
                                             required><?php echo htmlspecialchars($resident['address_on_id'] ?? ''); ?></textarea>
-                                        <div class="form-text mt-2"><i class="fas fa-exclamation-triangle me-1 text-warning"></i> 
-                                            This is the address printed on your physical ID card. It is used to compare with your registered address for verification purposes.
+                                        <div class="form-text mt-2"><i
+                                                class="fas fa-exclamation-triangle me-1 text-warning"></i>
+                                            This is the address printed on your physical ID card. It is used to compare with
+                                            your registered address for verification purposes.
                                         </div>
                                     </div>
 
@@ -311,10 +337,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                         const placeholder = document.getElementById(side + '_placeholder');
                                         const preview = document.getElementById(side + '_preview');
                                         const previewImg = preview.querySelector('img');
-                                        
+
                                         if (file) {
                                             const reader = new FileReader();
-                                            reader.onload = function(e) {
+                                            reader.onload = function (e) {
                                                 previewImg.src = e.target.result;
                                                 placeholder.classList.add('d-none');
                                                 preview.classList.remove('d-none');
@@ -325,7 +351,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                             preview.classList.add('d-none');
                                         }
                                     }
-                                    document.getElementById('verificationForm').addEventListener('submit', function(e) {
+                                    document.getElementById('verificationForm').addEventListener('submit', function (e) {
                                         Swal.fire({
                                             title: 'Are you sure?',
                                             text: "You are about to submit your ID for verification.",
@@ -407,19 +433,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 <hr class="my-4 border-light">
                                 <h6 class="fw-bold text-uppercase text-muted small mb-3 letter-spacing-1">Current Uploads
                                 </h6>
-                                 <div class="p-3 bg-light rounded-3 border border-light">
-                                     <div class="d-flex align-items-center justify-content-between mb-3">
-                                         <span class="badge bg-white text-dark border shadow-sm">Submitted Files</span>
-                                         <?php if (isset($resident['verified_at']) && $resident['verified_at']): ?>
-                                             <small
-                                                 class="text-muted"><?php echo date('M j, Y', strtotime($resident['verified_at'])); ?></small>
-                                         <?php endif; ?>
-                                     </div>
-                                     
-                                     <button type="button" class="btn btn-sm btn-outline-primary w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#viewMyIDModal">
-                                         <i class="fas fa-eye me-1"></i> View Details
-                                     </button>
-                                 </div>
+                                <div class="p-3 bg-light rounded-3 border border-light">
+                                    <div class="d-flex align-items-center justify-content-between mb-3">
+                                        <span class="badge bg-white text-dark border shadow-sm">Submitted Files</span>
+                                        <?php if (isset($resident['verified_at']) && $resident['verified_at']): ?>
+                                            <small
+                                                class="text-muted"><?php echo date('M j, Y', strtotime($resident['verified_at'])); ?></small>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <button type="button" class="btn btn-sm btn-outline-primary w-100 rounded-pill"
+                                        data-bs-toggle="modal" data-bs-target="#viewMyIDModal">
+                                        <i class="fas fa-eye me-1"></i> View Details
+                                    </button>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -471,13 +498,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content rounded-4 border-0 shadow-lg">
             <div class="modal-header border-0 pb-0">
-                <h5 class="modal-title fw-bold" id="viewMyIDModalLabel"><i class="fas fa-id-card me-2 text-primary"></i>My ID Verification Details</h5>
+                <h5 class="modal-title fw-bold" id="viewMyIDModalLabel"><i
+                        class="fas fa-id-card me-2 text-primary"></i>My ID Verification Details</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="row g-4 justify-content-center">
                     <div class="col-12 mb-2">
-                        <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
+                        <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i
+                                class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
                         <div class="p-3 bg-light rounded-3 border fw-semibold text-dark" style="font-size: 0.95rem;">
                             <?php echo !empty($resident['address_on_id']) ? htmlspecialchars($resident['address_on_id']) : '<i class="text-muted fw-normal">No address provided.</i>'; ?>
                         </div>
@@ -485,25 +514,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <?php if (!empty($resident['id_front_path'])): ?>
                         <div class="col-md-6 text-center">
                             <label class="form-label fw-bold small text-uppercase text-muted mb-2">Front ID View</label>
-                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_front_path']); ?>" 
-                                 class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
-                                 onclick="window.open(this.src, '_blank')">
+                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_front_path']); ?>"
+                                class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
                         </div>
                     <?php endif; ?>
                     <?php if (!empty($resident['id_back_path'])): ?>
                         <div class="col-md-6 text-center">
                             <label class="form-label fw-bold small text-uppercase text-muted mb-2">Back ID View</label>
-                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_back_path']); ?>" 
-                                 class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
-                                 onclick="window.open(this.src, '_blank')">
+                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_back_path']); ?>"
+                                class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
                         </div>
                     <?php endif; ?>
                     <?php if (empty($resident['id_front_path']) && empty($resident['id_back_path']) && !empty($resident['id_document_path'])): ?>
                         <div class="col-12 text-center">
-                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">ID Document (Legacy Format)</label>
-                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_document_path']); ?>" 
-                                 class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
-                                 onclick="window.open(this.src, '_blank')">
+                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">ID Document (Legacy
+                                Format)</label>
+                            <img src="uploads/id_documents/<?php echo htmlspecialchars($resident['id_document_path']); ?>"
+                                class="img-fluid rounded border shadow-sm" style="max-height: 350px; cursor: pointer;"
+                                onclick="window.open(this.src, '_blank')">
                         </div>
                     <?php endif; ?>
                     <div class="col-12 mt-3 text-center">
@@ -521,9 +551,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 </div>
 
 <script>
-    document.getElementById('verificationForm')?.addEventListener('submit', function(e) {
+    document.getElementById('verificationForm')?.addEventListener('submit', function (e) {
         e.preventDefault();
-        
+
         Swal.fire({
             title: 'Submit for Verification?',
             text: "Please ensure all information and photos are correct.",
@@ -552,23 +582,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     });
 
     <?php if ($success): ?>
-    Swal.fire({
-        title: 'Success!',
-        text: '<?php echo $success; ?>',
-        icon: 'success',
-        confirmButtonColor: '#0f766e',
-        borderRadius: '15px'
-    });
+        Swal.fire({
+            title: 'Success!',
+            text: '<?php echo $success; ?>',
+            icon: 'success',
+            confirmButtonColor: '#0f766e',
+            borderRadius: '15px'
+        });
     <?php endif; ?>
 
     <?php if ($errors): ?>
-    Swal.fire({
-        title: 'Wait!',
-        html: '<ul class="text-start small mb-0"><?php foreach($errors as $e) echo "<li>".htmlspecialchars($e)."</li>"; ?></ul>',
-        icon: 'error',
-        confirmButtonColor: '#0f766e',
-        borderRadius: '15px'
-    });
+        Swal.fire({
+            title: 'Wait!',
+            html: '<ul class="text-start small mb-0"><?php foreach ($errors as $e)
+                echo "<li>" . htmlspecialchars($e) . "</li>"; ?></ul>',
+            icon: 'error',
+            confirmButtonColor: '#0f766e',
+            borderRadius: '15px'
+        });
     <?php endif; ?>
 </script>
 <?php require_once __DIR__ . '/partials/user_dashboard_footer.php'; ?>

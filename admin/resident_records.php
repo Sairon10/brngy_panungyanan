@@ -12,8 +12,21 @@ require_once __DIR__ . '/header.php';
 ?>
 
 <style>
-    .action-btn { width: 35px; height: 35px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; transition: 0.3s; text-decoration: none; }
-    .action-btn:hover { background: #f1f5f9; transform: translateY(-2px); }
+    .action-btn {
+        width: 35px;
+        height: 35px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.3s;
+        text-decoration: none;
+    }
+
+    .action-btn:hover {
+        background: #f1f5f9;
+        transform: translateY(-2px);
+    }
 </style>
 
 <?php
@@ -124,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         // Additional demographic fields
         $religion = trim($_POST['religion'] ?? '');
         $occupation = trim($_POST['occupation'] ?? '');
-        
+
         $edu_base = trim($_POST['educational_attainment'] ?? '');
         $edu_status = trim($_POST['edu_status'] ?? '');
         $educational_attainment = $edu_base . ($edu_status ? " ($edu_status)" : "");
@@ -173,7 +186,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         $errors[] = 'Email already exists in another resident record';
                     } else {
                         $log_msg = "Starting update for Record ID: $record_id, User ID: $user_id\n";
-                        
+
                         if ($record_id > 0) {
                             $log_msg .= "Updating resident_records table...\n";
                             $stmt = $pdo->prepare('UPDATE resident_records SET email = ?, first_name = ?, last_name = ?, middle_name = ?, suffix = ?, full_name = ?, address = ?, phone = ?, birthdate = ?, sex = ?, citizenship = ?, civil_status = ?, purok = ?, is_active = ?, is_solo_parent = ?, is_pwd = ?, is_senior = ?, barangay_id = ? WHERE id = ?');
@@ -190,15 +203,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             $chk = $pdo->prepare('SELECT u.id FROM users u WHERE u.email = ? AND u.role = "resident" LIMIT 1');
                             $chk->execute([$email]);
                             $lu = $chk->fetch();
-                            if ($lu) $linked_user_id = $lu['id'];
+                            if ($lu)
+                                $linked_user_id = $lu['id'];
                         }
                         if (!$linked_user_id && $full_name) {
                             $chk = $pdo->prepare('SELECT u.id FROM users u WHERE u.full_name = ? AND u.role = "resident" LIMIT 1');
                             $chk->execute([$full_name]);
                             $lu = $chk->fetch();
-                            if ($lu) $linked_user_id = $lu['id'];
+                            if ($lu)
+                                $linked_user_id = $lu['id'];
                         }
-                        
+
                         if ($linked_user_id) {
                             $log_msg .= "Found linked user ID: $linked_user_id. Updating users and residents tables...\n";
                             // Update users table
@@ -226,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $errors[] = 'Server error: ' . htmlspecialchars($e->getMessage());
             }
         }
-        
+
         if ($errors) {
             file_put_contents(__DIR__ . '/debug_errors.txt', date('Y-m-d H:i:s') . "\nPOST: " . print_r($_POST, true) . "\nERRORS: " . print_r($errors, true) . "\n\n", FILE_APPEND);
         }
@@ -240,10 +255,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $deleted_count = 0;
         foreach ($selected_items as $item) {
             $parts = explode(':', $item);
-            if (count($parts) !== 3) continue;
+            if (count($parts) !== 3)
+                continue;
             list($type, $record_id, $user_id) = $parts;
-            $record_id = (int)$record_id;
-            $user_id = (int)$user_id;
+            $record_id = (int) $record_id;
+            $user_id = (int) $user_id;
 
             try {
                 if ($type === 'OWNER') {
@@ -261,7 +277,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     $pdo->prepare('DELETE FROM family_members WHERE id = ?')->execute([$record_id]);
                     $deleted_count++;
                 }
-            } catch (Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
         if ($deleted_count > 0) {
             $success = "Successfully deleted $deleted_count record(s).";
@@ -390,10 +407,10 @@ $all_resident_records = $pdo->query("SELECT rr.*, u.full_name as created_by_name
 
 function clean_str($str)
 {
-	if (!$str)
-		return "";
-	$str = preg_replace('/[\p{Z}\s]+/u', ' ', $str);
-	return strtolower(trim($str));
+    if (!$str)
+        return "";
+    $str = preg_replace('/[\p{Z}\s]+/u', ' ', $str);
+    return strtolower(trim($str));
 }
 
 // Build Unified List
@@ -405,7 +422,7 @@ if ($user_owners) {
         $matched_record_id = 0;
         $row = $u;
         $row['created_at'] = $u['created_at'] ?? date('Y-m-d H:i:s');
-        
+
         // Attempt to match with resident_records to get created_by and ID reference
         foreach ($all_resident_records as $rr) {
             if ((!empty($u['email']) && $u['email'] === $rr['email']) || clean_str($u['full_name']) === clean_str($rr['full_name'])) {
@@ -414,27 +431,29 @@ if ($user_owners) {
                 $row['id'] = $rr['id'];
                 $row['created_by_name'] = $rr['created_by_name'];
                 $row['created_at'] = $rr['created_at'];
-                
-                if (empty($row['address'])) $row['address'] = $rr['address'];
-                if (empty($row['phone'])) $row['phone'] = $rr['phone'];
+
+                if (empty($row['address']))
+                    $row['address'] = $rr['address'];
+                if (empty($row['phone']))
+                    $row['phone'] = $rr['phone'];
                 break;
             }
         }
-        
+
         if (!$matched_record_id) {
-            $row['id'] = 0; 
+            $row['id'] = 0;
             $row['created_by_name'] = 'Self Registered';
         }
-        
+
         $unified_records[] = $row;
-        
+
         // Add family members
         $fm_stmt = $pdo->prepare('SELECT * FROM family_members WHERE user_id = ? ORDER BY full_name');
         $fm_stmt->execute([$u['user_id']]);
         $fms = $fm_stmt->fetchAll();
         foreach ($fms as $fm) {
             $unified_records[] = [
-                'id' => $row['id'] ?? 0, 
+                'id' => $row['id'] ?? 0,
                 'fm_id' => $fm['id'],
                 'resident_type' => 'MEMBER',
                 'full_name' => $fm['full_name'],
@@ -462,11 +481,11 @@ foreach ($all_resident_records as $rr) {
 
 // Re-apply search if it was a record-only match
 if ($search !== '') {
-    $unified_records = array_filter($unified_records, function($r) use ($search) {
+    $unified_records = array_filter($unified_records, function ($r) use ($search) {
         $s = strtolower($search);
-        return strpos(strtolower($r['full_name'] ?? ''), $s) !== false || 
-               strpos(strtolower($r['email'] ?? ''), $s) !== false || 
-               strpos(strtolower($r['address'] ?? ''), $s) !== false;
+        return strpos(strtolower($r['full_name'] ?? ''), $s) !== false ||
+            strpos(strtolower($r['email'] ?? ''), $s) !== false ||
+            strpos(strtolower($r['address'] ?? ''), $s) !== false;
     });
 }
 
@@ -536,12 +555,15 @@ $display_records = array_slice($unified_records, $offset, $limit);
                         <div class="d-flex align-items-center justify-content-center gap-2">
                             ACTION
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-light border-0 text-secondary p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Bulk Actions" style="width: 24px; height: 24px;">
+                                <button class="btn btn-sm btn-light border-0 text-secondary p-0" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false" title="Bulk Actions"
+                                    style="width: 24px; height: 24px;">
                                     <i class="fas fa-ellipsis-v" style="font-size: 0.85rem;"></i>
                                 </button>
                                 <ul class="dropdown-menu shadow border-0 py-2 small">
                                     <li>
-                                        <button type="button" class="dropdown-item py-2" onclick="bulkDeleteResidents()">
+                                        <button type="button" class="dropdown-item py-2"
+                                            onclick="bulkDeleteResidents()">
                                             Delete
                                         </button>
                                     </li>
@@ -558,7 +580,10 @@ $display_records = array_slice($unified_records, $offset, $limit);
                     ?>
                     <tr>
                         <td class="ps-4">
-                            <input type="checkbox" class="form-check-input resident-checkbox" data-id="<?php echo $row['id']; ?>" data-user-id="<?php echo $row['user_id'] ?? 0; ?>" data-type="<?php echo $row['resident_type']; ?>" data-fm-id="<?php echo $row['fm_id'] ?? 0; ?>">
+                            <input type="checkbox" class="form-check-input resident-checkbox"
+                                data-id="<?php echo $row['id']; ?>" data-user-id="<?php echo $row['user_id'] ?? 0; ?>"
+                                data-type="<?php echo $row['resident_type']; ?>"
+                                data-fm-id="<?php echo $row['fm_id'] ?? 0; ?>">
                         </td>
                         <td class="text-muted small fw-bold"><?php echo $counter++; ?></td>
                         <td>
@@ -603,7 +628,8 @@ $display_records = array_slice($unified_records, $offset, $limit);
                                         value="<?php echo $row['resident_type'] === 'OWNER' ? $row['id'] : $row['fm_id']; ?>">
                                     <input type="hidden" name="user_id" value="<?php echo $row['user_id'] ?? 0; ?>">
                                     <input type="hidden" name="type" value="<?php echo $row['resident_type']; ?>">
-                                    <button type="button" class="action-btn border-0 bg-transparent text-danger btn-delete-record"
+                                    <button type="button"
+                                        class="action-btn border-0 bg-transparent text-danger btn-delete-record"
                                         title="Delete Record"
                                         data-name="<?php echo htmlspecialchars($row['full_name']); ?>">
                                         <i class="fas fa-trash"></i>

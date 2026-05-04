@@ -14,12 +14,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($action === 'bulk_delete_accounts') {
             $selected_ids = $_POST['selected_ids'] ?? [];
+            $selected_record_ids = $_POST['selected_record_ids'] ?? [];
             
-            if (!empty($selected_ids)) {
-                $placeholders = implode(',', array_fill(0, count($selected_ids), '?'));
-                $stmt = $pdo->prepare("DELETE FROM users WHERE id IN ($placeholders)");
-                $stmt->execute($selected_ids);
-                $info = "Successfully deleted " . count($selected_ids) . " account(s).";
+            if (!empty($selected_ids) || !empty($selected_record_ids)) {
+                try {
+                    $pdo->beginTransaction();
+                    if (!empty($selected_ids)) {
+                        $placeholders = implode(',', array_fill(0, count($selected_ids), '?'));
+                        $stmt = $pdo->prepare("DELETE FROM users WHERE id IN ($placeholders)");
+                        $stmt->execute($selected_ids);
+                    }
+                    if (!empty($selected_record_ids)) {
+                        $placeholders = implode(',', array_fill(0, count($selected_record_ids), '?'));
+                        $stmt = $pdo->prepare("DELETE FROM resident_records WHERE id IN ($placeholders)");
+                        $stmt->execute($selected_record_ids);
+                    }
+                    $pdo->commit();
+                    $info = "Successfully removed selected records.";
+                } catch (Throwable $e) {
+                    $pdo->rollBack();
+                    $error = "Error: " . $e->getMessage();
+                }
             }
         } else {
 			$rid = (int) ($_POST['record_id'] ?? 0);
@@ -39,12 +54,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 		} elseif ($action === 'delete_account') {
 			$uid = (int) ($_POST['user_id'] ?? 0);
-			if ($uid > 0) {
+			$rid = (int) ($_POST['record_id'] ?? 0);
+			
+			if ($uid > 0 || $rid > 0) {
 				try {
-					$pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
-					$info = 'Account deleted successfully.';
+					$pdo->beginTransaction();
+					if ($uid > 0) {
+						$pdo->prepare('DELETE FROM users WHERE id = ?')->execute([$uid]);
+					}
+					if ($rid > 0) {
+						$pdo->prepare('DELETE FROM resident_records WHERE id = ?')->execute([$rid]);
+					}
+					$pdo->commit();
+					$info = 'Resident data removed successfully.';
 				} catch (Throwable $e) {
-					$error = 'Error deleting account: ' . $e->getMessage();
+					$pdo->rollBack();
+					$error = 'Error deleting data: ' . $e->getMessage();
 				}
 			}
 		}
@@ -317,6 +342,7 @@ $display_rows = array_slice($rows, $offset, $limit);
 								<?php echo csrf_field(); ?>
 								<input type="hidden" name="action" value="delete_account">
 								<input type="hidden" name="user_id" value="<?php echo $r['user_id']; ?>">
+								<input type="hidden" name="record_id" value="<?php echo $r['official_id']; ?>">
 								<button type="button" class="action-btn border-0 bg-transparent text-danger btn-delete-account"
 									title="Delete Account"
 									data-name="<?php echo htmlspecialchars($r['full_name']); ?>">
@@ -376,7 +402,11 @@ $display_rows = array_slice($rows, $offset, $limit);
 		const selected = Array.from(document.querySelectorAll('.resident-checkbox:checked')).map(cb => {
 			const row = cb.closest('tr');
 			const form = row.querySelector('.delete-account-form');
-			return form ? { id: form.querySelector('[name="user_id"]').value, name: row.querySelector('.fw-bold.text-dark').innerText } : null;
+			return form ? { 
+                id: form.querySelector('[name="user_id"]').value, 
+                record_id: form.querySelector('[name="record_id"]').value,
+                name: row.querySelector('.fw-bold.text-dark').innerText 
+            } : null;
 		}).filter(item => item !== null);
 
 		if (selected.length === 0) {
@@ -400,11 +430,20 @@ $display_rows = array_slice($rows, $offset, $limit);
 					<input type="hidden" name="action" value="bulk_delete_accounts">
 				`;
 				selected.forEach(item => {
-					const input = document.createElement('input');
-					input.type = 'hidden';
-					input.name = 'selected_ids[]';
-					input.value = item.id;
-					bulkForm.appendChild(input);
+					if (item.id > 0) {
+						const input = document.createElement('input');
+						input.type = 'hidden';
+						input.name = 'selected_ids[]';
+						input.value = item.id;
+						bulkForm.appendChild(input);
+					}
+					if (item.record_id > 0) {
+						const input = document.createElement('input');
+						input.type = 'hidden';
+						input.name = 'selected_record_ids[]';
+						input.value = item.record_id;
+						bulkForm.appendChild(input);
+					}
 				});
 				document.body.appendChild(bulkForm);
 				bulkForm.submit();

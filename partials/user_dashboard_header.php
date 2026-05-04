@@ -325,12 +325,13 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 			width: 40px;
 			height: 40px;
 		}
-		
+
 		@media (max-width: 767.98px) {
 			.chatbot-top-btn {
 				width: 35px;
 				height: 35px;
 			}
+
 			.chatbot-top-btn i {
 				font-size: 0.9rem;
 			}
@@ -448,7 +449,8 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 							</button>
 							<div>
 								<h4 class="mb-0 fw-bold">
-									<?php echo isset($page_title) ? htmlspecialchars($page_title) : 'Dashboard'; ?></h4>
+									<?php echo isset($page_title) ? htmlspecialchars($page_title) : 'Dashboard'; ?>
+								</h4>
 							</div>
 						</div>
 						<div class="d-flex align-items-center gap-3">
@@ -524,7 +526,7 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 									class="btn border-0 p-1 pe-3 text-dark dropdown-toggle d-flex align-items-center gap-2 rounded-pill shadow-sm bg-light"
 									type="button" data-bs-toggle="dropdown">
 									<?php if ($nav_avatar && file_exists(__DIR__ . '/../' . $nav_avatar)): ?>
-										<img src="<?php echo htmlspecialchars($nav_avatar); ?>" 
+										<img src="<?php echo htmlspecialchars($nav_avatar); ?>"
 											class="rounded-circle shadow-sm"
 											style="width: 36px; height: 36px; object-fit: cover; border: 2px solid white;">
 									<?php else: ?>
@@ -536,7 +538,8 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 								</button>
 								<ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2 p-2 rounded-4">
 									<li class="px-3 py-2 d-md-none">
-										<span class="fw-bold d-block text-dark small"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?></span>
+										<span
+											class="fw-bold d-block text-dark small"><?php echo htmlspecialchars($_SESSION['full_name'] ?? 'User'); ?></span>
 										<small class="text-muted" style="font-size: 0.7rem;">Resident</small>
 										<hr class="my-2">
 									</li>

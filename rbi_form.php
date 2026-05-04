@@ -198,18 +198,21 @@ $resident = $stmt->fetch();
             <div class="col-xl-11">
                 <div class="card rbi-card">
                     <div class="rbi-header">
-                        <h6 class="mb-0 fw-bold"><i class="fas fa-user-edit me-2"></i>Finalize Your Resident Profile</h6>
+                        <h6 class="mb-0 fw-bold"><i class="fas fa-user-edit me-2"></i>Finalize Your Resident Profile
+                        </h6>
                     </div>
                     <div class="card-body p-4 p-md-5">
                         <div class="alert alert-info border-0 bg-info bg-opacity-10 text-info small mb-4">
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-info-circle fs-5 me-3"></i>
                                 <div>
-                                    <strong>Almost there!</strong> Your account is created, but we need a few more details for the <strong>Registry of Barangay Inhabitants (RBI)</strong> to fully verify your residency.
+                                    <strong>Almost there!</strong> Your account is created, but we need a few more
+                                    details for the <strong>Registry of Barangay Inhabitants (RBI)</strong> to fully
+                                    verify your residency.
                                 </div>
                             </div>
                         </div>
-                        
+
                         <h5 class="section-title text-uppercase border-bottom pb-2 mb-4">Personal Information</h5>
                         <?php if ($error): ?>
                             <div class="alert alert-danger rounded-3 small"><i
@@ -300,7 +303,8 @@ $resident = $stmt->fetch();
                                     <label class="form-label">Birthday</label>
                                     <div class="input-group">
                                         <input type="date" name="birthdate"
-                                            value="<?php echo $resident['birthdate'] ?? ''; ?>" class="form-control" required>
+                                            value="<?php echo $resident['birthdate'] ?? ''; ?>" class="form-control"
+                                            required>
                                     </div>
                                 </div>
                                 <div class="col-md-9">
@@ -357,9 +361,10 @@ $resident = $stmt->fetch();
                                             ?>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="educational_attainment"
-                                                    value="<?php echo $opt; ?>" id="edu_<?php echo str_replace(' ','_',$opt); ?>" required>
+                                                    value="<?php echo $opt; ?>"
+                                                    id="edu_<?php echo str_replace(' ', '_', $opt); ?>" required>
                                                 <label class="form-check-label"
-                                                    for="edu_<?php echo str_replace(' ','_',$opt); ?>"><?php echo $opt; ?></label>
+                                                    for="edu_<?php echo str_replace(' ', '_', $opt); ?>"><?php echo $opt; ?></label>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>
