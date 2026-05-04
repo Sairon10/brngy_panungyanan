@@ -53,10 +53,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                         }
 
                         if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
-                            send_id_verification_sms($data['phone'], 'verified', [
+                            $sms_result = send_id_verification_sms($data['phone'], 'verified', [
                                 'full_name' => $data['full_name'],
                                 'verification_notes' => ''
                             ]);
+                            if (!$sms_result['success']) {
+                                $success .= " (Email sent, but SMS failed: " . $sms_result['message'] . ")";
+                            } else {
+                                $success .= " (Email and SMS sent)";
+                            }
+                        } else {
+                            $success .= " (Email sent, no phone number for SMS)";
                         }
                     } elseif ($action === 'reject') {
                         $notes = trim($_POST['rejection_notes'] ?? '');
@@ -79,10 +86,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             }
 
                             if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
-                                send_id_verification_sms($data['phone'], 'rejected', [
+                                $sms_result = send_id_verification_sms($data['phone'], 'rejected', [
                                     'full_name' => $data['full_name'],
                                     'verification_notes' => $notes
                                 ]);
+                                if (!$sms_result['success']) {
+                                    $success .= " (Email sent, but SMS failed: " . $sms_result['message'] . ")";
+                                } else {
+                                    $success .= " (Email and SMS sent)";
+                                }
+                            } else {
+                                $success .= " (Email sent, no phone number for SMS)";
                             }
                         }
                     }
