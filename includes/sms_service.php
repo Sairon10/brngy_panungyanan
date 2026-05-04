@@ -111,6 +111,9 @@ function send_sms($phoneNumbers, $message) {
     
     $responseData = json_decode($response, true);
     
+    $logMsg = date('[Y-m-d H:i:s] ') . "SMS Attempt. URL: $apiUrl, Phone: " . implode(',', $phoneNumbers) . ", Code: $httpCode, Response: $response\n";
+    file_put_contents(__DIR__ . '/../sms_debug.log', $logMsg, FILE_APPEND);
+
     if ($httpCode >= 200 && $httpCode < 300) {
         return [
             'success' => true,
@@ -119,11 +122,6 @@ function send_sms($phoneNumbers, $message) {
         ];
     } else {
         $errorMsg = $responseData['message'] ?? $responseData['error'] ?? 'Server Response: ' . substr(strip_tags($response), 0, 100);
-        
-        // Log the error for debugging
-        $logMsg = date('[Y-m-d H:i:s] ') . "SMS Failed. URL: $apiUrl, Code: $httpCode, Error: $errorMsg, Response: $response\n";
-        file_put_contents(__DIR__ . '/../sms_debug.log', $logMsg, FILE_APPEND);
-
         return [
             'success' => false,
             'message' => 'SMS API Error (HTTP ' . $httpCode . '): ' . $errorMsg,
