@@ -320,6 +320,9 @@ function generate_id_verification_sms_text($status, $residentData) {
  * @return array Result with 'success' and 'message' keys
  */
 function send_id_verification_sms($phoneNumber, $status, $residentData) {
+    // Debug entry point
+    file_put_contents(__DIR__ . '/../sms_debug.log', date('[Y-m-d H:i:s] ') . "Entered send_id_verification_sms for $phoneNumber\n", FILE_APPEND);
+    
     if (empty($phoneNumber)) {
         return [
             'success' => false,
