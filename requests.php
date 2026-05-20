@@ -546,7 +546,6 @@ $documents = $documents_stmt->fetchAll();
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-flex align-items-center gap-2">
                                     Reference No.
-                                    <span class="badge bg-teal-50 text-teal-600 fw-semibold" style="font-size:.65rem;">Auto-scanned</span>
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0">
@@ -554,7 +553,7 @@ $documents = $documents_stmt->fetchAll();
                                     </span>
                                     <input type="text" name="payment_reference_no" id="payment_reference_no"
                                         class="form-control border-start-0 ps-1 rounded-end-3 bg-white"
-                                        placeholder="Upload receipt above to auto-scan"
+                                        placeholder="Upload receipt above"
                                         maxlength="100" readonly>
                                 </div>
                                 <div class="text-muted mt-1" style="font-size:.75rem;">
@@ -567,7 +566,6 @@ $documents = $documents_stmt->fetchAll();
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-flex align-items-center gap-2">
                                     Amount Paid (₱)
-                                    <span class="badge bg-teal-50 text-teal-600 fw-semibold" style="font-size:.65rem;">Auto-scanned</span>
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0">₱</span>
