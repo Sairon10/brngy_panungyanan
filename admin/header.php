@@ -643,6 +643,14 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 						];
 						$admin_req_status_filter = $admin_docreq_nav[$admin_req_basename] ?? '';
 						$admin_req_in_docreq_section = isset($admin_docreq_nav[$admin_req_basename]) || $admin_req_basename === 'barangay_clearances.php';
+			// Count pending payments for sidebar badge
+			$pdo_h = get_db_connection();
+			$pay_pending_count = 0;
+			try {
+				$c1 = (int) $pdo_h->query("SELECT COUNT(*) FROM barangay_clearances WHERE payment_receipt IS NOT NULL AND payment_receipt != '' AND (payment_status = 'pending' OR payment_status IS NULL)")->fetchColumn();
+				$c2 = (int) $pdo_h->query("SELECT COUNT(*) FROM document_requests   WHERE payment_receipt IS NOT NULL AND payment_receipt != '' AND (payment_status = 'pending' OR payment_status IS NULL)")->fetchColumn();
+				$pay_pending_count = $c1 + $c2;
+			} catch (Exception $e) { $pay_pending_count = 0; }
 
 						$admin_inc_basename = basename($_SERVER['PHP_SELF']);
 						$admin_inc_nav = [
@@ -728,6 +736,14 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 							<a class="nav-link ps-5 py-2 <?php echo ($admin_req_status_filter === 'canceled') ? 'active' : ''; ?>"
 								href="requests_cancelled.php" style="font-size: 0.85rem;" title="Cancelled">Cancelled</a>
 						</div>
+						<a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'payments.php' ? 'active' : ''; ?>"
+							href="payments.php" title="Payments">
+							<i class="fas fa-credit-card"></i>
+							<span>Payments</span>
+							<?php if ($pay_pending_count > 0): ?>
+								<span class="badge bg-danger ms-auto" style="font-size:0.65rem;"><?= $pay_pending_count ?></span>
+							<?php endif; ?>
+						</a>
 						<a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'document_types.php' ? 'active' : ''; ?>"
 							href="document_types.php" title="Document Types">
 							<i class="fas fa-cog"></i>

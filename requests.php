@@ -97,6 +97,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: requests.php?status_filter=all");
             exit;
         }
+    } else if (isset($_POST['action']) && $_POST['action'] === 'refund') {
+        $req_id = (int) ($_POST['req_id'] ?? 0);
+        $req_type = $_POST['req_type'] ?? '';
+
+        if ($req_id && $req_type) {
+            $refund_number = trim($_POST['refund_number'] ?? '');
+            $refund_notes = trim($_POST['refund_notes'] ?? '');
+            if ($req_type === 'clearance') {
+                $pdo->prepare("UPDATE barangay_clearances SET payment_status = 'refund_pending', status = 'canceled', notes = ?, refund_number = ?, refund_notes = ? WHERE id = ? AND user_id = ? AND payment_status IN ('pending', 'confirmed')")
+                    ->execute([$refund_notes, $refund_number, $refund_notes, $req_id, $_SESSION['user_id']]);
+            } else if ($req_type === 'document') {
+                $pdo->prepare("UPDATE document_requests SET payment_status = 'refund_pending', status = 'canceled', notes = ?, refund_number = ?, refund_notes = ? WHERE id = ? AND user_id = ? AND payment_status IN ('pending', 'confirmed')")
+                    ->execute([$refund_notes, $refund_number, $refund_notes, $req_id, $_SESSION['user_id']]);
+            }
+            $_SESSION['info'] = 'Refund request submitted successfully.';
+            $_SESSION['was_cancel'] = false;
+            header("Location: requests.php?status_filter=all");
+            exit;
+        }
     } else {
         $doc_type = trim($_POST['doc_type'] ?? '');
         $purpose = trim($_POST['purpose'] ?? '');
@@ -137,6 +156,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $requestor_type = $_POST['requestor_type'] ?? 'self';
             $family_member_id = ($requestor_type === 'family_member') ? (int) ($_POST['family_member_id'] ?? 0) : null;
 
+            // Handle optional e-wallet reference number and amount paid
+            $payment_reference_no = trim($_POST['payment_reference_no'] ?? '');
+            $payment_amount_paid  = !empty($_POST['payment_amount_paid']) ? (float)$_POST['payment_amount_paid'] : null;
+
+            // Handle optional GCash payment receipt upload
+            $payment_receipt_path = null;
+            if (isset($_FILES['payment_receipt']) && $_FILES['payment_receipt']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['payment_receipt'];
+                $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+                $maxSize = 5 * 1024 * 1024; // 5MB
+
+                if (!in_array($file['type'], $allowedTypes)) {
+                    $message = 'Error: Only JPG, JPEG, PNG, and WEBP images are allowed for receipts.';
+                    goto skip_request;
+                } elseif ($file['size'] > $maxSize) {
+                    $message = 'Error: Receipt image size must not exceed 5MB.';
+                    goto skip_request;
+                } else {
+                    $uploadDir = __DIR__ . '/uploads/receipts/';
+                    if (!is_dir($uploadDir)) {
+                        mkdir($uploadDir, 0755, true);
+                    }
+
+                    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+                    $filename = 'receipt_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $extension;
+                    $uploadPath = $uploadDir . $filename;
+
+                    if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                        $payment_receipt_path = 'uploads/receipts/' . $filename;
+                    } else {
+                        $message = 'Error: Failed to upload receipt. Please try again.';
+                        goto skip_request;
+                    }
+                }
+            }
+
             // Critical security check: Is the family member active, belongs to the user, and VERIFIED?
             if ($family_member_id) {
                 $fm_check = $pdo->prepare('SELECT id, verification_status FROM family_members WHERE id = ? AND user_id = ? AND is_active = 1 LIMIT 1');
@@ -153,6 +208,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if (stripos($doc_type, 'Resident ID') !== false) {
                     $message = 'Error: Resident IDs can only be requested for the account owner. Family members must create their own accounts.';
+                    goto skip_request;
+                }
+            }
+
+            // Duplicate reference number check — block if ref no. already used
+            if (!empty($payment_reference_no)) {
+                $dup1 = $pdo->prepare("SELECT id FROM barangay_clearances WHERE payment_reference_no = ? AND payment_status NOT IN ('rejected','refunded') LIMIT 1");
+                $dup1->execute([$payment_reference_no]);
+                $dup2 = $pdo->prepare("SELECT id FROM document_requests WHERE payment_reference_no = ? AND payment_status NOT IN ('rejected','refunded') LIMIT 1");
+                $dup2->execute([$payment_reference_no]);
+                if ($dup1->fetch() || $dup2->fetch()) {
+                    $message = 'Error: This reference number has already been used for another payment. Please check your receipt.';
                     goto skip_request;
                 }
             }
@@ -194,8 +261,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $clearance_number = 'BC-' . $year . '-' . $user_id_padded . '-' . str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
                 }
 
-                $stmt = $pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, validity_days, status) VALUES (?, ?, ?, ?, ?)');
-                $stmt->execute([$_SESSION['user_id'], $clearance_number, $purpose, $validity_days, 'pending']);
+                $stmt = $pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, validity_days, status, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$_SESSION['user_id'], $clearance_number, $purpose, $validity_days, 'pending', $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
 
                 $clearance_id = $pdo->lastInsertId();
                 if ($family_member_id) {
@@ -217,12 +284,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($is_indigency_doc && !empty($indigency_purpose)) {
                     // Save with selected indigency purpose
-                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, indigency_purposes, family_member_id, requestor_type) VALUES (?,?,?,?,?,?)')
-                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $indigency_purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self']);
+                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, indigency_purposes, family_member_id, requestor_type, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?,?,?,?,?,?,?,?,?)')
+                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $indigency_purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self', $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
                 } else {
                     // Save with text purpose
-                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, family_member_id, requestor_type) VALUES (?,?,?,?,?)')
-                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self']);
+                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, family_member_id, requestor_type, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?,?,?,?,?,?,?,?)')
+                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self', $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
                 }
 
                 $request_id = $pdo->lastInsertId();
@@ -284,7 +351,7 @@ $documents = $documents_stmt->fetchAll();
                     <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
-                <form method="post" id="requestForm" onsubmit="return validatePurpose()">
+                <form method="post" id="requestForm" enctype="multipart/form-data" onsubmit="return validatePurpose()">
                     <?php echo csrf_field(); ?>
 
                     <?php if (!$is_account_active): ?>
@@ -294,114 +361,237 @@ $documents = $documents_stmt->fetchAll();
                             requests at this time.
                         </div>
                     <?php endif; ?>
-                    <!-- Request For selector (first field) -->
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Request
-                            For</label>
-                        <input type="hidden" name="requestor_type" id="requestor_type_hidden" value="self">
-                        <input type="hidden" name="family_member_id" id="family_member_id_hidden" value="">
-                        <select id="request_for_select" class="form-select form-select-lg bg-light border-0" required
-                            onchange="handleRequestForChange(this)">
-                            <option value="self">
-                                <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Account Owner'); ?> — Owner
-                            </option>
-                            <?php if (!empty($family_members)): ?>
-                                <?php foreach ($family_members as $fm): ?>
-                                    <option value="<?php echo $fm['id']; ?>">
-                                        <?php echo htmlspecialchars($fm['full_name']); ?> — Family Member
-                                    </option>
-                                <?php endforeach; ?>
+                    <div id="form_step_1">
+                        <!-- Request For selector (first field) -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Request
+                                For</label>
+                            <input type="hidden" name="requestor_type" id="requestor_type_hidden" value="self">
+                            <input type="hidden" name="family_member_id" id="family_member_id_hidden" value="">
+                            <select id="request_for_select" class="form-select form-select-lg bg-light border-0" required
+                                onchange="handleRequestForChange(this)">
+                                <option value="self">
+                                    <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Account Owner'); ?> — Owner
+                                </option>
+                                <?php if (!empty($family_members)): ?>
+                                    <?php foreach ($family_members as $fm): ?>
+                                        <option value="<?php echo $fm['id']; ?>">
+                                            <?php echo htmlspecialchars($fm['full_name']); ?> — Family Member
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                <option value="add_new_fm" class="text-primary fw-bold">+ Add Family Member</option>
+                            </select>
+                            <?php if ($pending_fm_count > 0): ?>
+                                <div class="form-text small text-amber-600 mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    <?php echo $pending_fm_count; ?> family member(s) are hidden because they are still pending
+                                    verification.
+                                </div>
                             <?php endif; ?>
-                            <option value="add_new_fm" class="text-primary fw-bold">+ Add Family Member</option>
-                        </select>
-                        <?php if ($pending_fm_count > 0): ?>
-                            <div class="form-text small text-amber-600 mt-2">
-                                <i class="fas fa-info-circle me-1"></i>
-                                <?php echo $pending_fm_count; ?> family member(s) are hidden because they are still pending
-                                verification.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Document
+                                Type</label>
+                            <select name="doc_type" id="doc_type" class="form-select form-select-lg bg-light border-0"
+                                required>
+                                <option value="">Select Document...</option>
+                                <?php if (empty($document_types)): ?>
+                                    <option value="Barangay Clearance" data-price="0">Barangay Clearance</option>
+                                    <option value="Certificate of Residency" data-price="0">Certificate of Residency</option>
+                                    <option value="Indigency" data-price="0">Indigency</option>
+                                    <option value="Resident ID" data-price="0">Resident ID</option>
+                                <?php else: ?>
+                                    <?php foreach ($document_types as $dt): ?>
+                                        <option value="<?php echo htmlspecialchars($dt['name']); ?>"
+                                            data-requires-special="<?php echo $dt['requires_special_handling'] ? '1' : '0'; ?>"
+                                            data-price="<?php echo isset($dt['price']) ? htmlspecialchars($dt['price']) : '0'; ?>">
+                                            <?php echo htmlspecialchars($dt['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="document_price_container" style="display: none;">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Price</label>
+                            <div class="p-3 bg-light rounded text-success fs-5 fw-bold border" id="document_price_display">
+                                Free
                             </div>
-                        <?php endif; ?>
-                    </div>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Document
-                            Type</label>
-                        <select name="doc_type" id="doc_type" class="form-select form-select-lg bg-light border-0"
-                            required>
-                            <option value="">Select Document...</option>
-                            <?php if (empty($document_types)): ?>
-                                <option value="Barangay Clearance" data-price="0">Barangay Clearance</option>
-                                <option value="Certificate of Residency" data-price="0">Certificate of Residency</option>
-                                <option value="Indigency" data-price="0">Indigency</option>
-                                <option value="Resident ID" data-price="0">Resident ID</option>
-                            <?php else: ?>
-                                <?php foreach ($document_types as $dt): ?>
-                                    <option value="<?php echo htmlspecialchars($dt['name']); ?>"
-                                        data-requires-special="<?php echo $dt['requires_special_handling'] ? '1' : '0'; ?>"
-                                        data-price="<?php echo isset($dt['price']) ? htmlspecialchars($dt['price']) : '0'; ?>">
-                                        <?php echo htmlspecialchars($dt['name']); ?>
-                                    </option>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </select>
-                    </div>
+                        <!-- Purpose Selection for Indigency -->
+                        <div class="mb-3" id="indigency_purpose_field" style="display: none;">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Select
+                                Purpose:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex flex-column gap-2">
+                                    <?php foreach ($indigency_purposes_list as $purpose): ?>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="indigency_purpose"
+                                                value="<?php echo htmlspecialchars($purpose); ?>"
+                                                id="indigency_purpose_<?php echo md5($purpose); ?>">
+                                            <label class="form-check-label"
+                                                for="indigency_purpose_<?php echo md5($purpose); ?>">
+                                                <?php echo htmlspecialchars($purpose); ?>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="mb-3" id="document_price_container" style="display: none;">
-                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Price</label>
-                        <div class="p-3 bg-light rounded text-success fs-5 fw-bold border" id="document_price_display">
-                            Free
+                        <!-- Purpose Selection for Clearance -->
+                        <div class="mb-3" id="clearance_purpose_field" style="display: none;">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Select
+                                Purpose:</label>
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex flex-column gap-2">
+                                    <?php foreach ($clearance_purposes_list as $purpose): ?>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="clearance_purpose"
+                                                value="<?php echo htmlspecialchars($purpose); ?>"
+                                                id="clearance_purpose_<?php echo md5($purpose); ?>">
+                                            <label class="form-check-label"
+                                                for="clearance_purpose_<?php echo md5($purpose); ?>">
+                                                <?php echo htmlspecialchars($purpose); ?>
+                                            </label>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4" id="purpose_text_field">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purpose</label>
+                            <textarea name="purpose" class="form-control bg-light border-0" rows="4"
+                                placeholder="State your purpose..." id="purpose_textarea"></textarea>
                         </div>
                     </div>
 
-                    <!-- Purpose Selection for Indigency -->
-                    <div class="mb-3" id="indigency_purpose_field" style="display: none;">
-                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Select
-                            Purpose:</label>
-                        <div class="border rounded p-3 bg-light">
-                            <div class="d-flex flex-column gap-2">
-                                <?php foreach ($indigency_purposes_list as $purpose): ?>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="indigency_purpose"
-                                            value="<?php echo htmlspecialchars($purpose); ?>"
-                                            id="indigency_purpose_<?php echo md5($purpose); ?>">
-                                        <label class="form-check-label"
-                                            for="indigency_purpose_<?php echo md5($purpose); ?>">
-                                            <?php echo htmlspecialchars($purpose); ?>
-                                        </label>
+                    <div id="form_step_2" style="display: none;">
+                        <!-- E-Wallet Payment (Optional) Section -->
+                        <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+    <style>
+                            .border-dashed {
+                                border-style: dashed !important;
+                                border-width: 2px !important;
+                                border-color: #0d9488 !important; /* teal-600 */
+                                transition: all 0.2s ease-in-out;
+                            }
+                            .border-dashed:hover {
+                                background-color: #f0fdfa !important; /* light teal */
+                                border-color: #0f766e !important;
+                            }
+                            .cursor-pointer {
+                                cursor: pointer !important;
+                            }
+                        </style>
+                        <div id="payment_section" style="display: none;" class="mb-4">
+                            <hr class="my-4 opacity-10">
+                            <div class="fw-bold text-dark opacity-75 mb-1 fs-5">E-Wallet Payment (Optional)</div>
+                            <p class="text-secondary small mb-3">Scan QR code and upload receipt to complete payment</p>
+                            
+                            <div class="row g-3 mb-3">
+                                <!-- Amount Due Box -->
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded-3 border text-center h-100 d-flex flex-column justify-content-center">
+                                        <span class="text-secondary small fw-semibold text-uppercase d-block mb-1">Amount Due</span>
+                                        <span id="amount_due_display" class="fw-bold text-dark fs-6">₱ 0.00</span>
                                     </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Purpose Selection for Clearance -->
-                    <div class="mb-3" id="clearance_purpose_field" style="display: none;">
-                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Select
-                            Purpose:</label>
-                        <div class="border rounded p-3 bg-light">
-                            <div class="d-flex flex-column gap-2">
-                                <?php foreach ($clearance_purposes_list as $purpose): ?>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="clearance_purpose"
-                                            value="<?php echo htmlspecialchars($purpose); ?>"
-                                            id="clearance_purpose_<?php echo md5($purpose); ?>">
-                                        <label class="form-check-label"
-                                            for="clearance_purpose_<?php echo md5($purpose); ?>">
-                                            <?php echo htmlspecialchars($purpose); ?>
-                                        </label>
+                                </div>
+                                <!-- Amount Paid Box -->
+                                <div class="col-6">
+                                    <div class="p-3 bg-light rounded-3 border text-center h-100 d-flex flex-column justify-content-center">
+                                        <span class="text-secondary small fw-semibold text-uppercase d-block mb-1">Amount Paid</span>
+                                        <span id="amount_paid_display" class="fw-bold text-teal-600 fs-5">PHP 0.00</span>
                                     </div>
-                                <?php endforeach; ?>
+                                </div>
+                            </div>
+
+                            <!-- Scan QR Code Button -->
+                            <div class="text-center mb-3">
+                                <button type="button" class="btn btn-link text-teal-600 text-decoration-none fw-semibold small d-inline-flex align-items-center gap-1 shadow-none p-0" id="btn_toggle_qr">
+                                    <i class="fas fa-qrcode"></i> Scan QR Code
+                                </button>
+                            </div>
+
+                            <!-- Upload Receipt Box -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Upload Receipt</label>
+                                <div class="border border-dashed rounded-3 p-4 text-center cursor-pointer position-relative bg-light" id="receipt_dropzone" onclick="document.getElementById('payment_receipt').click();">
+                                    <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+                                        <div class="rounded-circle bg-teal-50 text-teal-600 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                            <i class="fas fa-upload fa-lg"></i>
+                                        </div>
+                                        <div class="fw-semibold text-dark" id="upload_status">Upload Receipt</div>
+                                        <div class="text-secondary small">PNG, JPG, WEBP - Max size: 5MB</div>
+                                    </div>
+                                    <input type="file" name="payment_receipt" id="payment_receipt" class="d-none" accept="image/png, image/jpeg, image/jpg, image/webp" onchange="handleReceiptSelected(this)">
+                                </div>
+                            </div>
+
+                            <!-- OCR Scanning Status -->
+                            <div id="ocr_scan_status" class="d-none mb-3">
+                                <div class="d-flex align-items-center gap-2 p-3 rounded-3 bg-light border">
+                                    <div class="spinner-border spinner-border-sm text-teal-600" id="ocr_spinner"></div>
+                                    <span class="small text-secondary" id="ocr_status_text">Scanning receipt for reference number...</span>
+                                </div>
+                            </div>
+
+                            <!-- Reference Number Field -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-flex align-items-center gap-2">
+                                    Reference No.
+                                    <span class="badge bg-teal-50 text-teal-600 fw-semibold" style="font-size:.65rem;">Auto-scanned</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">
+                                        <i class="fas fa-hashtag text-teal-600" style="font-size:.85rem;"></i>
+                                    </span>
+                                    <input type="text" name="payment_reference_no" id="payment_reference_no"
+                                        class="form-control border-start-0 ps-1 rounded-end-3 bg-white"
+                                        placeholder="Upload receipt above to auto-scan"
+                                        maxlength="100" readonly>
+                                </div>
+                                <div class="text-muted mt-1" style="font-size:.75rem;">
+                                    <i class="fas fa-shield-alt me-1 text-teal-600"></i>
+                                    Strictly extracted from your uploaded receipt for security.
+                                </div>
+                            </div>
+
+                            <!-- Amount Paid Field -->
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-flex align-items-center gap-2">
+                                    Amount Paid (₱)
+                                    <span class="badge bg-teal-50 text-teal-600 fw-semibold" style="font-size:.65rem;">Auto-scanned</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">₱</span>
+                                    <input type="text" name="payment_amount_paid" id="payment_amount_paid"
+                                        class="form-control border-start-0 ps-1 rounded-end-3 bg-white"
+                                        placeholder="0.00" readonly>
+                                </div>
+                                <div class="text-muted mt-1" style="font-size:.75rem;">
+                                    <i class="fas fa-shield-alt me-1 text-teal-600"></i>
+                                    Strictly extracted from your uploaded receipt for security.
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="mb-4" id="purpose_text_field">
-                        <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purpose</label>
-                        <textarea name="purpose" class="form-control bg-light border-0" rows="4"
-                            placeholder="State your purpose..." id="purpose_textarea"></textarea>
-                    </div>
-                    <div class="d-grid">
-                        <button class="btn btn-primary btn-lg rounded-pill" type="submit" <?php echo !$is_account_active ? 'disabled' : ''; ?>>
+                    <!-- Stepped Navigation Buttons -->
+                    <div class="d-flex gap-3 mt-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4 w-50" id="btn_prev_step" style="display: none;">
+                            <i class="fas fa-arrow-left me-2"></i> Back
+                        </button>
+                        <button type="button" class="btn btn-primary rounded-pill px-4 w-100" id="btn_next_step" style="display: none;">
+                            Next <i class="fas fa-arrow-right ms-2"></i>
+                        </button>
+                        <button class="btn btn-primary rounded-pill px-4 w-100" type="submit" id="btn_submit_request" <?php echo !$is_account_active ? 'disabled' : ''; ?>>
                             <i class="fas fa-paper-plane me-2"></i> Submit Request
                         </button>
                     </div>
@@ -469,7 +659,14 @@ $documents = $documents_stmt->fetchAll();
                                     'fm_name' => $c['fm_name'] ?? null,
                                     'fm_is_pwd' => $c['fm_is_pwd'] ?? 0,
                                     'fm_is_senior' => $c['fm_is_senior'] ?? 0,
-                                    'user_name' => $c['user_name'] ?? ''
+                                    'user_name' => $c['user_name'] ?? '',
+                                    'payment_receipt' => $c['payment_receipt'] ?? null,
+                                    'payment_status' => $c['payment_status'] ?? 'pending',
+                                    'refund_number' => $c['refund_number'] ?? null,
+                                    'refund_notes' => $c['refund_notes'] ?? null,
+                                    'refund_receipt' => $c['refund_receipt'] ?? null,
+                                    'admin_refund_number' => $c['admin_refund_number'] ?? null,
+                                    'admin_refund_notes' => $c['admin_refund_notes'] ?? null
                                 ];
                             }
                             foreach ($documents as $d) {
@@ -484,7 +681,14 @@ $documents = $documents_stmt->fetchAll();
                                     'fm_name' => $d['fm_name'] ?? null,
                                     'fm_is_pwd' => $d['fm_is_pwd'] ?? 0,
                                     'fm_is_senior' => $d['fm_is_senior'] ?? 0,
-                                    'user_name' => $d['user_name'] ?? ''
+                                    'user_name' => $d['user_name'] ?? '',
+                                    'payment_receipt' => $d['payment_receipt'] ?? null,
+                                    'payment_status' => $d['payment_status'] ?? 'pending',
+                                    'refund_number' => $d['refund_number'] ?? null,
+                                    'refund_notes' => $d['refund_notes'] ?? null,
+                                    'refund_receipt' => $d['refund_receipt'] ?? null,
+                                    'admin_refund_number' => $d['admin_refund_number'] ?? null,
+                                    'admin_refund_notes' => $d['admin_refund_notes'] ?? null
                                 ];
                             }
 
@@ -581,7 +785,16 @@ $documents = $documents_stmt->fetchAll();
                                                 data-status-class="<?php echo htmlspecialchars($statusClass, ENT_QUOTES); ?>"
                                                 data-icon="<?php echo htmlspecialchars($icon, ENT_QUOTES); ?>"
                                                 data-date="<?php echo date('F d, Y', strtotime($req['date'])); ?>"
-                                                data-notes="<?php echo htmlspecialchars($req['notes'] ?? '', ENT_QUOTES); ?>">
+                                                data-notes="<?php echo htmlspecialchars($req['notes'] ?? '', ENT_QUOTES); ?>"
+                                                data-payment-receipt="<?php echo htmlspecialchars($req['payment_receipt'] ?? '', ENT_QUOTES); ?>"
+                                                data-payment-status="<?php echo htmlspecialchars($req['payment_status'] ?? 'pending', ENT_QUOTES); ?>"
+                                                data-refund-number="<?php echo htmlspecialchars($req['refund_number'] ?? '', ENT_QUOTES); ?>"
+                                                data-refund-notes="<?php echo htmlspecialchars($req['refund_notes'] ?? '', ENT_QUOTES); ?>"
+                                                data-refund-receipt="<?php echo htmlspecialchars($req['refund_receipt'] ?? '', ENT_QUOTES); ?>"
+                                                data-admin-refund-number="<?php echo htmlspecialchars($req['admin_refund_number'] ?? '', ENT_QUOTES); ?>"
+                                                data-admin-refund-notes="<?php echo htmlspecialchars($req['admin_refund_notes'] ?? '', ENT_QUOTES); ?>"
+                                                data-req-id="<?php echo $req['id']; ?>"
+                                                data-req-type="<?php echo htmlspecialchars($req['type']); ?>">
                                                 <i class="fas <?php echo $icon; ?> me-1"></i>
                                                 <?php echo $statusLabel; ?>
                                             </div>
@@ -606,7 +819,16 @@ $documents = $documents_stmt->fetchAll();
                                                     data-status-class="<?php echo htmlspecialchars($statusClass, ENT_QUOTES); ?>"
                                                     data-icon="<?php echo htmlspecialchars($icon, ENT_QUOTES); ?>"
                                                     data-date="<?php echo date('F d, Y', strtotime($req['date'])); ?>"
-                                                    data-notes="<?php echo htmlspecialchars($req['notes'] ?? '', ENT_QUOTES); ?>">
+                                                    data-notes="<?php echo htmlspecialchars($req['notes'] ?? '', ENT_QUOTES); ?>"
+                                                    data-payment-receipt="<?php echo htmlspecialchars($req['payment_receipt'] ?? '', ENT_QUOTES); ?>"
+                                                    data-payment-status="<?php echo htmlspecialchars($req['payment_status'] ?? 'pending', ENT_QUOTES); ?>"
+                                                    data-refund-number="<?php echo htmlspecialchars($req['refund_number'] ?? '', ENT_QUOTES); ?>"
+                                                    data-refund-notes="<?php echo htmlspecialchars($req['refund_notes'] ?? '', ENT_QUOTES); ?>"
+                                                    data-refund-receipt="<?php echo htmlspecialchars($req['refund_receipt'] ?? '', ENT_QUOTES); ?>"
+                                                    data-admin-refund-number="<?php echo htmlspecialchars($req['admin_refund_number'] ?? '', ENT_QUOTES); ?>"
+                                                    data-admin-refund-notes="<?php echo htmlspecialchars($req['admin_refund_notes'] ?? '', ENT_QUOTES); ?>"
+                                                    data-req-id="<?php echo $req['id']; ?>"
+                                                    data-req-type="<?php echo htmlspecialchars($req['type']); ?>">
                                                     <i class="fas fa-eye" style="font-size: 0.8rem;"></i>
                                                 </button>
                                                 <!-- Cancel (only for pending) -->
@@ -709,7 +931,49 @@ $documents = $documents_stmt->fetchAll();
                         <td class="text-dark opacity-75 fw-semibold small">Date Filed</td>
                         <td id="detail_date"></td>
                     </tr>
+                    <tr id="detail_payment_row" style="display: none;">
+                        <td class="text-dark opacity-75 fw-semibold small">Payment</td>
+                        <td id="detail_payment_value"></td>
+                    </tr>
                 </table>
+
+                <!-- Resident Refund Request Details (collapsible) -->
+                <div id="detail_resident_refund_section" class="mt-3 p-3 border border-light-subtle rounded-3 bg-light bg-opacity-50" style="display: none;">
+                    <h6 class="fw-bold text-indigo-600 mb-2 small text-uppercase tracking-wider" style="font-size: 0.75rem;"><i class="fas fa-user-circle me-1"></i> Resident Refund Request Details</h6>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <span class="text-secondary small d-block">GCash / Maya / Account No.</span>
+                            <strong id="res_refund_number_val" class="font-monospace text-dark small"></strong>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-secondary small d-block">Reason for Refund</span>
+                            <span id="res_refund_notes_val" class="text-dark small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Refunded Details (collapsible) -->
+                <div id="detail_admin_refund_section" class="mt-3 p-3 border border-light-subtle rounded-3 bg-light bg-opacity-50" style="display: none;">
+                    <h6 class="fw-bold text-purple-600 mb-2 small text-uppercase tracking-wider" style="font-size: 0.75rem;"><i class="fas fa-check-circle me-1"></i> Refunded Details</h6>
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <span class="text-secondary small d-block">Refund Ref No.</span>
+                            <strong id="admin_refund_number_val" class="font-monospace text-dark small"></strong>
+                        </div>
+                        <div class="col-12">
+                            <span class="text-secondary small d-block">Admin Remarks / Notes</span>
+                            <span id="admin_refund_notes_val" class="text-dark small"></span>
+                        </div>
+                        <div class="col-12 mt-2" id="admin_refund_receipt_container">
+                            <!-- View Refund Receipt Button -->
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 text-center d-none" id="detail_refund_action_container">
+                    <button type="button" class="btn rounded-pill px-4" id="btn_request_refund_trigger" style="color: #6b21a8; border-color: #d8b4fe; background: #faf5ff; border: 1px solid #d8b4fe; font-size: 0.85rem; font-weight: 600;">
+                        <i class="fas fa-undo-alt me-2"></i>Request Refund
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -748,6 +1012,51 @@ $documents = $documents_stmt->fetchAll();
     </div>
 </div>
 
+<!-- Resident Refund Modal -->
+<div class="modal fade" id="residentRefundModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:420px;">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-body p-4">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="width-12 height-12 rounded-3 bg-purple-50 text-purple-600 d-flex align-items-center justify-content-center" style="width:42px; height:42px; background: #faf5ff;">
+                        <i class="fas fa-undo-alt fa-lg" style="color: #6b21a8;"></i>
+                    </div>
+                    <h5 class="fw-bold mb-0 text-dark">Request Refund</h5>
+                    <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="POST" id="residentRefundForm">
+                    <?php echo csrf_field(); ?>
+                    <input type="hidden" name="action" value="refund">
+                    <input type="hidden" name="req_id" id="refund_modal_req_id">
+                    <input type="hidden" name="req_type" id="refund_modal_req_type">
+                    
+                    <p class="text-secondary small mb-3">Please provide your e-wallet (GCash/Maya) or bank details where we can send your refund.</p>
+                    
+                    <div class="mb-3">
+                        <label for="res_refund_number" class="form-label small fw-bold text-dark mb-1">GCash / Maya / Account No. <span class="text-danger">*</span></label>
+                        <input type="text" name="refund_number" id="res_refund_number" class="form-control rounded-3" placeholder="e.g. GCash: 0917XXXXXXX" required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="res_refund_notes" class="form-label small fw-bold text-dark mb-1">Reason for Refund / Notes <span class="text-danger">*</span></label>
+                        <textarea name="refund_notes" id="res_refund_notes" class="form-control rounded-3" rows="3"
+                            placeholder="e.g. Cancelled request, wrong document type, etc." required></textarea>
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center">
+                        <button type="button" class="btn btn-light rounded-pill px-4 w-50" data-bs-dismiss="modal">
+                            Cancel
+                        </button>
+                        <button type="submit" class="btn text-white rounded-pill px-4 w-50" style="background: #0d9488; border: none;">
+                            Submit Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Show detail modal via data attributes
     document.addEventListener('click', function (e) {
@@ -759,8 +1068,15 @@ $documents = $documents_stmt->fetchAll();
         const notes = btn.dataset.notes || '';
         const hasNotes = notes.trim() !== '';
 
-        // Show "View Details" link for both Rejected and Cancelled statuses if they have notes/reasons
-        const showReasonLink = (statusLower === 'rejected' || statusLower === 'cancelled' || statusLower === 'canceled') && hasNotes;
+        const reqId = btn.dataset.reqId || '';
+        const reqType = btn.dataset.reqType || '';
+
+        const payStatus = btn.dataset.paymentStatus || 'pending';
+        const payStatusLower = payStatus.toLowerCase();
+        const isRefund = payStatusLower === 'refund_pending' || payStatusLower === 'refunded';
+
+        // Show "View Details" link for both Rejected and Cancelled statuses if they have notes/reasons (excluding refund cases)
+        const showReasonLink = (statusLower === 'rejected' || ((statusLower === 'cancelled' || statusLower === 'canceled') && !isRefund)) && hasNotes;
 
         document.getElementById('detail_document').textContent = btn.dataset.doc;
         document.getElementById('detail_requester').innerHTML = btn.dataset.requester + ' <span class="badge bg-light text-secondary">' + btn.dataset.requesterType + '</span>';
@@ -768,6 +1084,114 @@ $documents = $documents_stmt->fetchAll();
         document.getElementById('detail_status').innerHTML = '<span class="badge ' + btn.dataset.statusClass + ' rounded-pill px-3 py-2"><i class="fas ' + btn.dataset.icon + ' me-1"></i>' + statusLabel + '</span>' +
             (showReasonLink ? ' <a href="javascript:void(0)" class="text-primary ms-2 small btn-show-reason" title="View Reason"><i class="fas fa-eye"></i> View Details</a>' : '');
         document.getElementById('detail_date').textContent = btn.dataset.date;
+
+        // Reset refund sections display on modal open
+        document.getElementById('detail_resident_refund_section').style.display = 'none';
+        document.getElementById('detail_admin_refund_section').style.display = 'none';
+
+        // Populate refund data fields
+        const refundNumber = btn.dataset.refundNumber || '';
+        const refundNotes = btn.dataset.refundNotes || '';
+        const refundReceipt = btn.dataset.refundReceipt || '';
+        const adminRefundNumber = btn.dataset.adminRefundNumber || '';
+        const adminRefundNotes = btn.dataset.adminRefundNotes || '';
+
+        document.getElementById('res_refund_number_val').textContent = refundNumber || 'Not provided';
+        document.getElementById('res_refund_notes_val').textContent = refundNotes || notes || '—';
+        document.getElementById('admin_refund_number_val').textContent = adminRefundNumber || '—';
+        document.getElementById('admin_refund_notes_val').textContent = adminRefundNotes || 'No remarks provided.';
+
+        const adminRefundReceiptContainer = document.getElementById('admin_refund_receipt_container');
+        if (refundReceipt) {
+            adminRefundReceiptContainer.innerHTML = `
+                <a href="${refundReceipt}" target="_blank" class="btn btn-sm w-100 border fw-semibold rounded-3 py-2 mt-1 text-decoration-none d-flex align-items-center justify-content-center gap-1"
+                    style="font-size: 0.8rem; color: #0d9488; border-color: #99f6e4 !important; background: #f0fdfa;">
+                    <i class="far fa-image me-1"></i>View Refund Receipt Photo
+                </a>
+            `;
+        } else {
+            adminRefundReceiptContainer.innerHTML = '';
+        }
+
+        // Payment row logic
+        const paymentRow = document.getElementById('detail_payment_row');
+        const paymentVal = document.getElementById('detail_payment_value');
+        const receipt = btn.dataset.paymentReceipt || '';
+
+        if (receipt) {
+            let badgeClass = 'bg-amber-50 text-amber-600';
+            let statusText = 'Pending Verification';
+            if (payStatusLower === 'verified' || payStatusLower === 'approved' || payStatusLower === 'success' || payStatusLower === 'confirmed') {
+                badgeClass = 'bg-teal-50 text-teal-600';
+                statusText = 'Verified';
+            } else if (payStatusLower === 'rejected') {
+                badgeClass = 'bg-rose-50 text-rose-600';
+                statusText = 'Rejected';
+            } else if (payStatusLower === 'refunded') {
+                badgeClass = 'bg-purple-50 text-purple-600';
+                statusText = 'Refunded';
+            } else if (payStatusLower === 'refund_pending') {
+                badgeClass = 'bg-indigo-50 text-indigo-600';
+                statusText = 'Refund Pending';
+            }
+
+            let paymentHtml = `<span class="badge ${badgeClass} rounded-pill px-3 py-2"><i class="fas fa-receipt me-1"></i>${statusText}</span>`;
+            if (payStatusLower === 'refund_pending') {
+                paymentHtml = `
+                    <span class="badge ${badgeClass} rounded-pill px-3 py-2" style="cursor: pointer;" onclick="toggleResidentRefundDetails()"><i class="fas fa-hourglass-half me-1"></i>${statusText}</span>
+                    <a href="javascript:void(0)" class="text-indigo-600 fw-bold ms-2 small d-inline-flex align-items-center gap-1 text-decoration-none" onclick="toggleResidentRefundDetails()">
+                        <i class="fas fa-info-circle"></i> View Refund Request
+                    </a>
+                `;
+            } else if (payStatusLower === 'refunded') {
+                paymentHtml = `
+                    <span class="badge ${badgeClass} rounded-pill px-3 py-2" style="cursor: pointer;" onclick="toggleAdminRefundDetails()"><i class="fas fa-undo-alt me-1"></i>${statusText}</span>
+                    <a href="javascript:void(0)" class="text-purple-600 fw-bold ms-2 small d-inline-flex align-items-center gap-1 text-decoration-none" onclick="toggleAdminRefundDetails()">
+                        <i class="fas fa-eye"></i> View Refund Details
+                    </a>
+                `;
+            } else {
+                paymentHtml += `
+                    <a href="${receipt}" target="_blank" class="text-teal-600 fw-bold ms-2 small d-inline-flex align-items-center gap-1 text-decoration-none">
+                        <i class="fas fa-image"></i> View Receipt
+                    </a>
+                `;
+            }
+
+            paymentVal.innerHTML = paymentHtml;
+            paymentRow.style.display = 'table-row';
+        } else {
+            paymentRow.style.display = 'none';
+        }
+
+        // Show refund action if receipt exists, document status is pending, and payment is either pending or confirmed
+        const refundContainer = document.getElementById('detail_refund_action_container');
+        if (refundContainer) {
+            const payStatusLower = payStatus.toLowerCase();
+            const isRefundablePayment = payStatusLower === 'pending' || payStatusLower === 'confirmed' || payStatusLower === 'verified';
+            if (receipt && statusLower === 'pending' && isRefundablePayment) {
+                refundContainer.classList.remove('d-none');
+                const triggerBtn = document.getElementById('btn_request_refund_trigger');
+                triggerBtn.onclick = function() {
+                    var mainModalEl = document.getElementById('viewDetailModal');
+                    var modal = bootstrap.Modal.getInstance(mainModalEl);
+                    if (modal) modal.hide();
+                    
+                    document.getElementById('refund_modal_req_id').value = reqId;
+                    document.getElementById('refund_modal_req_type').value = reqType;
+                    document.getElementById('res_refund_number').value = '';
+                    document.getElementById('res_refund_notes').value = '';
+                    
+                    setTimeout(() => {
+                        var refModalEl = document.getElementById('residentRefundModal');
+                        var refModal = bootstrap.Modal.getOrCreateInstance(refModalEl);
+                        refModal.show();
+                    }, 300);
+                };
+            } else {
+                refundContainer.classList.add('d-none');
+            }
+        }
 
         // Store notes in a way that's easy to access for the "show reason" link
         var reasonLink = document.querySelector('#viewDetailModal .btn-show-reason');
@@ -802,9 +1226,68 @@ $documents = $documents_stmt->fetchAll();
         });
     }
 
+    function toggleResidentRefundDetails() {
+        const el = document.getElementById('detail_resident_refund_section');
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+        }
+    }
+
+    function toggleAdminRefundDetails() {
+        const el = document.getElementById('detail_admin_refund_section');
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+            // Also show resident's request info so they can see both
+            document.getElementById('detail_resident_refund_section').style.display = 'block';
+        } else {
+            el.style.display = 'none';
+            document.getElementById('detail_resident_refund_section').style.display = 'none';
+        }
+    }
+
     let _cancelForm = null;
 
     function showCancelModal(form) {
+        const row = form.closest('tr');
+        const viewBtn = row ? row.querySelector('.btn-view-detail') : null;
+        const receipt = viewBtn ? (viewBtn.dataset.paymentReceipt || '') : '';
+        const payStatus = viewBtn ? (viewBtn.dataset.paymentStatus || 'pending') : 'pending';
+        const payStatusLower = payStatus.toLowerCase();
+        
+        if (receipt && (payStatusLower === 'pending' || payStatusLower === 'confirmed' || payStatusLower === 'verified')) {
+            Swal.fire({
+                title: '<div class="text-teal-600 fw-bold">Paid Request Detected</div>',
+                html: '<div class="text-start p-3 bg-light rounded border-start border-4 border-teal-500" style="font-size: 0.95rem; line-height: 1.6;">You have already uploaded a payment receipt for this request. To cancel, please submit a Refund Request so we can return your payment to GCash/Maya.</div>',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0d9488',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Request Refund Now',
+                cancelButtonText: 'Go Back',
+                customClass: {
+                    title: 'fs-4',
+                    confirmButton: 'px-4 py-2 rounded-pill fw-bold',
+                    cancelButton: 'px-4 py-2 rounded-pill fw-bold'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const reqId = viewBtn.dataset.reqId || '';
+                    const reqType = viewBtn.dataset.reqType || '';
+                    document.getElementById('refund_modal_req_id').value = reqId;
+                    document.getElementById('refund_modal_req_type').value = reqType;
+                    document.getElementById('res_refund_number').value = '';
+                    document.getElementById('res_refund_notes').value = '';
+                    
+                    var refModalEl = document.getElementById('residentRefundModal');
+                    var refModal = bootstrap.Modal.getOrCreateInstance(refModalEl);
+                    refModal.show();
+                }
+            });
+            return;
+        }
+
         _cancelForm = form;
         document.getElementById('cancelReasonInput').value = '';
         document.getElementById('cancelReasonError').style.display = 'none';
@@ -871,26 +1354,175 @@ $documents = $documents_stmt->fetchAll();
         });
     }
 
-    // Form validation for purpose selection
-    function validatePurpose() {
-        const docType = document.getElementById('doc_type').value.toLowerCase();
-        const indigencyPurposeField = document.getElementById('indigency_purpose_field');
-        const clearancePurposeField = document.getElementById('clearance_purpose_field');
+    // Multi-Step Request Wizard State and Controls
+    let currentStep = 1;
 
+    function updateNavigationButtons() {
+        const docTypeSelect = document.getElementById('doc_type');
+        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+        const btnPrev = document.getElementById('btn_prev_step');
+        const btnNext = document.getElementById('btn_next_step');
+        const btnSubmit = document.getElementById('btn_submit_request');
+
+        const price = selectedOption && selectedOption.value !== "" ? parseFloat(selectedOption.getAttribute('data-price') || "0") : 0;
+
+        if (currentStep === 1) {
+            btnPrev.style.display = 'none';
+            btnSubmit.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Submit Request';
+            if (price > 0) {
+                // Paid document in Step 1: show Next button (w-100), hide Submit button
+                btnNext.style.display = 'block';
+                btnNext.classList.remove('w-50');
+                btnNext.classList.add('w-100');
+                btnSubmit.style.display = 'none';
+            } else {
+                // Free document in Step 1: show Submit button (w-100), hide Next button
+                btnNext.style.display = 'none';
+                btnSubmit.style.display = 'block';
+                btnSubmit.classList.remove('w-50');
+                btnSubmit.classList.add('w-100');
+            }
+        } else if (currentStep === 2) {
+            // Step 2 (paid documents only): show Back (w-50) and Submit (w-50)
+            btnNext.style.display = 'none';
+            btnSubmit.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Submit';
+
+            btnPrev.style.display = 'block';
+            btnPrev.classList.remove('w-100');
+            btnPrev.classList.add('w-50');
+
+            btnSubmit.style.display = 'block';
+            btnSubmit.classList.remove('w-100');
+            btnSubmit.classList.add('w-50');
+        }
+    }
+
+    // Step 1 Validation
+    function validateStep1() {
+        const docTypeSelect = document.getElementById('doc_type');
+        if (!docTypeSelect.value) {
+            Swal.fire({
+                title: 'Required Field',
+                text: 'Please select a document type to proceed.',
+                icon: 'warning',
+                confirmButtonColor: '#0d9488'
+            });
+            return false;
+        }
+
+        const docType = docTypeSelect.value.toLowerCase();
         if (docType.includes('indigency')) {
             const selectedIndigency = document.querySelector('input[name="indigency_purpose"]:checked');
             if (!selectedIndigency) {
-                alert('Please select a purpose for Indigency certificate.');
+                Swal.fire({
+                    title: 'Purpose Required',
+                    text: 'Please select a purpose for the Indigency certificate.',
+                    icon: 'warning',
+                    confirmButtonColor: '#0d9488'
+                });
                 return false;
             }
-        } else if (docType.includes('clearance') || document.getElementById('doc_type').value === 'Barangay Clearance') {
+        } else if (docType.includes('clearance') || docTypeSelect.value === 'Barangay Clearance') {
             const selectedClearance = document.querySelector('input[name="clearance_purpose"]:checked');
             if (!selectedClearance) {
-                alert('Please select a purpose for Barangay Clearance.');
+                Swal.fire({
+                    title: 'Purpose Required',
+                    text: 'Please select a purpose for the Barangay Clearance.',
+                    icon: 'warning',
+                    confirmButtonColor: '#0d9488'
+                });
+                return false;
+            }
+        } else {
+            const purposeTextarea = document.getElementById('purpose_textarea');
+            if (!purposeTextarea.value.trim()) {
+                Swal.fire({
+                    title: 'Purpose Required',
+                    text: 'Please state your purpose for the document request.',
+                    icon: 'warning',
+                    confirmButtonColor: '#0d9488'
+                });
+                purposeTextarea.focus();
                 return false;
             }
         }
         return true;
+    }
+
+    // Form submission validation (uses same logic as Step 1)
+    function validatePurpose() {
+        return validateStep1();
+    }
+
+    // Step Navigation Click Handlers
+    document.getElementById('btn_next_step').addEventListener('click', function () {
+        if (validateStep1()) {
+            currentStep = 2;
+            document.getElementById('form_step_1').style.display = 'none';
+            document.getElementById('form_step_2').style.display = 'block';
+            updateNavigationButtons();
+        }
+    });
+
+    document.getElementById('btn_prev_step').addEventListener('click', function () {
+        currentStep = 1;
+        document.getElementById('form_step_2').style.display = 'none';
+        document.getElementById('form_step_1').style.display = 'block';
+        updateNavigationButtons();
+    });
+
+    // Reset Wizard to step 1 and clean states
+    function resetWizard() {
+        document.getElementById('requestForm').reset();
+        document.getElementById('requestor_type_hidden').value = 'self';
+        document.getElementById('family_member_id_hidden').value = '';
+
+        currentStep = 1;
+        document.getElementById('form_step_1').style.display = 'block';
+        document.getElementById('form_step_2').style.display = 'none';
+
+        document.getElementById('document_price_container').style.display = 'none';
+        document.getElementById('document_price_display').textContent = 'Free';
+        document.getElementById('payment_section').style.display = 'none';
+        document.getElementById('upload_status').textContent = 'Upload Receipt';
+        
+        const amountPaidDisplay = document.getElementById('amount_paid_display');
+        if (amountPaidDisplay) amountPaidDisplay.textContent = '₱ 0.00';
+        
+        const refInput = document.getElementById('payment_reference_no');
+        if (refInput) refInput.value = '';
+        
+        const amountInput = document.getElementById('payment_amount_paid');
+        if (amountInput) amountInput.value = '';
+        
+        const ocrStatus = document.getElementById('ocr_scan_status');
+        if (ocrStatus) ocrStatus.classList.add('d-none');
+
+        const btnToggleQr = document.getElementById('btn_toggle_qr');
+        if (btnToggleQr) {
+            btnToggleQr.innerHTML = '<i class="fas fa-qrcode"></i> Scan QR Code';
+        }
+
+        document.getElementById('indigency_purpose_field').style.display = 'none';
+        document.getElementById('clearance_purpose_field').style.display = 'none';
+        
+        const purposeTextField = document.getElementById('purpose_text_field');
+        if (purposeTextField) {
+            purposeTextField.style.display = 'block';
+        }
+        const purposeTextarea = document.getElementById('purpose_textarea');
+        if (purposeTextarea) {
+            purposeTextarea.setAttribute('required', 'required');
+        }
+
+        updateNavigationButtons();
+    }
+
+    // Modal show/hidden hooks to reset wizard cleanly
+    const requestModalEl = document.getElementById('requestDocumentModal');
+    if (requestModalEl) {
+        requestModalEl.addEventListener('show.bs.modal', resetWizard);
+        requestModalEl.addEventListener('hidden.bs.modal', resetWizard);
     }
 
     // Show/hide purpose selection based on document type
@@ -903,18 +1535,23 @@ $documents = $documents_stmt->fetchAll();
         const docTypeValue = this.value.toLowerCase();
 
         // Price display logic
+        const price = selectedOption && selectedOption.value !== "" ? parseFloat(selectedOption.getAttribute('data-price') || "0") : 0;
         const priceContainer = document.getElementById('document_price_container');
         const priceDisplay = document.getElementById('document_price_display');
-        if (selectedOption && selectedOption.value !== "") {
-            const price = parseFloat(selectedOption.getAttribute('data-price') || "0");
-            if (price > 0) {
-                priceDisplay.textContent = '₱ ' + price.toFixed(2);
-            } else {
-                priceDisplay.textContent = 'Free';
-            }
+
+        // E-Wallet/GCash Section
+        const paymentSection = document.getElementById('payment_section');
+        const amountDueDisplay = document.getElementById('amount_due_display');
+
+        if (price > 0) {
             priceContainer.style.display = 'block';
+            priceDisplay.textContent = '₱ ' + price.toFixed(2);
+            paymentSection.style.display = 'block';
+            amountDueDisplay.textContent = '₱ ' + price.toFixed(2);
         } else {
             priceContainer.style.display = 'none';
+            priceDisplay.textContent = 'Free';
+            paymentSection.style.display = 'none';
         }
 
         // Show/hide purpose selection based on document type
@@ -937,7 +1574,199 @@ $documents = $documents_stmt->fetchAll();
             purposeTextField.style.display = 'block';
             purposeTextarea.setAttribute('required', 'required');
         }
+
+        // Update stepped wizard navigation buttons immediately when price changes
+        updateNavigationButtons();
     });
+
+    // Show QR code in screen overlay
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnToggleQr = document.getElementById('btn_toggle_qr');
+        if (btnToggleQr) {
+            btnToggleQr.addEventListener('click', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Scan QR Code',
+                    html: `
+                        <div class="text-center p-2">
+                            <p class="small text-secondary mb-3">Scan this QR code using GCash, Maya, or any InstaPay-supported banking app:</p>
+                            <div class="d-inline-block p-3 bg-white rounded-3 border shadow-sm mb-3">
+                                <img src="public/img/gcash_qr.png" alt="InstaPay QR Code" class="img-fluid" style="max-width: 280px; width: 100%; height: auto;">
+                            </div>
+                            <div class="fw-bold text-teal-600 fs-6">Barangay Panungyanan Payment Portal</div>
+                        </div>
+                    `,
+                    showCloseButton: true,
+                    confirmButtonText: 'Done Scanning',
+                    confirmButtonColor: '#0d9488',
+                    customClass: {
+                        popup: 'rounded-4 shadow'
+                    }
+                });
+            });
+        }
+    });
+
+    // Update upload status when file is chosen
+    // Update upload status when file is chosen and run OCR
+    async function handleReceiptSelected(input) {
+        const statusDiv = document.getElementById('upload_status');
+        const ocrStatus = document.getElementById('ocr_scan_status');
+        const refInput = document.getElementById('payment_reference_no');
+        const spinner = document.getElementById('ocr_spinner');
+        const statusText = document.getElementById('ocr_status_text');
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+            statusDiv.innerHTML = `<span class="text-teal-600 fw-bold"><i class="fas fa-check-circle me-1"></i> Selected: ${file.name} (${sizeInMB} MB)</span>`;
+
+            // Start OCR
+            ocrStatus.classList.remove('d-none');
+            spinner.classList.remove('d-none');
+            spinner.classList.add('text-teal-600');
+            spinner.classList.remove('text-success', 'text-danger');
+            statusText.textContent = 'Scanning receipt for reference number...';
+            statusText.className = 'small text-secondary';
+            refInput.value = '';
+
+            try {
+                // Create object URL for Tesseract
+                const imageUrl = URL.createObjectURL(file);
+                
+                // Initialize worker
+                const worker = await Tesseract.createWorker('eng');
+                
+                // Recognize text
+                const ret = await worker.recognize(imageUrl);
+                const text = ret.data.text;
+                
+                await worker.terminate();
+                URL.revokeObjectURL(imageUrl);
+
+                // Try to find reference number using common patterns
+                // Search line-by-line to avoid merging with adjacent text (dates, etc.)
+                const lines = text.split(/\n/);
+                
+                let foundRef = '';
+                
+                // 1. Look for a line with "Ref" label and extract ONLY the continuous block of digits from it
+                for (const line of lines) {
+                    const refLineMatch = line.match(/(?:ref(?:erence)?\.?\s*(?:no\.?|num(?:ber)?)?|trans(?:action)?\.?\s*(?:no\.?|id)?)\s*[:.-]?\s*([\d\sA-Za-z]+)/i);
+                    if (refLineMatch) {
+                        // Remove spaces first, then find the first block of 10-15 digits
+                        const noSpaces = refLineMatch[1].replace(/\s+/g, '');
+                        const digitsOnly = noSpaces.match(/\d{10,15}/);
+                        if (digitsOnly) {
+                            foundRef = digitsOnly[0];
+                            break;
+                        }
+                    }
+                }
+                
+                // 2. If not found via label, look for standalone 10-15 digit number per line
+                if (!foundRef) {
+                    for (const line of lines) {
+                        // Extract all digits from the line, check if there's a 10-15 digit cluster
+                        const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
+                        if (digitsMatch) {
+                            const clean = digitsMatch[1].replace(/\s+/g, '');
+                            if (clean.length >= 10 && clean.length <= 15) {
+                                foundRef = clean;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // 3. Last resort: look for any 13-digit number anywhere
+                if (!foundRef) {
+                    const allDigits = text.replace(/\s/g, '').match(/\d{13}/);
+                    if (allDigits) foundRef = allDigits[0];
+                }
+
+                // Try to find amount paid
+                let foundAmount = '';
+                const amountMatch = text.match(/(?:amount|total|php|p|₱)\s*[:.-]?\s*([0-9,]+\.\d{2})/i);
+                if (amountMatch) {
+                    foundAmount = amountMatch[1].replace(/,/g, ''); // remove commas
+                } else {
+                    // Fallback: just look for any standard currency format XX.XX
+                    const fallbackMatch = text.match(/\b([0-9,]+\.\d{2})\b/);
+                    if (fallbackMatch) {
+                        foundAmount = fallbackMatch[1].replace(/,/g, '');
+                    }
+                }
+
+                spinner.classList.add('d-none');
+                
+                const amountInput = document.getElementById('payment_amount_paid');
+                
+                if (foundRef || foundAmount) {
+                    if (foundRef) {
+                        refInput.value = foundRef;
+
+                        // ── Duplicate ref-number check ──────────────────
+                        try {
+                            const chkRes  = await fetch(`/api/check_ref.php?ref=${encodeURIComponent(foundRef)}`);
+                            const chkData = await chkRes.json();
+
+                            if (chkData.exists) {
+                                statusText.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-ban me-1"></i> Duplicate Reference No.!</span> ${chkData.message}`;
+                                refInput.value = '';
+
+                                // Disable submit button
+                                const submitBtn = document.getElementById('btn_submit_request');
+                                if (submitBtn) {
+                                    submitBtn.disabled = true;
+                                    submitBtn.title = 'Cannot submit: reference number already used.';
+                                }
+
+                                spinner.classList.add('d-none');
+                                if (foundAmount && amountInput) {
+                                    amountInput.value = foundAmount;
+                                    document.getElementById('amount_paid_display').textContent = '₱ ' + foundAmount;
+                                }
+                                return; // stop here
+                            } else {
+                                // Re-enable submit in case it was disabled before
+                                const submitBtn = document.getElementById('btn_submit_request');
+                                if (submitBtn) {
+                                    submitBtn.disabled = false;
+                                    submitBtn.title = '';
+                                }
+                            }
+                        } catch(e) {
+                            // If the check fails (network error), allow submission (server will catch it)
+                            console.warn('Ref check failed:', e);
+                        }
+                        // ─────────────────────────────────────────────────
+                    }
+
+                    if (foundAmount && amountInput) {
+                        amountInput.value = foundAmount;
+                        document.getElementById('amount_paid_display').textContent = '₱ ' + foundAmount;
+                    }
+                    
+                    statusText.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Scan complete!</span> Details extracted from receipt.`;
+                } else {
+                    statusText.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> Could not detect details.</span> Please ensure the receipt is clear.`;
+                }
+
+            } catch (error) {
+                console.error("OCR Error:", error);
+                spinner.classList.add('d-none');
+                statusText.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-times-circle me-1"></i> Scan failed.</span> Please ensure the receipt is clear.`;
+            }
+
+        } else {
+            statusDiv.textContent = 'Upload Receipt';
+            ocrStatus.classList.add('d-none');
+            refInput.value = '';
+            const amountInput = document.getElementById('payment_amount_paid');
+            if (amountInput) amountInput.value = '';
+        }
+    }
 
     <?php
     $display_msg = $message ?: ($_SESSION['info'] ?? '');
