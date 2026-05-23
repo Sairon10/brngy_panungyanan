@@ -15,7 +15,7 @@ $stmt = $pdo->prepare('
     SELECT 
         u.full_name, u.first_name, u.last_name, u.middle_name, u.email,
         r.address, r.barangay_id, r.birthdate, r.sex, r.citizenship, r.civil_status,
-        r.verification_status, r.avatar
+        r.verification_status, r.avatar, r.phone, r.birth_place
     FROM users u 
     LEFT JOIN residents r ON r.user_id = u.id 
     WHERE u.id = ?
@@ -39,13 +39,31 @@ $qr_verify_url = rtrim($base_url, '/') . '/qr_verify.php?id=' . $_SESSION['user_
 // Generate QR code URL (using a free QR code API)
 $qr_code_url = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($qr_verify_url);
 
+// Calculate validity date as exactly 1 year from the approved Resident ID request creation date
+$req_stmt = $pdo->prepare("SELECT created_at FROM document_requests WHERE user_id=? AND doc_type='Resident ID' AND status IN ('approved','released') ORDER BY id DESC LIMIT 1");
+$req_stmt->execute([$_SESSION['user_id']]);
+$req_date = $req_stmt->fetchColumn();
+$valid_until = $req_date ? date('F d, Y', strtotime($req_date . ' +1 year')) : date('F d, Y', strtotime('+1 year'));
+
+$is_expired = false;
+$is_expiring_soon = false;
+if ($req_date) {
+    $expiry_time = strtotime($req_date . ' +1 year');
+    $current_time = time();
+    if ($current_time > $expiry_time) {
+        $is_expired = true;
+    } elseif ($expiry_time - $current_time < 30 * 24 * 60 * 60) { // 30 days
+        $is_expiring_soon = true;
+    }
+}
+
 // Format birthdate
 $birthdate_formatted = $resident['birthdate'] ? date('M d, Y', strtotime($resident['birthdate'])) : 'N/A';
 $age = $resident['birthdate'] ? date_diff(date_create($resident['birthdate']), date_create('today'))->y : 'N/A';
 ?>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Roboto:wght@400;500;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Roboto:wght@400;500;700;900&family=Alex+Brush&family=Libre+Barcode+39&display=swap');
 
 .id-card-container {
     perspective: 1000px;
@@ -74,294 +92,502 @@ $age = $resident['birthdate'] ? date_diff(date_create($resident['birthdate']), d
     height: 100%;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
-    border-radius: 25px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    border-radius: 20px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
     overflow: hidden;
+    border: 1px solid #dddddd;
 }
 
-.id-card-back {
-    transform: rotateY(180deg);
-}
-
-/* Front Card Styles */
+/* Front Side Layout */
 .id-card-front {
-    background: linear-gradient(135deg, #104020 0%, #1e5c30 100%);
+    background: #ffffff;
+    color: #333333;
+    display: flex;
+    flex-direction: row;
+    position: absolute;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* Left Panel (Green Gradient & Waves) */
+.left-panel {
+    position: relative;
+    width: 360px;
+    height: 585px; /* Leave space for white footer strip at bottom */
+    background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 60%, #4caf50 100%);
     display: flex;
     flex-direction: column;
-    color: white;
-    border: 1px solid #0f3d1e;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    z-index: 1;
 }
 
-/* Background Pattern */
-.id-card-front::before {
+/* Vector wave details */
+.left-panel-wave-1 {
+    position: absolute;
+    top: -50px;
+    right: -100px;
+    width: 320px;
+    height: 750px;
+    background: #4caf50;
+    border-radius: 40% 60% 40% 60% / 50% 30% 70% 50%;
+    transform: rotate(-15deg);
+    opacity: 0.4;
+    z-index: 1;
+}
+
+.left-panel-wave-2 {
+    position: absolute;
+    top: -80px;
+    right: -40px;
+    width: 260px;
+    height: 700px;
+    background: #81c784;
+    border-radius: 50% 40% 60% 50% / 40% 50% 50% 60%;
+    transform: rotate(-25deg);
+    opacity: 0.3;
+    z-index: 2;
+}
+
+.left-panel-wave-3 {
+    position: absolute;
+    bottom: -150px;
+    left: -100px;
+    width: 300px;
+    height: 500px;
+    background: #1b5e20;
+    border-radius: 50%;
+    opacity: 0.3;
+    z-index: 0;
+}
+
+/* Circular Photo Container */
+.id-photo-container {
+    position: relative;
+    z-index: 10;
+    width: 230px;
+    height: 230px;
+    border-radius: 50%;
+    border: 8px solid #ffffff;
+    outline: 8px solid #4caf50;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    overflow: hidden;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.id-photo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Right Panel Layout */
+.right-panel {
+    flex: 1;
+    height: 585px; /* Leave space for bottom footer */
+    padding: 25px 40px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #ffffff;
+    z-index: 2;
+}
+
+/* Very faint watermark background for security look */
+.right-panel::before {
     content: '';
     position: absolute;
-    top: 50%; left: 50%;
+    top: 55%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 60%;
-    height: 60%;
+    width: 320px;
+    height: 320px;
     background: url('public/img/barangaylogo.png') no-repeat center center;
     background-size: contain;
-    opacity: 0.15;
+    opacity: 0.035;
     z-index: 0;
-    filter: grayscale(100%);
+    pointer-events: none;
 }
 
-.id-card-header {
-    position: relative;
-    z-index: 1;
+/* Header (Logos + Text) */
+.id-header-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 25px 40px;
-    height: 140px;
-}
-
-.id-card-logo {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: white;
-    object-fit: cover;
-    border: 4px solid #fff;
-    display: block;
-    box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-}
-
-.id-card-header-text {
-    text-align: center;
-    flex: 1;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-    padding: 0 20px;
-}
-
-.id-card-header-text h4 {
-    margin: 0;
-    font-family: 'Libre Baskerville', serif;
-    font-size: 28px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    line-height: 1.2;
-    color: #fff;
-}
-
-.id-card-header-text p {
-    margin: 5px 0 0;
-    font-family: 'Roboto', sans-serif;
-    font-size: 15px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Yellow Bar */
-.id-card-title-bar {
-    position: relative;
-    z-index: 1;
-    background: linear-gradient(90deg, #ffcc00, #ffdb4d);
-    padding: 12px 0;
-    text-align: center;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-    border-top: 1px solid #e6b800;
-    border-bottom: 1px solid #e6b800;
-}
-
-.id-card-title-bar h2 {
-    margin: 0;
-    color: #fff;
-    font-family: 'Roboto', sans-serif;
-    font-size: 38px;
-    font-weight: 900;
-    text-transform: uppercase;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
-    letter-spacing: 1px;
-    -webkit-text-stroke: 0.5px rgba(0,0,0,0.1);
-}
-
-/* Body */
-.id-card-body {
-    position: relative;
-    z-index: 1;
-    flex: 1;
-    background: rgba(255, 255, 255, 0.95);
-    margin: 0;
-    padding: 35px 50px;
-    display: flex;
-    align-items: flex-start;
-    gap: 40px;
-}
-
-.id-photo-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex-shrink: 0;
-    width: 200px;
-}
-
-.id-photo {
-    width: 200px;
-    height: 200px;
-    border: 5px solid #fff;
-    box-shadow: 0 0 0 1px #ccc;
-    background: #f8f9fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
+    width: 100%;
     margin-bottom: 15px;
+    position: relative;
+    z-index: 1;
 }
 
-.id-photo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+.header-logo {
+    object-fit: contain;
 }
 
-.id-photo-placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    font-size: 70px;
-    color: #ccc;
-    background: #f0f0f0;
+.logo-left {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
 }
 
-.id-validity {
-    font-family: 'Roboto', sans-serif;
-    font-size: 13px;
-    font-weight: 800;
-    color: #000;
-    text-transform: uppercase;
-    text-align: center;
-    margin-top: 5px;
+.logo-middle {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
 }
 
-.id-details {
+.logo-right {
+    width: 70px;
+    height: 60px;
+}
+
+.header-text {
     flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding-top: 10px;
+    text-align: center;
+    padding: 0 10px;
 }
 
-.id-detail-row {
-    display: flex;
-    margin-bottom: 25px;
-    align-items: flex-start;
-}
-
-.id-detail-group {
-    margin-right: 40px;
-}
-
-.id-label {
+.ph-gov {
     font-family: 'Roboto', sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    color: #104020;
-    text-transform: uppercase;
-    margin-bottom: 5px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #1b5e20;
     letter-spacing: 0.5px;
 }
 
-.id-value {
+.region, .province, .city {
     font-family: 'Roboto', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: #000;
+    font-size: 9px;
+    font-weight: 600;
+    color: #555555;
     line-height: 1.2;
 }
 
-.id-value.xl {
-    font-size: 40px;
-    font-weight: 800;
+.brgy {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #1b5e20;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* Resident Name */
+.id-name {
+    font-family: 'Roboto', sans-serif;
+    font-size: 34px;
+    font-weight: 900;
+    color: #111111;
+    margin-top: 20px;
     text-transform: uppercase;
-    letter-spacing: -0.5px;
+    position: relative;
+    z-index: 1;
 }
 
-.qr-box {
-    position: absolute;
-    bottom: 30px;
-    right: 40px;
-    width: 130px;
-    height: 130px;
-    border: 3px solid #333;
-    padding: 3px;
-    background: white;
+/* Address Styling */
+.id-address {
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: #555555;
+    line-height: 1.4;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    z-index: 1;
+    max-width: 480px;
 }
 
-.qr-box img {
+/* Signature Styling */
+.id-signature-container {
+    margin-top: 20px;
+    width: 250px;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+}
+
+.id-signature-text {
+    font-family: 'Alex Brush', cursive;
+    font-size: 36px;
+    color: #000000;
+    line-height: 1;
+    margin-bottom: -3px;
+}
+
+.id-signature-line {
     width: 100%;
-    height: 100%;
+    height: 1.5px;
+    background-color: #222222;
 }
 
-.bg-curve {
+.id-signature-label {
+    font-family: 'Roboto', sans-serif;
+    font-size: 9px;
+    font-weight: 800;
+    color: #555555;
+    letter-spacing: 1px;
+    margin-top: 4px;
+}
+
+/* Bottom Details */
+.id-bottom-section {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.id-no {
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    color: #111111;
+}
+
+.id-barcode {
+    font-family: 'Libre Barcode 39', sans-serif;
+    font-size: 48px;
+    color: #2e7d32;
+    margin: 0;
+    line-height: 0.9;
+}
+
+.id-valid {
+    font-family: 'Roboto', sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: #666666;
+    letter-spacing: 0.5px;
+}
+
+/* White footer strip along bottom */
+.id-card-footer {
     position: absolute;
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 40%;
-    background: linear-gradient(to top, #104020 0%, transparent 100%);
+    height: 45px;
+    background: #ffffff;
+    border-top: 1px solid #eeeeee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    font-weight: 900;
+    color: #222222;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    z-index: 5;
+}
+
+/* Back Card Styles */
+.id-card-back {
+    background: #ffffff;
+    color: #333333;
+    display: flex;
+    flex-direction: row; /* Horizontal layout! Left is info, Right is green wave + chairman signature */
+    position: absolute;
+    transform: rotateY(180deg);
+    font-family: 'Roboto', sans-serif;
+    overflow: hidden;
+    border: 1px solid #dddddd;
+}
+
+/* Watermark background on the left side of the back */
+.back-left-panel {
+    width: 650px;
+    height: 100%;
+    padding: 35px 50px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    z-index: 2;
+}
+
+.back-left-panel::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    height: 400px;
+    background: url('public/img/barangaylogo.png') no-repeat center center;
+    background-size: contain;
     opacity: 0.05;
     z-index: 0;
     pointer-events: none;
 }
 
-/* Back Card Styles */
-.id-card-back {
-    background: white;
-    color: #333;
-    display: flex;
-    flex-direction: column;
-    padding: 50px;
-    border: 10px solid #104020;
+/* Right Panel of Back (Green Diagonal Sweep) */
+.back-right-panel {
+    position: relative;
+    width: 350px;
+    height: 100%;
+    background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 60%, #4caf50 100%);
+    z-index: 1;
+    overflow: hidden;
 }
 
-.id-card-back-header {
-    text-align: center;
-    margin-bottom: 40px;
-    color: #104020;
+/* Curve details on the back right panel */
+.back-right-panel-wave-1 {
+    position: absolute;
+    top: -100px;
+    left: -150px;
+    width: 400px;
+    height: 900px;
+    background: #4caf50;
+    border-radius: 40% 60% 40% 60% / 50% 30% 70% 50%;
+    transform: rotate(20deg);
+    opacity: 0.4;
+    z-index: 1;
 }
 
-.id-card-back-header h4 {
-    font-size: 28px;
-    font-weight: 900;
-    text-transform: uppercase;
-    margin-bottom: 5px;
+.back-right-panel-wave-2 {
+    position: absolute;
+    top: -50px;
+    left: -100px;
+    width: 300px;
+    height: 800px;
+    background: #81c784;
+    border-radius: 50% 40% 60% 50% / 40% 50% 50% 60%;
+    transform: rotate(15deg);
+    opacity: 0.3;
+    z-index: 2;
 }
 
-.id-card-back-body {
-    flex: 1;
+/* White Cutout on the Bottom-Right for Chairman Signature */
+.back-chairman-container {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 340px;
+    height: 190px;
+    background: #ffffff;
+    clip-path: polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 40px;
+    padding-left: 60px; /* Offset for clip path */
+    padding-top: 15px;
+    z-index: 10;
+}
+
+.back-info-section {
+    text-align: left;
+    font-size: 15.5px;
+    line-height: 1.45;
+    color: #333333;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.back-info-row {
+    margin-bottom: 3px;
+}
+
+.back-info-label {
+    font-weight: 700;
+    color: #111111;
+}
+
+.back-info-value {
+    font-weight: 500;
+    color: #333333;
+}
+
+.back-emergency-header {
+    font-weight: 700;
+    color: #555555;
+    margin-top: 10px;
+    font-size: 14.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.back-terms-section {
+    text-align: left;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+.back-terms-title {
+    font-family: 'Roboto', sans-serif;
+    font-size: 15px;
+    font-weight: 900;
+    color: #111111;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.back-terms-desc {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: #444444;
+    font-weight: 500;
+}
+
+.back-footer-section {
+    text-align: left;
+    margin-top: auto; /* Push to bottom of left panel */
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: #555555;
+    font-weight: 600;
+    position: relative;
+    z-index: 2;
+}
+
+.chairman-sig-text {
+    font-family: 'Alex Brush', cursive;
+    font-size: 32px;
+    color: #111111;
+    line-height: 0.9;
+    margin-bottom: 2px;
+}
+
+.chairman-name {
+    font-size: 12px;
+    font-weight: 900;
+    color: #111111;
+    border-top: 1.5px solid #222222;
+    padding-top: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-block;
+    width: 200px;
     text-align: center;
 }
 
-.id-back-terms {
-    font-size: 14px;
-    line-height: 1.6;
-    max-width: 80%;
-    color: #555;
-    font-weight: 500;
+.chairman-title {
+    font-size: 8.5px;
+    font-weight: 800;
+    color: #555555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+    text-align: center;
 }
 
 .flip-hint {
     position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 13px;
-    color: white;
+    bottom: 55px;
+    right: 20px;
+    font-size: 12px;
+    color: #ffffff;
     opacity: 0.8;
-    background: rgba(0,0,0,0.3);
-    padding: 5px 15px;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 12px;
     border-radius: 20px;
     z-index: 10;
 }
@@ -406,95 +632,122 @@ $age = $resident['birthdate'] ? date_diff(date_create($resident['birthdate']), d
 <?php else: ?>
 <div class="container py-5">
     <div class="row justify-content-center animate__animated animate__fadeInUp">
-        <div class="col-lg-12 d-flex justify-content-center">
+        <div class="col-lg-12 d-flex flex-column align-items-center">
+            
+            <!-- Expired / Expiring Soon Alerts & Action Buttons -->
+            <?php if ($is_expired || $is_expiring_soon): ?>
+                <div class="id-action-bar mb-4 text-center w-100" style="max-width: 1000px;">
+                    <?php if ($is_expired): ?>
+                        <div class="alert alert-danger border-0 bg-danger text-white rounded-4 shadow-sm p-4 d-flex align-items-center gap-3 justify-content-center mb-3">
+                            <i class="fas fa-times-circle fa-2x text-white animate__animated animate__bounceIn"></i>
+                            <div class="text-start">
+                                <h6 class="fw-bold mb-1" style="color: #ffffff; margin-bottom: 0;">Your Resident ID Card Has Expired!</h6>
+                                <p class="mb-0 small" style="color: rgba(255,255,255,0.9);">This card expired on <?php echo date('F d, Y', strtotime($req_date . ' +1 year')); ?>. Establishments or officers may no longer accept this as a valid ID.</p>
+                            </div>
+                        </div>
+                        <a href="/requests.php" class="btn btn-danger btn-lg px-5 rounded-pill shadow-sm animate__animated animate__pulse animate__infinite" style="text-decoration: none;">
+                            <i class="fas fa-sync-alt me-2"></i>Renew Resident ID Now
+                        </a>
+                    <?php else: // Expiring soon ?>
+                        <div class="alert alert-warning border-0 bg-warning text-dark rounded-4 shadow-sm p-4 d-flex align-items-center gap-3 justify-content-center mb-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-dark animate__animated animate__shakeX"></i>
+                            <div class="text-start">
+                                <h6 class="fw-bold mb-1" style="color: #212529; margin-bottom: 0;">Your Resident ID Card is Expiring Soon!</h6>
+                                <p class="mb-0 small" style="color: rgba(33,37,41,0.95);">It will expire on <?php echo date('F d, Y', strtotime($req_date . ' +1 year')); ?>. You can request a renewal ahead of time to keep your records updated.</p>
+                            </div>
+                        </div>
+                        <a href="/requests.php" class="btn btn-warning px-5 btn-lg rounded-pill shadow-sm" style="text-decoration: none; color: #212529;">
+                            <i class="fas fa-sync-alt me-2"></i>Renew Resident ID
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+            
             <div class="id-card-container">
                 <div class="id-card-inner" id="idCard">
                     <!-- Front of ID Card -->
                     <div class="id-card-front">
-                        <!-- Header -->
-                        <div class="id-card-header">
-                            <img src="public/img/barangaylogo.png" class="id-card-logo" alt="Barangay Logo">
-                            <div class="id-card-header-text">
-                                <h4>Republic of the Philippines</h4>
-                                <p>Barangay Panungyanan - City of General Trias</p>
-                            </div>
-                            <img src="public/img/gentri.jpg" class="id-card-logo" alt="City Logo">
-                        </div>
-
-                        <!-- Title Bar -->
-                        <div class="id-card-title-bar">
-                            <h2>Barangay Resident's Card</h2>
-                        </div>
-
-                        <!-- Body -->
-                        <div class="id-card-body">
-                            <!-- Photo Section -->
-                            <div class="id-photo-section">
-                                <div class="id-photo">
-                                    <?php 
-                                    $photo_path = null;
-                                    if (!empty($resident['avatar']) && file_exists(__DIR__ . '/' . $resident['avatar'])) {
-                                        $photo_path = $resident['avatar'];
-                                    }
-                                    
-                                    if ($photo_path): ?>
-                                        <img src="/<?php echo htmlspecialchars($photo_path); ?>" alt="Photo">
-                                    <?php else: ?>
-                                        <div class="id-photo-placeholder">
-                                            <?php 
-                                            $initials = strtoupper(substr($resident['first_name'] ?? '', 0, 1) . substr($resident['last_name'] ?? '', 0, 1));
-                                            if (empty($initials)) $initials = 'ID';
-                                            echo $initials;
-                                            ?>
-                                        </div>
-                                    <?php endif; ?>
-                                </div>
-                                <div class="id-validity">VALID UNTIL: DEC 2026</div>
-                            </div>
-
-                            <!-- Details Section -->
-                            <div class="id-details">
-                                <div class="id-detail-row">
-                                    <div class="id-detail-group">
-                                        <div class="id-label">Resident ID No:</div>
-                                        <div class="id-value"><?php echo htmlspecialchars($uid); ?></div>
+                        <!-- Left Panel (Green Waves + Photo) -->
+                        <div class="left-panel">
+                            <div class="left-panel-wave-1"></div>
+                            <div class="left-panel-wave-2"></div>
+                            <div class="left-panel-wave-3"></div>
+                            
+                            <div class="id-photo-container">
+                                <?php 
+                                $photo_path = null;
+                                if (!empty($resident['avatar']) && file_exists(__DIR__ . '/' . $resident['avatar'])) {
+                                    $photo_path = $resident['avatar'];
+                                }
+                                
+                                if ($photo_path): ?>
+                                    <img src="/<?php echo htmlspecialchars($photo_path); ?>" alt="Photo">
+                                <?php else: ?>
+                                    <div class="id-photo-placeholder" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 70px; color: #ccc; background: #f0f0f0; font-family: 'Roboto', sans-serif;">
+                                        <?php 
+                                        $initials = strtoupper(substr($resident['first_name'] ?? '', 0, 1) . substr($resident['last_name'] ?? '', 0, 1));
+                                        if (empty($initials)) $initials = 'ID';
+                                        echo $initials;
+                                        ?>
                                     </div>
-                                    <div class="id-detail-group ms-auto me-5">
-                                        <div class="id-label">Birth Date</div>
-                                        <div class="id-value"><?php echo $resident['birthdate'] ? date('M. j, Y', strtotime($resident['birthdate'])) : 'N/A'; ?></div>
-                                    </div>
-                                </div>
-
-                                <div class="id-detail-row" style="margin-bottom: 5px;">
-                                    <div class="id-detail-group w-100">
-                                        <div class="id-label">Name:</div>
-                                        <div class="id-value xl">
-                                            <?php 
-                                            // Construct name
-                                            $name = ($resident['first_name'] ?? '') . ' ' . ($resident['middle_name'] ? substr($resident['middle_name'],0,1).'. ' : '') . ($resident['last_name'] ?? '');
-                                            echo htmlspecialchars($name);
-                                            ?>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="id-detail-row">
-                                    <div class="id-detail-group">
-                                        <div class="id-label">Address:</div>
-                                        <div class="id-value" style="font-size: 16px; max-width: 450px;">
-                                            <?php echo htmlspecialchars($resident['address'] ?? 'N/A'); ?>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- QR Code -->
-                            <div class="qr-box">
-                                <img src="<?php echo htmlspecialchars($qr_code_url); ?>" alt="QR">
+                                <?php endif; ?>
                             </div>
                         </div>
                         
-                        <div class="bg-curve"></div>
+                        <!-- Right Panel (Info, Signature, Barcode) -->
+                        <div class="right-panel">
+                            <!-- Header (Logos + Text) -->
+                            <div class="id-header-container">
+                                <img src="public/img/barangaylogo.png" class="header-logo logo-left" alt="Barangay Logo">
+                                <div class="header-text">
+                                    <div class="ph-gov">REPUBLIC OF THE PHILIPPINES</div>
+                                    <div class="region">Region IV-A CALABARZON</div>
+                                    <div class="province">Province of Cavite</div>
+                                    <div class="city">CITY OF GENERAL TRIAS</div>
+                                    <div class="brgy">BARANGAY PANUNGYANAN</div>
+                                </div>
+                                <img src="public/img/gentri.jpg" class="header-logo logo-middle" alt="City Logo">
+                                <img src="public/img/bagongpilipinas.jpg" class="header-logo logo-right" alt="Bagong Pilipinas Logo">
+                            </div>
+                            
+                            <!-- Resident Name -->
+                            <div class="id-name">
+                                <?php 
+                                $name = ($resident['first_name'] ?? '') . ' ' . ($resident['middle_name'] ? substr($resident['middle_name'],0,1).'. ' : '') . ($resident['last_name'] ?? '');
+                                echo htmlspecialchars($name);
+                                ?>
+                            </div>
+                            
+                            <!-- Address -->
+                            <div class="id-address">
+                                <?php 
+                                $address_raw = $resident['address'] ?? 'N/A';
+                                echo nl2br(htmlspecialchars(strtoupper($address_raw)));
+                                ?>
+                            </div>
+                            
+                            <!-- Signature Area (Blank for physical signature) -->
+                            <div class="id-signature-container" style="height: 55px; display: flex; flex-direction: column; justify-content: flex-end;">
+                                <div class="id-signature-line"></div>
+                                <div class="id-signature-label">CARDHOLDER'S SIGNATURE</div>
+                            </div>
+                            
+                            <!-- Bottom Details (ID No. + Validity + QR Code) -->
+                            <div class="id-bottom-section" style="width: 100%; display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between;">
+                                <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                                    <div class="id-no">ID. NO. <?php echo htmlspecialchars($uid); ?></div>
+                                    <div class="id-valid" style="margin-top: 5px;">VALID UNTIL: <?php echo strtoupper($valid_until); ?></div>
+                                </div>
+                                <div class="front-qr-wrapper" style="width: 80px; height: 80px; border: 2px solid #2e7d32; padding: 2px; background: #ffffff; border-radius: 6px; position: relative; z-index: 10; margin-bottom: 5px;">
+                                    <img src="<?php echo htmlspecialchars($qr_code_url); ?>" alt="QR" style="width: 100%; height: 100%; object-fit: contain;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer Text along the bottom white border -->
+                        <div class="id-card-footer">
+                            BARANGAY PANUNGYANAN IDENTIFICATION CARD
+                        </div>
                         
                         <div class="flip-hint">
                             <i class="fas fa-hand-pointer me-1"></i> Click to flip
@@ -503,20 +756,50 @@ $age = $resident['birthdate'] ? date_diff(date_create($resident['birthdate']), d
                     
                     <!-- Back of ID Card -->
                     <div class="id-card-back">
-                        <div class="id-card-back-header">
-                            <img src="public/img/barangaylogo.png" style="width: 70px; margin-bottom: 10px;">
-                            <h4>Barangay Panungyanan</h4>
+                        <!-- Left Panel (Watermark + Resident Info + Emergency Contacts + Terms) -->
+                        <div class="back-left-panel">
+                            <!-- Personal Info Section -->
+                            <div class="back-info-section">
+                                <div class="back-info-row">
+                                    <span class="back-info-label">Birth Date:</span> 
+                                    <span class="back-info-value"><?php echo $resident['birthdate'] ? date('F j, Y', strtotime($resident['birthdate'])) : 'June 26, 1992'; ?></span>
+                                </div>
+                                <div class="back-info-row">
+                                    <span class="back-info-label">Birth Place:</span> 
+                                    <span class="back-info-value"><?php echo !empty($resident['birth_place']) ? htmlspecialchars(strtoupper($resident['birth_place'])) : 'MAKATI CITY'; ?></span>
+                                </div>
+                                <div class="back-info-row">
+                                    <span class="back-info-label">Contact No.</span> 
+                                    <span class="back-info-value"><?php echo !empty($resident['phone']) ? htmlspecialchars($resident['phone']) : '09663801837'; ?></span>
+                                </div>
+                            </div>
+                            <!-- Terms & Conditions Section -->
+                            <div class="back-terms-section">
+                                <div class="back-terms-title">THIS CARD IS NON TRANSFERRABLE</div>
+                                <div class="back-terms-desc">
+                                    Holder is a bonafide constituent of this Barangay<br>
+                                    and is entitled to all privileges and services holder<br>
+                                    may require
+                                </div>
+                            </div>
+                            
+                            <!-- Footer Return Instructions Section -->
+                            <div class="back-footer-section">
+                                If found, please return to the Barangay Secretariate<br>
+                                PANUNGYANAN Multi-Purpose Hall.
+                            </div>
                         </div>
                         
-                        <div class="id-card-back-body">
-                            <p class="id-back-terms">
-                                This card is non-transferable and must be presented upon request.
-                                If found, please return to the Barangay Hall of Panungyanan, General Trias, Cavite.
-                            </p>
+                        <!-- Right Panel (Abstract Green Sweep + Chairman Signature Block) -->
+                        <div class="back-right-panel">
+                            <div class="back-right-panel-wave-1"></div>
+                            <div class="back-right-panel-wave-2"></div>
                             
-                            <div style="margin-top: 20px;">
-                                <div class="id-label" style="text-align: center;">Emergency Contact</div>
-                                <div class="id-value">046-123-4567</div>
+                            <!-- White Cutout for Chairman Signature -->
+                            <div class="back-chairman-container">
+                                <div style="height: 50px;"></div> <!-- Blank space for physical signature -->
+                                <div class="chairman-name">HON. RENATO S. ALMANZOR</div>
+                                <div class="chairman-title">BARANGAY CHAIRMAN</div>
                             </div>
                         </div>
                     </div>

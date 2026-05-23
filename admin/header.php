@@ -202,6 +202,7 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 			padding: 1.5rem;
 			margin-bottom: 1rem;
 			box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+			height: 100%;
 		}
 
 		/* Make dashboard stats cards clickable */
@@ -209,6 +210,7 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 			display: block;
 			text-decoration: none;
 			color: inherit;
+			height: 100%;
 		}
 
 		.admin-stats-link .admin-stats-card {

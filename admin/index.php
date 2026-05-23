@@ -177,7 +177,7 @@ $overview_pie_data = [
 							</div>
 							<!-- Solo Parent -->
 							<div class="col-sm-4">
-								<a href="reports.php?type=solo_parents" class="admin-stats-link text-decoration-none">
+								<a href="resident_records.php?filter=solo_parent" class="admin-stats-link text-decoration-none">
 									<div class="admin-stats-card warning mb-0"
 										style="background: linear-gradient(135deg, #a855f7, #7c3aed);">
 										<div class="d-flex align-items-center p-3 text-white">
@@ -194,9 +194,9 @@ $overview_pie_data = [
 							</div>
 							<!-- PWD -->
 							<div class="col-sm-4">
-								<a href="reports.php?type=pwds" class="admin-stats-link text-decoration-none">
+								<a href="resident_records.php?filter=pwd" class="admin-stats-link text-decoration-none">
 									<div class="admin-stats-card info mb-0"
-										style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+										style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
 										<div class="d-flex align-items-center p-3 text-white">
 											<div class="stats-icon me-3 fs-3 opacity-75"><i
 													class="fas fa-wheelchair"></i></div>
@@ -211,7 +211,7 @@ $overview_pie_data = [
 							</div>
 							<!-- Senior Citizen -->
 							<div class="col-sm-6">
-								<a href="reports.php?type=seniors" class="admin-stats-link text-decoration-none">
+								<a href="resident_records.php?filter=senior" class="admin-stats-link text-decoration-none">
 									<div class="admin-stats-card mb-0"
 										style="background: linear-gradient(135deg, #f59e0b, #d97706);">
 										<div class="d-flex align-items-center p-3 text-white">
@@ -230,7 +230,7 @@ $overview_pie_data = [
 							<div class="col-sm-6">
 								<a href="id_verifications.php" class="admin-stats-link text-decoration-none">
 									<div class="admin-stats-card mb-0"
-										style="background: linear-gradient(135deg, #6366f1, #4f46e5);">
+										style="background: linear-gradient(135deg, #f43f5e, #be123c);">
 										<div class="d-flex align-items-center p-3 text-white">
 											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-id-badge"></i>
 											</div>
@@ -275,58 +275,66 @@ $overview_pie_data = [
 						<div class="row g-3">
 							<!-- Pending -->
 							<div class="col-sm-6">
-								<div class="admin-stats-card warning mb-0"
-									style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-									<div class="d-flex align-items-center p-3 text-white">
-										<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-clock"></i></div>
-										<div>
-											<div class="stats-number fs-4 fw-bold"><?php echo $total_pending; ?></div>
-											<div class="stats-label small opacity-75">Pending</div>
+								<a href="requests_pending.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card warning mb-0"
+										style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-clock"></i></div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $total_pending; ?></div>
+												<div class="stats-label small opacity-75">Pending</div>
+											</div>
 										</div>
 									</div>
-								</div>
+								</a>
 							</div>
 							<!-- Ready to Pickup -->
 							<div class="col-sm-6">
-								<div class="admin-stats-card success mb-0"
-									style="background: linear-gradient(135deg, #10b981, #059669);">
-									<div class="d-flex align-items-center p-3 text-white">
-										<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-check-circle"></i>
-										</div>
-										<div>
-											<div class="stats-number fs-4 fw-bold"><?php echo $total_approved; ?></div>
-											<div class="stats-label small opacity-75">Ready to Pickup</div>
+								<a href="requests_approved.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card success mb-0"
+										style="background: linear-gradient(135deg, #10b981, #059669);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-check-circle"></i>
+											</div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $total_approved; ?></div>
+												<div class="stats-label small opacity-75">Ready to Pickup</div>
+											</div>
 										</div>
 									</div>
-								</div>
+								</a>
 							</div>
 							<!-- Released -->
 							<div class="col-sm-6">
-								<div class="admin-stats-card info mb-0"
-									style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
-									<div class="d-flex align-items-center p-3 text-white">
-										<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-hand-holding"></i>
-										</div>
-										<div>
-											<div class="stats-number fs-4 fw-bold"><?php echo $total_released; ?></div>
-											<div class="stats-label small opacity-75">Released</div>
+								<a href="requests_released.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card info mb-0"
+										style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-hand-holding"></i>
+											</div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $total_released; ?></div>
+												<div class="stats-label small opacity-75">Released</div>
+											</div>
 										</div>
 									</div>
-								</div>
+								</a>
 							</div>
 							<!-- Rejected -->
 							<div class="col-sm-6">
-								<div class="admin-stats-card danger mb-0"
-									style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-									<div class="d-flex align-items-center p-3 text-white">
-										<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-times-circle"></i>
-										</div>
-										<div>
-											<div class="stats-number fs-4 fw-bold"><?php echo $total_rejected; ?></div>
-											<div class="stats-label small opacity-75">Rejected</div>
+								<a href="requests_rejected.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card danger mb-0"
+										style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-times-circle"></i>
+											</div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $total_rejected; ?></div>
+												<div class="stats-label small opacity-75">Rejected</div>
+											</div>
 										</div>
 									</div>
-								</div>
+								</a>
 							</div>
 						</div>
 					</div>
@@ -356,48 +364,71 @@ $overview_pie_data = [
 					<div class="col-xl-7 col-lg-6">
 						<div class="row g-3">
 							<!-- Submitted -->
-							<div class="col-sm-4">
-								<div class="admin-stats-card danger mb-0"
-									style="background: linear-gradient(135deg, #ef4444, #dc2626);">
-									<div class="d-flex align-items-center p-3 text-white">
-										<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-bullhorn"></i>
-										</div>
-										<div>
-											<div class="stats-number fs-4 fw-bold"><?php echo $incidents_submitted; ?>
+							<div class="col-sm-6">
+								<a href="incidents_pending.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card warning mb-0"
+										style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-bullhorn"></i>
 											</div>
-											<div class="stats-label small opacity-75">Pending</div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $incidents_submitted; ?>
+												</div>
+												<div class="stats-label small opacity-75">Pending</div>
+											</div>
 										</div>
 									</div>
-								</div>
+								</a>
 							</div>
 							<!-- In Review -->
-							<div class="col-sm-4">
-								<div class="admin-stats-card info mb-0"
-									style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
-									<div class="d-flex align-items-center p-3 text-white">
-										<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-search"></i></div>
-										<div>
-											<div class="stats-number fs-4 fw-bold"><?php echo $incidents_review; ?>
+							<div class="col-sm-6">
+								<a href="incidents_review.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card info mb-0"
+										style="background: linear-gradient(135deg, #0ea5e9, #0284c7);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-search"></i></div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $incidents_review; ?>
+												</div>
+												<div class="stats-label small opacity-75">In Review</div>
 											</div>
-											<div class="stats-label small opacity-75">In Review</div>
 										</div>
 									</div>
-								</div>
+								</a>
 							</div>
 							<!-- Resolved -->
-							<div class="col-sm-4">
-								<div class="admin-stats-card success mb-0"
-									style="background: linear-gradient(135deg, #10b981, #059669);">
-									<div class="d-flex align-items-center p-3 text-white">
-										<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-check-double"></i>
-										</div>
-										<div>
-											<div class="stats-number fs-4 fw-bold"><?php echo $incidents_resolved; ?>
+							<div class="col-sm-6">
+								<a href="incidents_resolved.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card success mb-0"
+										style="background: linear-gradient(135deg, #10b981, #059669);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-check-double"></i>
 											</div>
-											<div class="stats-label small opacity-75">Resolved</div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $incidents_resolved; ?>
+												</div>
+												<div class="stats-label small opacity-75">Resolved</div>
+											</div>
 										</div>
 									</div>
-								</div>
+								</a>
+							</div>
+							<!-- Rejected -->
+							<div class="col-sm-6">
+								<a href="incidents_rejected.php" class="admin-stats-link text-decoration-none">
+									<div class="admin-stats-card danger mb-0"
+										style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+										<div class="d-flex align-items-center p-3 text-white">
+											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-times-circle"></i>
+											</div>
+											<div>
+												<div class="stats-number fs-4 fw-bold"><?php echo $incidents_rejected; ?>
+												</div>
+												<div class="stats-label small opacity-75">Rejected</div>
+											</div>
+										</div>
+									</div>
+								</a>
 							</div>
 						</div>
 					</div>
@@ -418,7 +449,7 @@ $overview_pie_data = [
 				labels: <?php echo json_encode($overview_pie_labels); ?>,
 				datasets: [{
 					data: <?php echo json_encode($overview_pie_data); ?>,
-					backgroundColor: ['#10b981', '#a855f7', '#3b82f6', '#f59e0b', '#6366f1']
+					backgroundColor: ['#10b981', '#a855f7', '#06b6d4', '#f59e0b', '#f43f5e']
 				}]
 			},
 			options: {
@@ -452,14 +483,14 @@ $overview_pie_data = [
 
 		// ── Incidents Report Pie Chart ──────────────────────────────────
 		const incCtx = document.getElementById('incidentsPieChart').getContext('2d');
-		const incEmpty = <?php echo ($incidents_submitted + $incidents_review + $incidents_resolved) == 0 ? 'true' : 'false'; ?>;
+		const incEmpty = <?php echo ($incidents_submitted + $incidents_review + $incidents_resolved + $incidents_rejected) == 0 ? 'true' : 'false'; ?>;
 		new Chart(incCtx, {
 			type: 'pie',
 			data: {
-				labels: incEmpty ? ['No Incidents'] : ['Pending', 'In Review', 'Resolved', 'Rejected', 'Cancelled'],
+				labels: incEmpty ? ['No Incidents'] : ['Pending', 'In Review', 'Resolved', 'Rejected'],
 				datasets: [{
-					data: incEmpty ? [1] : [<?php echo $incidents_submitted; ?>, <?php echo $incidents_review; ?>, <?php echo $incidents_resolved; ?>, <?php echo $incidents_rejected; ?>, <?php echo $incidents_canceled; ?>],
-					backgroundColor: incEmpty ? ['#e5e7eb'] : ['#ef4444', '#0ea5e9', '#10b981', '#6b7280', '#9ca3af'],
+					data: incEmpty ? [1] : [<?php echo $incidents_submitted; ?>, <?php echo $incidents_review; ?>, <?php echo $incidents_resolved; ?>, <?php echo $incidents_rejected; ?>],
+					backgroundColor: incEmpty ? ['#e5e7eb'] : ['#f59e0b', '#0ea5e9', '#10b981', '#ef4444'],
 					borderWidth: 2,
 					borderColor: '#ffffff'
 				}]

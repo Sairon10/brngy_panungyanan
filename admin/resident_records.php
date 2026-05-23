@@ -384,7 +384,10 @@ $query_primary = '
         res.occupation,
         res.educational_attainment,
         res.classification,
-        res.verification_status
+        res.verification_status,
+        res.is_senior,
+        res.is_pwd,
+        res.is_solo_parent
     FROM users u 
     LEFT JOIN residents res ON res.user_id = u.id 
     WHERE u.role = "resident" 
@@ -436,6 +439,13 @@ if ($user_owners) {
                     $row['address'] = $rr['address'];
                 if (empty($row['phone']))
                     $row['phone'] = $rr['phone'];
+
+                if (empty($row['is_senior']))
+                    $row['is_senior'] = $rr['is_senior'];
+                if (empty($row['is_pwd']))
+                    $row['is_pwd'] = $rr['is_pwd'];
+                if (empty($row['is_solo_parent']))
+                    $row['is_solo_parent'] = $rr['is_solo_parent'];
                 break;
             }
         }
@@ -463,7 +473,10 @@ if ($user_owners) {
                 'created_by_name' => $row['full_name'] ?? 'N/A',
                 'user_id' => $u['user_id'],
                 'created_at' => $fm['created_at'] ?? ($row['created_at'] ?? date('Y-m-d H:i:s')),
-                'verification_status' => 'verified'
+                'verification_status' => 'verified',
+                'is_senior' => $fm['is_senior'],
+                'is_pwd' => $fm['is_pwd'],
+                'is_solo_parent' => $fm['is_solo_parent']
             ];
         }
     }
@@ -486,6 +499,17 @@ if ($search !== '') {
         return strpos(strtolower($r['full_name'] ?? ''), $s) !== false ||
             strpos(strtolower($r['email'] ?? ''), $s) !== false ||
             strpos(strtolower($r['address'] ?? ''), $s) !== false;
+    });
+}
+
+// Category Quick Filter
+$filter = isset($_GET['filter']) ? trim($_GET['filter']) : 'all';
+if ($filter !== 'all') {
+    $unified_records = array_filter($unified_records, function ($r) use ($filter) {
+        if ($filter === 'senior') return !empty($r['is_senior']);
+        if ($filter === 'pwd') return !empty($r['is_pwd']);
+        if ($filter === 'solo_parent') return !empty($r['is_solo_parent']);
+        return true;
     });
 }
 
@@ -529,6 +553,7 @@ $display_records = array_slice($unified_records, $offset, $limit);
             <p class="text-muted mb-0 small">Unified view of all residents and family members</p>
         </div>
         <form method="GET" class="d-inline-block" style="max-width: 350px;">
+            <input type="hidden" name="filter" value="<?php echo htmlspecialchars($filter); ?>">
             <div class="input-group shadow-sm">
                 <input type="text" name="search" class="form-control border-0" placeholder="Search name or address..."
                     value="<?php echo htmlspecialchars($search); ?>" style="background: #f8f9fa;">
@@ -536,6 +561,31 @@ $display_records = array_slice($unified_records, $offset, $limit);
                         class="fas fa-search"></i></button>
             </div>
         </form>
+    </div>
+
+    <!-- Quick Category Filters -->
+    <div class="px-4 py-2.5 border-bottom d-flex align-items-center flex-wrap gap-2" style="background-color: #fafbfc;">
+        <span class="text-muted small fw-semibold me-2"><i class="fas fa-filter me-1" style="color: #14b8a6;"></i>Quick Filter:</span>
+        <a href="?filter=all&search=<?php echo urlencode($search); ?>" 
+           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'all' ? 'text-white border-0 shadow-sm' : 'bg-white text-secondary border border-light-subtle'; ?>" 
+           style="<?php echo $filter === 'all' ? 'background-color: #14b8a6 !important; box-shadow: 0 2px 6px rgba(20, 184, 166, 0.15);' : ''; ?> font-size: 0.8rem; transition: all 0.2s;">
+            All
+        </a>
+        <a href="?filter=senior&search=<?php echo urlencode($search); ?>" 
+           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'senior' ? 'bg-warning text-dark border-warning shadow-sm fw-bold' : 'bg-white text-secondary border border-light-subtle'; ?>" 
+           style="font-size: 0.8rem; transition: all 0.2s;">
+            👴 Senior Citizen
+        </a>
+        <a href="?filter=pwd&search=<?php echo urlencode($search); ?>" 
+           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'pwd' ? 'bg-info text-dark border-info shadow-sm fw-bold' : 'bg-white text-secondary border border-light-subtle'; ?>" 
+           style="font-size: 0.8rem; transition: all 0.2s;">
+            ♿ PWD
+        </a>
+        <a href="?filter=solo_parent&search=<?php echo urlencode($search); ?>" 
+           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'solo_parent' ? 'bg-secondary text-white border-secondary shadow-sm fw-bold' : 'bg-white text-secondary border border-light-subtle'; ?>" 
+           style="font-size: 0.8rem; transition: all 0.2s;">
+            👪 Solo Parent
+        </a>
     </div>
 
     <div class="table-responsive">
@@ -587,7 +637,18 @@ $display_records = array_slice($unified_records, $offset, $limit);
                         </td>
                         <td class="text-muted small fw-bold"><?php echo $counter++; ?></td>
                         <td>
-                            <div class="fw-bold text-dark"><?php echo htmlspecialchars($row['full_name']); ?></div>
+                            <div class="d-flex align-items-center flex-wrap gap-1">
+                                <span class="fw-bold text-dark me-1"><?php echo htmlspecialchars($row['full_name']); ?></span>
+                                <?php if (!empty($row['is_senior'])): ?>
+                                    <a href="?filter=senior" class="badge bg-warning text-dark border border-warning text-decoration-none" style="font-size: 0.65rem; padding: 2px 6px;">SENIOR</a>
+                                <?php endif; ?>
+                                <?php if (!empty($row['is_pwd'])): ?>
+                                    <a href="?filter=pwd" class="badge bg-info text-dark border border-info text-decoration-none" style="font-size: 0.65rem; padding: 2px 6px;">PWD</a>
+                                <?php endif; ?>
+                                <?php if (!empty($row['is_solo_parent'])): ?>
+                                    <a href="?filter=solo_parent" class="badge bg-secondary text-white border border-secondary text-decoration-none" style="font-size: 0.65rem; padding: 2px 6px;">SOLO PARENT</a>
+                                <?php endif; ?>
+                            </div>
                         </td>
                         <td>
                             <?php if ($row['resident_type'] === 'OWNER'): ?>
@@ -659,17 +720,17 @@ $display_records = array_slice($unified_records, $offset, $limit);
                 <ul class="pagination pagination-sm mb-0">
                     <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
                         <a class="page-link"
-                            href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>">Previous</a>
+                            href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>">Previous</a>
                     </li>
                     <?php for ($i = 1; $i <= $total_pages; $i++): ?>
                         <li class="page-item <?php echo $i == $current_page ? 'active' : ''; ?>">
                             <a class="page-link"
-                                href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>"><?php echo $i; ?></a>
+                                href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>"><?php echo $i; ?></a>
                         </li>
                     <?php endfor; ?>
                     <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
                         <a class="page-link"
-                            href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search); ?>">Next</a>
+                            href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>">Next</a>
                     </li>
                 </ul>
             </nav>
