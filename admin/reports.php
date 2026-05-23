@@ -298,6 +298,8 @@ require_once __DIR__ . '/header.php';
                 <div class="d-flex gap-2 align-items-center ms-auto">
                     <button class="btn btn-success btn-sm" onclick="printReport()"><i
                             class="fas fa-print me-1"></i>Print</button>
+                    <button class="btn btn-outline-success btn-sm" id="btnExportExcel" onclick="exportToExcel()"><i
+                            class="fas fa-file-excel me-1"></i>Export Excel</button>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
             </div>
@@ -319,6 +321,17 @@ require_once __DIR__ . '/header.php';
         document.getElementById('reportModalTitle').innerHTML = '<i class="fas fa-list me-2"></i>' + label;
         document.getElementById('reportModalPeriod').textContent =
             'Period: ' + formatDate(START_DATE) + ' to ' + formatDate(END_DATE);
+        
+        // Hide Excel export button for RBI Form Reports (type 'households' or 'summary')
+        const excelBtn = document.getElementById('btnExportExcel');
+        if (excelBtn) {
+            if (type === 'households' || type === 'summary') {
+                excelBtn.style.display = 'none';
+            } else {
+                excelBtn.style.display = 'inline-block';
+            }
+        }
+
         document.getElementById('reportModalBody').innerHTML =
             '<div class="text-center py-5"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">Loading...</div></div>';
         if (!window.reportModalObj) {
@@ -342,6 +355,98 @@ require_once __DIR__ . '/header.php';
     function formatDate(d) {
         const dt = new Date(d + 'T00:00:00');
         return dt.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function exportToExcel() {
+        const type = window.currentReportType;
+        const data = window.currentReportData;
+        if (!data || data.length === 0) {
+            Swal.fire('No data', 'There is no data to export.', 'warning');
+            return;
+        }
+
+        let csvContent = "";
+        let filename = type + "_report_" + new Date().toISOString().slice(0, 10) + ".csv";
+
+        // Helper to escape CSV values (wrap in quotes, escape double quotes)
+        const csvEsc = (val) => {
+            if (val === null || val === undefined) return '""';
+            let str = String(val).trim();
+            str = str.replace(/"/g, '""'); // escape double quotes
+            return `"${str}"`;
+        };
+
+        if (type === 'total_residents' || type === 'male' || type === 'female') {
+            csvContent += "Number,Full Name,Type,Birthdate,Sex,Civil Status,Address,Phone\n";
+            data.forEach((r, i) => {
+                const isFM = r.source === 'Family Member' && r.owner_name;
+                const typeText = isFM ? "Family Member" : "Owner";
+                csvContent += `${i + 1},${csvEsc(r.full_name)},${csvEsc(typeText)},${csvEsc(r.birthdate)},${csvEsc(r.sex)},${csvEsc(r.civil_status)},${csvEsc(r.address)},${csvEsc(r.phone)}\n`;
+            });
+        } else if (type === 'seniors' || type === 'pwds') {
+            csvContent += "Number,Full Name,Type,Birthdate,Sex,Address\n";
+            data.forEach((r, i) => {
+                const isFM = r.source === 'Family Member' && r.owner_name;
+                const typeText = isFM ? "Family Member" : "Owner";
+                csvContent += `${i + 1},${csvEsc(r.full_name)},${csvEsc(typeText)},${csvEsc(r.birthdate)},${csvEsc(r.sex)},${csvEsc(r.address)}\n`;
+            });
+        } else if (type === 'solo_parents') {
+            csvContent += "Number,Full Name,Type,Birthdate,Sex,Address,Phone\n";
+            data.forEach((r, i) => {
+                const isFM = r.source === 'Family Member' && r.owner_name;
+                const typeText = isFM ? "Family Member" : "Owner";
+                csvContent += `${i + 1},${csvEsc(r.full_name)},${csvEsc(typeText)},${csvEsc(r.birthdate)},${csvEsc(r.sex)},${csvEsc(r.address)},${csvEsc(r.phone)}\n`;
+            });
+        } else if (type === 'doc_requests') {
+            csvContent += "Number,Date,Resident Name,Requestor Head,Document Type,Status\n";
+            data.forEach((r, i) => {
+                csvContent += `${i + 1},${csvEsc(r.created_at)},${csvEsc(r.display_name)},${csvEsc(r.requester_name || '')},${csvEsc(r.doc_type)},${csvEsc(r.status)}\n`;
+            });
+        } else if (type === 'households') {
+            const isIndividual = document.getElementById('reportModalTitle').innerText.includes('Individual');
+            if (isIndividual) {
+                csvContent += "Number,Full Name,Role,Birthdate,Sex,Address\n";
+                data.forEach((r, i) => {
+                    csvContent += `${i + 1},${csvEsc(r.full_name)},${csvEsc(r.role)},${csvEsc(r.birthdate)},${csvEsc(r.sex)},${csvEsc(r.address)}\n`;
+                });
+            } else {
+                csvContent += "Number,Full Name,Role,Birthdate,Sex,Address\n";
+                const heads = data.filter(r => r.role === 'Head');
+                heads.forEach((r, i) => {
+                    csvContent += `${i + 1},${csvEsc(r.full_name)},${csvEsc(r.role)},${csvEsc(r.birthdate)},${csvEsc(r.sex)},${csvEsc(r.address)}\n`;
+                });
+            }
+        } else if (type === 'summary') {
+            csvContent += "INDICATORS,MALE,FEMALE,TOTAL\n";
+            csvContent += "Population by Age Bracket,,,\n";
+            Object.keys(data.age_brackets).forEach(b => {
+                const ageData = data.age_brackets[b];
+                csvContent += `${csvEsc(b + ' years old')},${ageData.M},${ageData.F},${ageData.M + ageData.F}\n`;
+            });
+            csvContent += "\nPopulation by Sector,,,\n";
+            Object.keys(data.sectors).forEach(s => {
+                const sectData = data.sectors[s];
+                csvContent += `${csvEsc(s)},${sectData.M},${sectData.F},${sectData.M + sectData.F}\n`;
+            });
+        } else if (type === 'incidents') {
+            csvContent += "Number,Date,Resident Name,Description,Status\n";
+            data.forEach((r, i) => {
+                csvContent += `${i + 1},${csvEsc(r.created_at)},${csvEsc(r.full_name)},${csvEsc(r.description)},${csvEsc(r.status)}\n`;
+            });
+        }
+
+        // Create Blob and trigger download
+        const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     }
 
     function buildTable(type, label, data) {
