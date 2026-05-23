@@ -141,7 +141,7 @@ $payments_display = $filter_val !== ''
 
 // Pagination
 $page       = max(1, (int) ($_GET['page'] ?? 1));
-$limit      = 12;
+$limit      = 10;
 $total      = count($payments_display);
 $total_pages = max(1, (int) ceil($total / $limit));
 if ($page > $total_pages) $page = $total_pages;

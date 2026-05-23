@@ -226,7 +226,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($requires_special_handling) {
                 // Handle special document types (like Barangay Clearance)
-                $validity_days = $requires_validity ? (int) ($_POST['validity_days'] ?? 30) : 30;
+                $db_months = isset($doc_type_info['validity_months']) ? (int)$doc_type_info['validity_months'] : 1;
+                $validity_days = $requires_validity ? ($db_months * 30) : 30;
 
                 // Generate unique clearance number
                 $year = date('Y');
