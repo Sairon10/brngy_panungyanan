@@ -188,6 +188,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$wi_purok = trim($_POST['wi_purok'] ?? '');
 			$wi_doc_type = trim($_POST['wi_doc_type'] ?? '');
 			$wi_purpose = trim($_POST['wi_purpose'] ?? '');
+			
+			$wi_payment_method = trim($_POST['wi_payment_method'] ?? 'Cash');
+			$wi_payment_ref = trim($_POST['wi_payment_ref'] ?? '');
 
 			if ($wi_doc_type && ($wi_resident_id || $wi_requestor_name)) {
 				$wi_user_id = $admin_uid; // default to admin
@@ -209,13 +212,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$final_purpose = $tags . ' ' . $wi_purpose;
 				}
 
+				$db_ref = ($wi_payment_method === 'GCash') ? $wi_payment_ref : null;
+				$payment_receipt_path = null;
+				if ($wi_payment_method === 'GCash' && isset($_FILES['payment_receipt']) && $_FILES['payment_receipt']['error'] === UPLOAD_ERR_OK) {
+					$file = $_FILES['payment_receipt'];
+					$allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+					if (in_array($file['type'], $allowedTypes)) {
+						$uploadDir = __DIR__ . '/../uploads/receipts/';
+						if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+						$ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+						$filename = 'receipt_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+						if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+							$payment_receipt_path = 'uploads/receipts/' . $filename;
+						}
+					}
+				}
+
 				if ($wi_doc_type === 'Barangay Clearance') {
 					$cn = 'BC-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6));
-					$pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, status, created_at) VALUES (?, ?, ?, "pending", NOW())')
-						->execute([$wi_user_id, $cn, $final_purpose]);
+					$pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, status, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, "pending", ?, ?, NOW())')
+						->execute([$wi_user_id, $cn, $final_purpose, $db_ref, $payment_receipt_path]);
 				} else {
-					$pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, status, created_at) VALUES (?, ?, ?, "pending", NOW())')
-						->execute([$wi_user_id, $wi_doc_type, $final_purpose]);
+					$pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, status, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, "pending", ?, ?, NOW())')
+						->execute([$wi_user_id, $wi_doc_type, $final_purpose, $db_ref, $payment_receipt_path]);
 				}
 				$_SESSION['action_success'] = [
 					'title' => 'Walk-in Request Added',
@@ -393,7 +412,7 @@ $wi_residents = $pdo->query("
     ORDER BY u.full_name ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
-$wi_doc_types = $pdo->query('SELECT name FROM document_types ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
+$wi_doc_types = $pdo->query('SELECT name, price FROM document_types ORDER BY name')->fetchAll(PDO::FETCH_ASSOC);
 
 // Define available purposes for Indigency certificates
 $indigency_purposes_list = [
@@ -1060,79 +1079,188 @@ require_once __DIR__ . '/header.php';
 				<button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
 			</div>
 			<div class="modal-body px-4 py-3">
-				<form method="post" id="walkinForm" action="">
+				<form method="post" id="walkinForm" action="" enctype="multipart/form-data">
 					<?php echo csrf_field(); ?>
 					<input type="hidden" name="walkin_action" value="1">
 
-					<!-- Resident Search -->
-					<div class="mb-3">
-						<label class="form-label fw-semibold small text-uppercase text-secondary">Requestor Name</label>
-						<input type="text" id="wiResidentSearch" name="wi_requestor_name" class="form-control"
-							placeholder="Search resident or enter full name..." autocomplete="off">
-						<div id="wiResidentDropdown" class="list-group mt-1 shadow-sm"
-							style="display:none; max-height:180px; overflow-y:auto; position:absolute; z-index:9999; width:calc(100% - 3rem);">
-						</div>
-						<input type="hidden" name="wi_resident_id" id="wiResidentId">
-						<div id="wiResidentSelected" class="mt-2 small text-success fw-semibold" style="display:none;">
-						</div>
-					</div>
-
-					<!-- Walk-in Extra Fields (For Unregistered) -->
-					<div class="mb-3" id="wiExtraFields">
-						<div class="row">
-							<div class="col-md-6">
-								<label class="form-label fw-semibold small text-uppercase text-secondary">Civil Status</label>
-								<select name="wi_civil_status" id="wiCivilStatus" class="form-select">
-									<option value="">-- Select --</option>
-									<option value="Single">Single</option>
-									<option value="Married">Married</option>
-									<option value="Widow/er">Widow/er</option>
-								</select>
+					<div id="wi_form_step_1">
+						<!-- Resident Search -->
+						<div class="mb-3">
+							<label class="form-label fw-semibold small text-uppercase text-secondary">Requestor Name</label>
+							<input type="text" id="wiResidentSearch" name="wi_requestor_name" class="form-control"
+								placeholder="Search resident or enter full name..." autocomplete="off">
+							<div id="wiResidentDropdown" class="list-group mt-1 shadow-sm"
+								style="display:none; max-height:180px; overflow-y:auto; position:absolute; z-index:9999; width:calc(100% - 3rem);">
 							</div>
-							<div class="col-md-6">
-								<label class="form-label fw-semibold small text-uppercase text-secondary">Purok</label>
-								<select name="wi_purok" id="wiPurok" class="form-select">
-									<option value="">-- Select --</option>
-									<option value="1">1</option>
-									<option value="2">2</option>
-									<option value="3">3</option>
-									<option value="4">4</option>
-									<option value="5">5</option>
-									<option value="6">6</option>
-									<option value="7">7</option>
-								</select>
+							<input type="hidden" name="wi_resident_id" id="wiResidentId">
+							<div id="wiResidentSelected" class="mt-2 small text-success fw-semibold" style="display:none;">
 							</div>
 						</div>
+
+						<!-- Walk-in Extra Fields (For Unregistered) -->
+						<div class="mb-3" id="wiExtraFields">
+							<div class="row">
+								<div class="col-md-6">
+									<label class="form-label fw-semibold small text-uppercase text-secondary">Civil Status</label>
+									<select name="wi_civil_status" id="wiCivilStatus" class="form-select">
+										<option value="">-- Select --</option>
+										<option value="Single">Single</option>
+										<option value="Married">Married</option>
+										<option value="Widow/er">Widow/er</option>
+									</select>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label fw-semibold small text-uppercase text-secondary">Purok</label>
+									<select name="wi_purok" id="wiPurok" class="form-select">
+										<option value="">-- Select --</option>
+										<option value="1">1</option>
+										<option value="2">2</option>
+										<option value="3">3</option>
+										<option value="4">4</option>
+										<option value="5">5</option>
+										<option value="6">6</option>
+										<option value="7">7</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+						<!-- Document Type -->
+						<div class="mb-3">
+							<label class="form-label fw-semibold small text-uppercase text-secondary">Document Type</label>
+							<select name="wi_doc_type" id="wiDocType" class="form-select" onchange="wiUpdatePurpose()">
+								<option value="">-- Select document --</option>
+								<?php foreach ($wi_doc_types as $dt): ?>
+									<option value="<?php echo htmlspecialchars($dt['name']); ?>" data-price="<?php echo htmlspecialchars($dt['price']); ?>"><?php echo htmlspecialchars($dt['name']); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+						</div>
+
+						<div class="mb-3" id="wi_document_price_container" style="display: none;">
+							<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Price</label>
+							<div class="p-3 bg-light rounded text-success fs-5 fw-bold border" id="wi_document_price_display">
+								Free
+							</div>
+						</div>
+
+						<!-- Purpose -->
+						<div class="mb-3" id="wiPurposeWrap">
+							<label class="form-label fw-semibold small text-uppercase text-secondary">Purpose</label>
+							<select name="wi_purpose" id="wiPurposeSelect" class="form-select" style="display:none;">
+								<option value="">-- Select purpose --</option>
+							</select>
+							<input type="text" name="wi_purpose_text" id="wiPurposeText" class="form-control"
+								placeholder="State purpose...">
+						</div>
+						
+						<!-- Payment Method -->
+						<div class="mb-3">
+							<label class="form-label fw-semibold small text-uppercase text-secondary">Payment Method</label>
+							<select name="wi_payment_method" id="wiPaymentMethod" class="form-select" onchange="updateWalkinNav()">
+								<option value="Cash">Cash</option>
+								<option value="GCash">GCash / E-Wallet</option>
+							</select>
+						</div>
+
+						<div class="d-flex gap-2 justify-content-end pt-2">
+							<button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+							<button type="button" class="btn btn-primary rounded-pill px-4" id="btn_wi_next" style="display:none;">Next <i class="fas fa-arrow-right ms-2"></i></button>
+							<button type="submit" class="btn btn-primary rounded-pill px-4" id="btn_wi_submit_step1"><i class="fas fa-plus me-1"></i> Add Request</button>
+						</div>
 					</div>
 
-					<!-- Document Type -->
-					<div class="mb-3">
-						<label class="form-label fw-semibold small text-uppercase text-secondary">Document Type</label>
-						<select name="wi_doc_type" id="wiDocType" class="form-select" onchange="wiUpdatePurpose()">
-							<option value="">-- Select document --</option>
-							<?php foreach ($wi_doc_types as $dt): ?>
-								<option value="<?php echo htmlspecialchars($dt); ?>"><?php echo htmlspecialchars($dt); ?>
-								</option>
-							<?php endforeach; ?>
-						</select>
-					</div>
+					<div id="wi_form_step_2" style="display:none;">
+						<div class="fw-bold text-dark opacity-75 mb-1 fs-5">E-Wallet Payment</div>
+						<p class="text-secondary small mb-3">Scan QR code and upload receipt to complete payment</p>
+						
+						<div class="row g-3 mb-3">
+							<!-- Amount Due Box -->
+							<div class="col-6">
+								<div class="p-3 bg-light rounded-3 border text-center h-100 d-flex flex-column justify-content-center">
+									<span class="text-secondary small fw-semibold text-uppercase d-block mb-1">Amount Due</span>
+									<span id="amount_due_display_admin" class="fw-bold text-dark fs-6">₱ 0.00</span>
+								</div>
+							</div>
+							<!-- Amount Paid Box -->
+							<div class="col-6">
+								<div class="p-3 bg-light rounded-3 border text-center h-100 d-flex flex-column justify-content-center">
+									<span class="text-secondary small fw-semibold text-uppercase d-block mb-1">Amount Paid</span>
+									<span id="amount_paid_display_admin" class="fw-bold text-teal-600 fs-5">PHP 0.00</span>
+								</div>
+							</div>
+						</div>
+						
+						<!-- Scan QR Code Button -->
+						<div class="text-center mb-3">
+							<button type="button" class="btn btn-link text-teal-600 text-decoration-none fw-semibold small d-inline-flex align-items-center gap-1 shadow-none p-0" id="btn_toggle_qr_admin">
+								<i class="fas fa-qrcode"></i> Scan QR Code
+							</button>
+						</div>
 
-					<!-- Purpose -->
-					<div class="mb-3" id="wiPurposeWrap">
-						<label class="form-label fw-semibold small text-uppercase text-secondary">Purpose</label>
-						<select name="wi_purpose" id="wiPurposeSelect" class="form-select" style="display:none;">
-							<option value="">-- Select purpose --</option>
-						</select>
-						<input type="text" name="wi_purpose_text" id="wiPurposeText" class="form-control"
-							placeholder="State purpose...">
-					</div>
+						<!-- Upload Receipt Box -->
+						<div class="mb-3">
+							<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Upload Receipt</label>
+							<div class="border border-dashed border-2 rounded-3 p-3 text-center position-relative bg-light" style="border-color: #0d9488 !important; cursor: pointer; border-style: dashed !important;" id="receipt_dropzone_admin" onclick="document.getElementById('wi_payment_receipt').click();">
+								<div class="d-flex flex-column align-items-center justify-content-center gap-2">
+									<div class="rounded-circle bg-teal-50 text-teal-600 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+										<i class="fas fa-upload"></i>
+									</div>
+									<div class="fw-semibold text-dark" id="upload_status_admin" style="font-size: 0.9rem;">Upload Receipt</div>
+									<div class="text-secondary" style="font-size: 0.75rem;">PNG, JPG, WEBP - Max size: 5MB</div>
+								</div>
+								<input type="file" name="payment_receipt" id="wi_payment_receipt" class="d-none" accept="image/png, image/jpeg, image/jpg, image/webp" onchange="handleAdminReceiptSelected(this)">
+							</div>
+						</div>
 
-					<div class="d-flex gap-2 justify-content-end pt-2">
-						<button type="button" class="btn btn-light rounded-pill px-4"
-							data-bs-dismiss="modal">Cancel</button>
-						<button type="submit" class="btn btn-primary rounded-pill px-4">
-							<i class="fas fa-plus me-1"></i> Add Request
-						</button>
+						<!-- OCR Scanning Status -->
+						<div id="ocr_scan_status_admin" class="d-none mb-3">
+							<div class="d-flex align-items-center gap-2 p-2 rounded-3 bg-light border">
+								<div class="spinner-border spinner-border-sm text-teal-600" id="ocr_spinner_admin"></div>
+								<span class="small text-secondary" id="ocr_status_text_admin">Scanning receipt for reference number...</span>
+							</div>
+						</div>
+
+						<!-- Reference Number Field -->
+						<div class="mb-3">
+							<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-flex align-items-center gap-2">
+								Reference No.
+							</label>
+							<div class="input-group input-group-sm">
+								<span class="input-group-text bg-light border-end-0">
+									<i class="fas fa-hashtag text-teal-600"></i>
+								</span>
+								<input type="text" name="wi_payment_ref" id="payment_reference_no_admin"
+									class="form-control border-start-0 ps-1 rounded-end-3 bg-white"
+									placeholder="Enter Reference No." readonly>
+							</div>
+							<div class="text-muted mt-1" style="font-size:.75rem;">
+								<i class="fas fa-shield-alt me-1 text-teal-600"></i>
+								Strictly extracted from your uploaded receipt for security.
+							</div>
+						</div>
+
+						<!-- Amount Paid Field -->
+						<div class="mb-3">
+							<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-flex align-items-center gap-2">
+								Amount Paid (₱)
+							</label>
+							<div class="input-group input-group-sm">
+								<span class="input-group-text bg-light border-end-0">₱</span>
+								<input type="text" name="payment_amount_paid" id="payment_amount_paid_admin"
+									class="form-control border-start-0 ps-1 rounded-end-3 bg-white"
+									placeholder="0.00" readonly>
+							</div>
+							<div class="text-muted mt-1" style="font-size:.75rem;">
+								<i class="fas fa-shield-alt me-1 text-teal-600"></i>
+								Strictly extracted from your uploaded receipt for security.
+							</div>
+						</div>
+
+						<div class="d-flex gap-2 justify-content-end pt-2">
+							<button type="button" class="btn btn-light rounded-pill px-4" id="btn_wi_back"><i class="fas fa-arrow-left me-2"></i> Back</button>
+							<button type="submit" class="btn btn-primary rounded-pill px-4"><i class="fas fa-plus me-1"></i> Add Request</button>
+						</div>
 					</div>
 				</form>
 			</div>
@@ -1253,6 +1381,9 @@ require_once __DIR__ . '/header.php';
 		</div>
 	</div>
 </div>
+
+<!-- Tesseract.js for OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
 	// Search JS (Ignored because search was moved to server-side)
@@ -1451,6 +1582,178 @@ require_once __DIR__ . '/header.php';
 		}
 	});
 
+	// Walk-in Receipt Selection
+	window.handleAdminReceiptSelected = async function(input) {
+		const statusDiv = document.getElementById('upload_status_admin');
+		const ocrStatus = document.getElementById('ocr_scan_status_admin');
+		const refInput = document.getElementById('payment_reference_no_admin');
+		const spinner = document.getElementById('ocr_spinner_admin');
+		const statusText = document.getElementById('ocr_status_text_admin');
+
+		if (input.files && input.files[0]) {
+			const file = input.files[0];
+			const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+			statusDiv.innerHTML = `<span class="text-teal-600 fw-bold"><i class="fas fa-check-circle me-1"></i> Selected: ${file.name} (${sizeInMB} MB)</span>`;
+
+			// Start OCR
+			ocrStatus.classList.remove('d-none');
+			spinner.classList.remove('d-none');
+			spinner.classList.add('text-teal-600');
+			spinner.classList.remove('text-success', 'text-danger');
+			statusText.textContent = 'Scanning receipt for reference number...';
+			statusText.className = 'small text-secondary';
+			refInput.value = '';
+
+			try {
+				// Create object URL for Tesseract
+				const imageUrl = URL.createObjectURL(file);
+				
+				// Initialize worker
+				const worker = await Tesseract.createWorker('eng');
+				
+				// Recognize text
+				const ret = await worker.recognize(imageUrl);
+				const text = ret.data.text;
+				
+				await worker.terminate();
+				URL.revokeObjectURL(imageUrl);
+
+				// Try to find reference number using common patterns
+				const lines = text.split(/\n/);
+				let foundRef = '';
+				
+				for (const line of lines) {
+					const refLineMatch = line.match(/(?:ref(?:erence)?\.?\s*(?:no\.?|num(?:ber)?)?|trans(?:action)?\.?\s*(?:no\.?|id)?)\s*[:.-]?\s*([\d\sA-Za-z]+)/i);
+					if (refLineMatch) {
+						const noSpaces = refLineMatch[1].replace(/\s+/g, '');
+						const digitsOnly = noSpaces.match(/\d{10,15}/);
+						if (digitsOnly) {
+							foundRef = digitsOnly[0];
+							break;
+						}
+					}
+				}
+				
+				if (!foundRef) {
+					for (const line of lines) {
+						const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
+						if (digitsMatch) {
+							const clean = digitsMatch[1].replace(/\s+/g, '');
+							if (clean.length >= 10 && clean.length <= 15) {
+								foundRef = clean;
+								break;
+							}
+						}
+					}
+				}
+				
+				if (!foundRef) {
+					const allDigits = text.replace(/\s/g, '').match(/\d{13}/);
+					if (allDigits) foundRef = allDigits[0];
+				}
+
+				// Try to find amount paid
+				let foundAmount = '';
+				const amountMatch = text.match(/(?:amount|total|php|p|₱)\s*[:.-]?\s*([0-9,]+\.\d{2})/i);
+				if (amountMatch) {
+					foundAmount = amountMatch[1].replace(/,/g, ''); // remove commas
+				} else {
+					const fallbackMatch = text.match(/\b([0-9,]+\.\d{2})\b/);
+					if (fallbackMatch) {
+						foundAmount = fallbackMatch[1].replace(/,/g, '');
+					}
+				}
+
+				spinner.classList.add('d-none');
+				const amountInput = document.getElementById('payment_amount_paid_admin');
+				
+				if (foundRef || foundAmount) {
+					if (foundRef) {
+						refInput.value = foundRef;
+					}
+
+					if (foundAmount && amountInput) {
+						amountInput.value = foundAmount;
+						document.getElementById('amount_paid_display_admin').textContent = 'PHP ' + parseFloat(foundAmount).toFixed(2);
+					}
+					
+					statusText.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Scan complete!</span> Details extracted from receipt.`;
+				} else {
+					statusText.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> Could not detect details.</span> Please ensure the receipt is clear.`;
+				}
+
+			} catch (error) {
+				console.error("OCR Error:", error);
+				spinner.classList.add('d-none');
+				statusText.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-times-circle me-1"></i> Scan failed.</span> Please ensure the receipt is clear.`;
+			}
+
+		} else {
+			statusDiv.textContent = 'Upload Receipt';
+			ocrStatus.classList.add('d-none');
+			refInput.value = '';
+			const amountInput = document.getElementById('payment_amount_paid_admin');
+			if (amountInput) amountInput.value = '';
+		}
+	};
+
+	// Walk-in QR Code Scanner Modal
+	document.getElementById('btn_toggle_qr_admin')?.addEventListener('click', function(e) {
+		e.preventDefault();
+		Swal.fire({
+			title: 'Scan QR Code',
+			html: `
+				<div class="text-center p-2">
+					<div class="d-inline-block p-3 bg-white rounded-3 border shadow-sm mb-3">
+						<img src="/public/img/gcash_qr.png" alt="InstaPay QR Code" class="img-fluid" style="max-width: 280px; width: 100%; height: auto;">
+					</div>
+					<div class="fw-bold text-teal-600 fs-6">Barangay Panungyanan Payment Portal</div>
+				</div>
+			`,
+			showCloseButton: true,
+			confirmButtonText: 'Done Scanning',
+			confirmButtonColor: '#0d9488',
+			customClass: {
+				confirmButton: 'rounded-pill px-4'
+			}
+		});
+	});
+
+	function updateWalkinNav() {
+		const method = document.getElementById('wiPaymentMethod').value;
+		if (method === 'GCash') {
+			document.getElementById('btn_wi_next').style.display = 'inline-block';
+			document.getElementById('btn_wi_submit_step1').style.display = 'none';
+		} else {
+			document.getElementById('btn_wi_next').style.display = 'none';
+			document.getElementById('btn_wi_submit_step1').style.display = 'inline-block';
+		}
+	}
+
+	document.getElementById('btn_wi_next')?.addEventListener('click', function() {
+		// Basic validation before next
+		const name = document.getElementById('wiResidentSearch').value;
+		const docTypeSelect = document.getElementById('wiDocType');
+		const docType = docTypeSelect.value;
+		if (!name || !docType) {
+			Swal.fire('Required Fields', 'Please select a requestor and document type.', 'warning');
+			return;
+		}
+
+		// Update Price Display
+		const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+		const price = selectedOption ? parseFloat(selectedOption.getAttribute('data-price') || 0) : 0;
+		document.getElementById('amount_due_display_admin').textContent = '₱ ' + price.toFixed(2);
+
+		document.getElementById('wi_form_step_1').style.display = 'none';
+		document.getElementById('wi_form_step_2').style.display = 'block';
+	});
+
+	document.getElementById('btn_wi_back')?.addEventListener('click', function() {
+		document.getElementById('wi_form_step_2').style.display = 'none';
+		document.getElementById('wi_form_step_1').style.display = 'block';
+	});
+
 	// ── Walk-in Request Modal JS ──────────────────────────────────────────────
 	(function () {
 		var residents = <?php echo json_encode(array_values($wi_residents)); ?>;
@@ -1506,9 +1809,12 @@ require_once __DIR__ . '/header.php';
 
 		// Purpose switcher
 		window.wiUpdatePurpose = function () {
-			var docType = document.getElementById('wiDocType').value;
+			var docTypeSelect = document.getElementById('wiDocType');
+			var docType = docTypeSelect.value;
 			var sel = document.getElementById('wiPurposeSelect');
 			var txt = document.getElementById('wiPurposeText');
+			var priceContainer = document.getElementById('wi_document_price_container');
+			var priceDisplay = document.getElementById('wi_document_price_display');
 
 			if (purposeMap[docType]) {
 				sel.innerHTML = '<option value="">-- Select purpose --</option>';
@@ -1526,6 +1832,22 @@ require_once __DIR__ . '/header.php';
 				txt.style.display = '';
 				sel.name = '';
 				txt.name = 'wi_purpose';
+			}
+
+			// Update price display
+			const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+			if (selectedOption && selectedOption.value !== "") {
+				const price = parseFloat(selectedOption.getAttribute('data-price') || 0);
+				priceContainer.style.display = 'block';
+				if (price > 0) {
+					priceDisplay.textContent = '₱ ' + price.toFixed(2);
+					priceDisplay.className = 'p-3 bg-light rounded text-dark fs-5 fw-bold border';
+				} else {
+					priceDisplay.textContent = 'Free';
+					priceDisplay.className = 'p-3 bg-light rounded text-success fs-5 fw-bold border';
+				}
+			} else {
+				priceContainer.style.display = 'none';
 			}
 		};
 	})();

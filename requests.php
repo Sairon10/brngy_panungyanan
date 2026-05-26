@@ -1542,14 +1542,18 @@ $documents = $documents_stmt->fetchAll();
         const paymentSection = document.getElementById('payment_section');
         const amountDueDisplay = document.getElementById('amount_due_display');
 
-        if (price > 0) {
+        if (selectedOption && selectedOption.value !== "") {
             priceContainer.style.display = 'block';
-            priceDisplay.textContent = '₱ ' + price.toFixed(2);
-            paymentSection.style.display = 'block';
-            amountDueDisplay.textContent = '₱ ' + price.toFixed(2);
+            if (price > 0) {
+                priceDisplay.textContent = '₱ ' + price.toFixed(2);
+                paymentSection.style.display = 'block';
+                amountDueDisplay.textContent = '₱ ' + price.toFixed(2);
+            } else {
+                priceDisplay.textContent = 'Free';
+                paymentSection.style.display = 'none';
+            }
         } else {
             priceContainer.style.display = 'none';
-            priceDisplay.textContent = 'Free';
             paymentSection.style.display = 'none';
         }
 
@@ -1588,7 +1592,6 @@ $documents = $documents_stmt->fetchAll();
                     title: 'Scan QR Code',
                     html: `
                         <div class="text-center p-2">
-                            <p class="small text-secondary mb-3">Scan this QR code using GCash, Maya, or any InstaPay-supported banking app:</p>
                             <div class="d-inline-block p-3 bg-white rounded-3 border shadow-sm mb-3">
                                 <img src="public/img/gcash_qr.png" alt="InstaPay QR Code" class="img-fluid" style="max-width: 280px; width: 100%; height: auto;">
                             </div>

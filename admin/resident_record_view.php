@@ -519,7 +519,7 @@ if ($linked_resident) {
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label fw-semibold text-muted small">Gender</label>
+                        <label class="form-label fw-semibold text-muted small">Sex</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['sex']) ? '-' : $display_data['sex']); ?>
                         </div>
@@ -1096,7 +1096,7 @@ if ($linked_resident) {
                             <input type="date" name="birthdate" id="edit_birthdate" class="form-control">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Gender</label>
+                            <label class="form-label">Sex</label>
                             <select name="sex" id="edit_sex" class="form-control">
                                 <option value="">Select...</option>
                                 <option value="Male">Male</option>
