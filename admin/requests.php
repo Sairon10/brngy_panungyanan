@@ -184,6 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (!empty($_POST['walkin_action'])) {
 			$wi_resident_id = (int) ($_POST['wi_resident_id'] ?? 0);
 			$wi_requestor_name = trim($_POST['wi_requestor_name'] ?? '');
+			$wi_civil_status = trim($_POST['wi_civil_status'] ?? '');
+			$wi_purok = trim($_POST['wi_purok'] ?? '');
 			$wi_doc_type = trim($_POST['wi_doc_type'] ?? '');
 			$wi_purpose = trim($_POST['wi_purpose'] ?? '');
 
@@ -201,7 +203,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					}
 				} else {
 					// Unregistered walk-in requestor
-					$final_purpose = '[Walk-in Requestor: ' . $wi_requestor_name . '] ' . $wi_purpose;
+					$tags = '[Walk-in Requestor: ' . $wi_requestor_name . ']';
+					if ($wi_civil_status) $tags .= '[CS: ' . $wi_civil_status . ']';
+					if ($wi_purok) $tags .= '[Purok: ' . $wi_purok . ']';
+					$final_purpose = $tags . ' ' . $wi_purpose;
 				}
 
 				if ($wi_doc_type === 'Barangay Clearance') {
@@ -494,7 +499,7 @@ require_once __DIR__ . '/header.php';
 <div class="admin-table">
 	<div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
 		<div>
-			<h5 class="mb-0"><i class="fas fa-file-alt me-2"></i><?php echo htmlspecialchars($rv_meta['heading']); ?>
+			<h5 class="mb-0"><i class="fas fa-file-signature me-2"></i><?php echo htmlspecialchars($rv_meta['heading']); ?>
 			</h5>
 			<p class="text-muted mb-0"><?php echo htmlspecialchars($rv_meta['sub']); ?></p>
 		</div>
@@ -538,6 +543,7 @@ require_once __DIR__ . '/header.php';
 						<th class="py-3 <?php echo $show_request_checkboxes ? '' : 'ps-3'; ?>" style="width: 50px;">#
 						</th>
 						<th class="py-3">Name</th>
+						<th class="py-3">Type</th>
 						<th class="py-3">Status</th>
 						<th class="py-3">Date</th>
 						<th class="py-3 pe-3 text-center">
@@ -740,7 +746,7 @@ require_once __DIR__ . '/header.php';
 					?>
 					<?php if (empty($paginated_requests)): ?>
 						<tr>
-							<td colspan="<?php echo $show_request_checkboxes ? '6' : '5'; ?>" class="text-center py-5">
+							<td colspan="<?php echo $show_request_checkboxes ? '7' : '6'; ?>" class="text-center py-5">
 								<p class="text-muted mb-0">No requests found.</p>
 							</td>
 						</tr>
@@ -846,6 +852,10 @@ require_once __DIR__ . '/header.php';
 									<?php else: ?>
 										<div class="fw-bold text-dark mb-0"><?php echo htmlspecialchars($requesterName); ?></div>
 									<?php endif; ?>
+								</td>
+								<!-- Type -->
+								<td>
+									<div class="text-dark"><?php echo htmlspecialchars($req['doc_type']); ?></div>
 								</td>
 								<!-- Status -->
 								<td>
@@ -1038,9 +1048,9 @@ require_once __DIR__ . '/header.php';
 		<div class="modal-content border-0 shadow-lg rounded-4">
 			<div class="modal-header border-0 pb-0 px-4 pt-4">
 				<div class="d-flex align-items-center gap-3">
-					<div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
-						style="width:44px;height:44px;">
-						<i class="fas fa-walking fa-lg"></i>
+					<div class="rounded-3 d-flex align-items-center justify-content-center"
+						style="width:44px;height:44px; background-color: #f0fdfa; color: #0d9488;">
+						<i class="fas fa-file-signature fa-lg"></i>
 					</div>
 					<div>
 						<h5 class="fw-bold mb-0">Walk-in Request</h5>
@@ -1067,12 +1077,39 @@ require_once __DIR__ . '/header.php';
 						</div>
 					</div>
 
+					<!-- Walk-in Extra Fields (For Unregistered) -->
+					<div class="mb-3" id="wiExtraFields">
+						<div class="row">
+							<div class="col-md-6">
+								<label class="form-label fw-semibold small text-uppercase text-secondary">Civil Status</label>
+								<select name="wi_civil_status" id="wiCivilStatus" class="form-select">
+									<option value="">-- Select --</option>
+									<option value="Single">Single</option>
+									<option value="Married">Married</option>
+									<option value="Widow/er">Widow/er</option>
+								</select>
+							</div>
+							<div class="col-md-6">
+								<label class="form-label fw-semibold small text-uppercase text-secondary">Purok</label>
+								<select name="wi_purok" id="wiPurok" class="form-select">
+									<option value="">-- Select --</option>
+									<option value="1">1</option>
+									<option value="2">2</option>
+									<option value="3">3</option>
+									<option value="4">4</option>
+									<option value="5">5</option>
+									<option value="6">6</option>
+									<option value="7">7</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
 					<!-- Document Type -->
 					<div class="mb-3">
 						<label class="form-label fw-semibold small text-uppercase text-secondary">Document Type</label>
 						<select name="wi_doc_type" id="wiDocType" class="form-select" onchange="wiUpdatePurpose()">
 							<option value="">-- Select document --</option>
-							<option value="Barangay Clearance">Barangay Clearance</option>
 							<?php foreach ($wi_doc_types as $dt): ?>
 								<option value="<?php echo htmlspecialchars($dt); ?>"><?php echo htmlspecialchars($dt); ?>
 								</option>
@@ -1109,9 +1146,9 @@ require_once __DIR__ . '/header.php';
 		<div class="modal-content border-0 shadow-lg rounded-4">
 			<div class="modal-body p-4">
 				<div class="d-flex align-items-center gap-3 mb-4">
-					<div class="rounded-3 bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
-						style="width: 48px; height: 48px;">
-						<i class="fas fa-file-alt fa-lg"></i>
+					<div class="rounded-3 d-flex align-items-center justify-content-center"
+						style="width: 48px; height: 48px; background-color: #f0fdfa; color: #0d9488;">
+						<i class="fas fa-file-signature fa-lg"></i>
 					</div>
 					<h5 class="fw-bold mb-0 text-dark">Request Details</h5>
 					<button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -1420,6 +1457,7 @@ require_once __DIR__ . '/header.php';
 
 		var purposeMap = {
 			'Barangay Clearance': ['Local Employment', 'Postal ID Application', 'Medical/Financial Assistance', 'Bank Requirements', 'Scholarship Program', 'Water/Electric Connection', 'Educational Assistance', 'Other\'s'],
+			'Barangay Indigency': ['Financial/Medical Assistance', 'Burial Assistance', 'Senior Citizen Social Pension', 'Vaccination Requirements', 'Educational Assistance', 'Other\'s'],
 			'Barangay Indigency Certificate': ['Financial/Medical Assistance', 'Burial Assistance', 'Senior Citizen Social Pension', 'Vaccination Requirements', 'Educational Assistance', 'Other\'s'],
 			'Certificate of Indigency': ['Financial/Medical Assistance', 'Burial Assistance', 'Senior Citizen Social Pension', 'Vaccination Requirements', 'Educational Assistance', 'Other\'s']
 		};

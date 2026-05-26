@@ -48,6 +48,28 @@ if (!empty($request['family_member_id']) && !empty($request['fm_name'])) {
     $request['civil_status'] = ''; // Family members do not have civil status recorded
 }
 
+// Check for Walk-in Requestor override in purpose field
+$raw_purpose = $request['purpose'] ?? '';
+if (preg_match('/\[Walk-in Requestor:\s*(.*?)\]/', $raw_purpose, $matches)) {
+    $request['full_name'] = trim($matches[1]);
+    $raw_purpose = trim(str_replace($matches[0], '', $raw_purpose));
+    $request['sex'] = '';
+    $request['birthdate'] = '';
+    $request['civil_status'] = '';
+    $request['purok'] = '';
+    
+    if (preg_match('/\[CS:\s*(.*?)\]/', $raw_purpose, $cs_matches)) {
+        $request['civil_status'] = trim($cs_matches[1]);
+        $raw_purpose = trim(str_replace($cs_matches[0], '', $raw_purpose));
+    }
+    if (preg_match('/\[Purok:\s*(.*?)\]/', $raw_purpose, $purok_matches)) {
+        $request['purok'] = trim($purok_matches[1]);
+        $raw_purpose = trim(str_replace($purok_matches[0], '', $raw_purpose));
+    }
+    
+    $request['purpose'] = $raw_purpose;
+}
+
 // Prefix for name based on sex
 $prefix = '';
 if (strtolower($request['sex']) === 'male') {
@@ -83,9 +105,9 @@ $pronoun = (strtolower($request['sex']) === 'female') ? 'She' : 'He';
     <title>Good Moral Character - <?php echo htmlspecialchars($request['full_name']); ?></title>
     <style>
         @media print {
-            body { margin: 0; }
+            body { margin: 0; padding: 0.5in; box-sizing: border-box; }
             .no-print { display: none; }
-            @page { margin: 0.5in; }
+            @page { size: A4 portrait; margin: 0; }
         }
 
         body {

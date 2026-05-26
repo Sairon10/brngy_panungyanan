@@ -46,6 +46,29 @@ if (!empty($clearance['family_member_id']) && !empty($clearance['fm_name'])) {
     $clearance['civil_status'] = ''; // Family members do not have civil status recorded
 }
 
+// Check for Walk-in Requestor override in purpose field
+$raw_purpose = $clearance['purpose'] ?? '';
+if (preg_match('/\[Walk-in Requestor:\s*(.*?)\]/', $raw_purpose, $matches)) {
+    $clearance['full_name'] = trim($matches[1]);
+    $raw_purpose = trim(str_replace($matches[0], '', $raw_purpose));
+    // Clear out demographic data for unregistered walk-ins
+    $clearance['sex'] = '';
+    $clearance['birthdate'] = '';
+    $clearance['civil_status'] = '';
+    $clearance['purok'] = '';
+    
+    if (preg_match('/\[CS:\s*(.*?)\]/', $raw_purpose, $cs_matches)) {
+        $clearance['civil_status'] = trim($cs_matches[1]);
+        $raw_purpose = trim(str_replace($cs_matches[0], '', $raw_purpose));
+    }
+    if (preg_match('/\[Purok:\s*(.*?)\]/', $raw_purpose, $purok_matches)) {
+        $clearance['purok'] = trim($purok_matches[1]);
+        $raw_purpose = trim(str_replace($purok_matches[0], '', $raw_purpose));
+    }
+    
+    $clearance['purpose'] = $raw_purpose;
+}
+
 // Calculate age from birthdate
 $age = 'of legal age';
 if ($clearance['birthdate']) {
@@ -204,6 +227,8 @@ try {
         @media print {
             body {
                 margin: 0;
+                padding: 0.5in;
+                box-sizing: border-box;
             }
 
             .no-print {
@@ -211,7 +236,8 @@ try {
             }
 
             @page {
-                margin: 0.5in;
+                size: A4 portrait;
+                margin: 0;
             }
         }
 
@@ -221,7 +247,7 @@ try {
             padding: 40px;
             color: #000;
             background: white;
-            line-height: 1.5;
+            line-height: 1.4;
         }
 
         .container {
@@ -283,7 +309,7 @@ try {
             font-size: 24px;
             margin-top: 10px;
             text-transform: uppercase;
-            margin-bottom: 40px;
+            margin-bottom: 20px;
         }
 
         /* Watermark Background */
@@ -316,22 +342,28 @@ try {
 
         .field-underline {
             border-bottom: 1px solid black;
-            display: inline-block;
+            display: inline-flex;
+            justify-content: center;
+            align-items: flex-end;
             min-width: 200px;
-            text-align: center;
+            padding: 0 10px;
             font-weight: bold;
+            vertical-align: bottom;
         }
 
         .small-underline {
             border-bottom: 1px solid black;
-            display: inline-block;
+            display: inline-flex;
+            justify-content: center;
+            align-items: flex-end;
             min-width: 50px;
-            text-align: center;
+            padding: 0 10px;
+            vertical-align: bottom;
         }
 
         /* Checkboxes */
         .purpose-grid {
-            margin: 20px 0 20px 40px;
+            margin: 10px 0 10px 40px;
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 10px;
@@ -402,12 +434,20 @@ try {
 
         /* Footer */
         .footer-note {
-            margin-top: 50px;
+            margin-top: 10px;
             font-style: italic;
             font-size: 12px;
             color: #555;
             border-top: 1px solid #ccc;
-            padding-top: 10px;
+            padding-top: 5px;
+        }
+
+        .footer-note p {
+            margin: 2px 0;
+        }
+
+        .content p {
+            margin: 10px 0;
         }
 
         .print-btn {
@@ -462,7 +502,7 @@ try {
 
         /* Footer section for clearance */
         .footer-section {
-            margin-top: 50px;
+            margin-top: 10px;
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
@@ -540,10 +580,8 @@ try {
             <div class="to-whom">TO WHOM IT MAY CONCERN:</div>
 
             <p class="indent">
-                This is to certify that <span class="field-underline">
-                    <?php echo htmlspecialchars($full_name); ?>
-                </span>
-                of legal age single (<?php echo $is_single ? '✓' : ''; ?>) married (<?php echo $is_married ? '✓' : ''; ?>), widow/er (<?php echo $is_widower ? '✓' : ''; ?>), Filipino citizen, resident of this Barangay and presently residing at, <strong>PUROK <span class="small-underline"><?php echo htmlspecialchars($purok ?: ''); ?></span></strong> Barangay Panungyanan, General Trias City of Cavite.
+                This is to certify that <span class="field-underline"><?php echo htmlspecialchars($full_name); ?></span>
+                of legal age single (<?php echo $is_single ? '✓' : ''; ?>) married (<?php echo $is_married ? '✓' : ''; ?>), widow/er (<?php echo $is_widower ? '✓' : ''; ?>), Filipino citizen, resident of this Barangay and presently residing at, <strong>PUROK <span class="small-underline"><?php echo htmlspecialchars(trim(str_ireplace('Purok', '', $purok ?: ''))); ?></span></strong> Barangay Panungyanan, General Trias City of Cavite.
             </p>
 
             <p class="indent">
@@ -586,12 +624,8 @@ try {
             </div>
 
             <p class="indent" style="margin-top: 30px;">
-                Issued this <span class="small-underline">
-                    <?php echo $issue_day; ?>
-                </span> day of
-                <span class="small-underline">
-                    <?php echo $issue_month; ?>
-                </span> <?php echo $issue_year; ?>, at Barangay Panungyanan, City of General Trias, Cavite.
+                Issued this <span class="small-underline"><?php echo $issue_day; ?></span> day of
+                <span class="small-underline"><?php echo $issue_month; ?></span> <?php echo $issue_year; ?>, at Barangay Panungyanan, City of General Trias, Cavite.
             </p>
         </div>
 

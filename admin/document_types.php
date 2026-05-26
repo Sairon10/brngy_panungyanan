@@ -40,22 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $uploadPath = $uploadDir . $filename;
                     if (move_uploaded_file($_FILES['pdf_template']['tmp_name'], $uploadPath)) {
                         $pdf_template_path = 'uploads/document_templates/' . $filename;
-                    } else {
-                        $message = 'Error: Failed to upload PDF template.';
-                        $message_type = 'danger';
                     }
-                } else {
-                    $message = 'Error: Only PDF files are allowed.';
-                    $message_type = 'danger';
                 }
-            } else {
-                $message = 'Error: Blank PDF template is required.';
-                $message_type = 'danger';
             }
             
             $validity_months = $requires_validity ? max(1, (int)($_POST['validity_months'] ?? 1)) : 1;
             
-            if ($message === '' && $name !== '') {
+            if ($name !== '') {
                 try {
                     $stmt = $pdo->prepare('
                         INSERT INTO document_types (name, pdf_template_path, requires_validity, validity_months, requires_special_handling, display_order, price, is_active)
@@ -113,12 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $message = 'Error: Only PDF files are allowed.';
                     $message_type = 'danger';
                 }
-            } elseif (empty($pdf_template_path)) {
-                $message = 'Error: Blank PDF template is required.';
-                $message_type = 'danger';
             }
             
-            if ($message === '' && $id > 0 && $name !== '') {
+            if ($id > 0 && $name !== '') {
                 try {
                     $stmt = $pdo->prepare('
                         UPDATE document_types 
@@ -170,7 +158,7 @@ if (isset($_GET['edit'])) {
 	<div class="p-3 border-bottom">
 		<div class="d-flex justify-content-between align-items-center">
 			<div>
-				<h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Document Types Management</h5>
+				<h5 class="mb-0"><i class="fas fa-file-signature me-2"></i>Document Types Management</h5>
 				<p class="text-muted mb-0">Manage available document types for residents to request</p>
 			</div>
 			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
@@ -180,10 +168,16 @@ if (isset($_GET['edit'])) {
 	</div>
 
 	<?php if ($message): ?>
-		<div class="alert alert-<?php echo $message_type; ?> alert-dismissible fade show m-3" role="alert">
-			<?php echo htmlspecialchars($message); ?>
-			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-		</div>
+		<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			Swal.fire({
+				title: '<?php echo $message_type === "success" ? "Success!" : "Error"; ?>',
+				text: <?php echo json_encode($message); ?>,
+				icon: '<?php echo $message_type === "success" ? "success" : "error"; ?>',
+				confirmButtonColor: '#0d9488'
+			});
+		});
+		</script>
 	<?php endif; ?>
 
 	<div class="p-3">
@@ -317,8 +311,8 @@ if (isset($_GET['edit'])) {
 						</div>
 					</div>
 					<div class="mb-3 border-top pt-3">
-						<label class="form-label fw-bold">Blank PDF Upload <span class="text-danger">*</span></label>
-						<input type="file" name="pdf_template" class="form-control" accept=".pdf" <?php echo empty($edit_type['pdf_template_path']) ? 'required' : ''; ?>>
+						<label class="form-label fw-bold">Blank PDF Upload (Optional)</label>
+						<input type="file" name="pdf_template" class="form-control" accept=".pdf">
 						<small class="d-block text-muted">Upload a blank PDF file that administrators can download to fill out manually.</small>
 						<?php if (!empty($edit_type['pdf_template_path'])): ?>
 							<div class="mt-2 text-info small">

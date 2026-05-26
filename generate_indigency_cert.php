@@ -58,6 +58,29 @@ if (!empty($request['family_member_id']) && !empty($request['fm_name'])) {
     $request['civil_status'] = ''; // Family members do not have civil status recorded
 }
 
+// Check for Walk-in Requestor override in purpose field
+$raw_purpose = $request['purpose'] ?? '';
+if (preg_match('/\[Walk-in Requestor:\s*(.*?)\]/', $raw_purpose, $matches)) {
+    $request['full_name'] = trim($matches[1]);
+    $raw_purpose = trim(str_replace($matches[0], '', $raw_purpose));
+    // Clear out demographic data for unregistered walk-ins
+    $request['sex'] = '';
+    $request['birthdate'] = '';
+    $request['civil_status'] = '';
+    $request['purok'] = '';
+    
+    if (preg_match('/\[CS:\s*(.*?)\]/', $raw_purpose, $cs_matches)) {
+        $request['civil_status'] = trim($cs_matches[1]);
+        $raw_purpose = trim(str_replace($cs_matches[0], '', $raw_purpose));
+    }
+    if (preg_match('/\[Purok:\s*(.*?)\]/', $raw_purpose, $purok_matches)) {
+        $request['purok'] = trim($purok_matches[1]);
+        $raw_purpose = trim(str_replace($purok_matches[0], '', $raw_purpose));
+    }
+    
+    $request['purpose'] = $raw_purpose;
+}
+
 // Check if document type contains "Indigency" (case-insensitive, handles variations like "Barangay Indigency")
 if (stripos($request['doc_type'], 'Indigency') === false) {
     die('Invalid document type requested. This certificate generator is only for Indigency documents.');
@@ -111,6 +134,8 @@ if ($request['civil_status']) {
         @media print {
             body {
                 margin: 0;
+                padding: 0.5in;
+                box-sizing: border-box;
             }
 
             .no-print {
@@ -118,7 +143,8 @@ if ($request['civil_status']) {
             }
 
             @page {
-                margin: 0.5in;
+                size: A4 portrait;
+                margin: 0;
             }
         }
 
@@ -223,17 +249,23 @@ if ($request['civil_status']) {
 
         .field-underline {
             border-bottom: 1px solid black;
-            display: inline-block;
+            display: inline-flex;
+            justify-content: center;
+            align-items: flex-end;
             min-width: 200px;
-            text-align: center;
+            padding: 0 10px;
             font-weight: bold;
+            vertical-align: bottom;
         }
 
         .small-underline {
             border-bottom: 1px solid black;
-            display: inline-block;
+            display: inline-flex;
+            justify-content: center;
+            align-items: flex-end;
             min-width: 50px;
-            text-align: center;
+            padding: 0 10px;
+            vertical-align: bottom;
         }
 
         /* Checkboxes */
@@ -276,16 +308,16 @@ if ($request['civil_status']) {
             line-height: 1;
         }
 
-        /* Signatories */
         .signatories {
             margin-top: 50px;
             display: flex;
-            justify-content: flex-end;
-            flex-direction: column;
+            justify-content: space-between;
+            align-items: flex-start;
         }
 
         .attested {
-            margin-bottom: 40px;
+            margin-bottom: 0;
+            text-align: left;
         }
 
         .sign-block {
@@ -304,17 +336,25 @@ if ($request['civil_status']) {
 
         .approved-by {
             text-align: right;
-            margin-top: 20px;
+            margin-top: 0;
         }
 
         /* Footer */
         .footer-note {
-            margin-top: 50px;
+            margin-top: 20px;
             font-style: italic;
             font-size: 12px;
             color: #555;
             border-top: 1px solid #ccc;
             padding-top: 10px;
+        }
+
+        .footer-note p {
+            margin: 2px 0;
+        }
+
+        .content p {
+            margin: 10px 0;
         }
 
         .print-btn {
@@ -420,11 +460,9 @@ if ($request['civil_status']) {
             <div class="to-whom">TO WHOM IT MAY CONCERN:</div>
 
             <p class="indent">
-                This is to certify that <span class="field-underline">
-                    <?php echo htmlspecialchars($full_name); ?>
-                </span>
+                This is to certify that <span class="field-underline"><?php echo htmlspecialchars($full_name); ?></span>
                 of legal age single (<?php echo $is_single ? '✓' : ''; ?>) married (<?php echo $is_married ? '✓' : ''; ?>), widow/er (<?php echo $is_widowed ? '✓' : ''; ?>), Filipino is a bonafide resident of
-                <strong>PUROK <span class="small-underline"><?php echo htmlspecialchars($request['purok'] ?? ''); ?></span></strong>,
+                <strong>PUROK <span class="small-underline"><?php echo htmlspecialchars(trim(str_ireplace('Purok', '', $request['purok'] ?? ''))); ?></span></strong>,
                 <strong>Barangay Panungyanan City of General Trias, Cavite.</strong>
             </p>
 
@@ -435,10 +473,7 @@ if ($request['civil_status']) {
             </p>
 
             <p class="indent">
-                This certification is being issued upon request of <strong>
-                    <?php echo $salutation; ?>
-                    <?php echo htmlspecialchars($full_name); ?>
-                </strong>
+                This certification is being issued upon request of <strong><?php echo $salutation; ?> <?php echo htmlspecialchars($full_name); ?></strong>
                 for the following purposes.
             </p>
 
@@ -462,12 +497,8 @@ if ($request['civil_status']) {
             </div>
 
             <p class="indent" style="margin-top: 30px;">
-                Issued this <span class="small-underline">
-                    <?php echo date('jS'); ?>
-                </span> day of
-                <span class="small-underline">
-                    <?php echo date('F'); ?>
-                </span> 2025 , at Barangay Panungyanan, City of General Trias, Cavite.
+                Issued this <span class="small-underline"><?php echo date('jS'); ?></span> day of
+                <span class="small-underline"><?php echo date('F'); ?></span> 2025, at Barangay Panungyanan, City of General Trias, Cavite.
             </p>
         </div>
 
