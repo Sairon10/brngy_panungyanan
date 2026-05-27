@@ -45,6 +45,10 @@ $columns_to_add = [
         'definition' => 'TEXT DEFAULT NULL',
         'after' => 'admin_refund_number'
     ],
+    'admin_refund_amount' => [
+        'definition' => 'DECIMAL(10,2) DEFAULT NULL',
+        'after' => 'admin_refund_notes'
+    ],
 ];
 
 echo "<pre>";

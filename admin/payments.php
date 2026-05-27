@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
 		if ($pay_action === 'refunded') {
 			$refund_number = trim($_POST['refund_number'] ?? '');
 			$refund_notes  = trim($_POST['refund_notes']  ?? '');
+			$refund_amount = !empty($_POST['refund_amount']) ? (float)$_POST['refund_amount'] : null;
 			
 			// Handle file upload
 			$refund_receipt_path = null;
@@ -60,8 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
 
 			if ($message === '') {
 				$table = $pay_type === 'clearance' ? 'barangay_clearances' : 'document_requests';
-				$pdo->prepare("UPDATE $table SET payment_status = 'refunded', admin_refund_number = ?, admin_refund_notes = ?, refund_receipt = ? WHERE id = ?")
-					->execute([$refund_number, $refund_notes, $refund_receipt_path, $pay_id]);
+				$pdo->prepare("UPDATE $table SET payment_status = 'refunded', admin_refund_number = ?, admin_refund_notes = ?, admin_refund_amount = ?, refund_receipt = ? WHERE id = ?")
+					->execute([$refund_number, $refund_notes, $refund_amount, $refund_receipt_path, $pay_id]);
 				
 				$message = 'Payment has been marked as <strong>refunded</strong> successfully.';
 				$message_type = 'success';
@@ -93,7 +94,7 @@ $stmt = $pdo->query("
 	       bc.payment_receipt, bc.payment_status, bc.created_at,
 	       COALESCE(bc.payment_amount_paid, dt.price) AS amount_paid,
            dt.price AS expected_amount, bc.refund_number, bc.refund_notes, bc.refund_receipt, bc.notes,
-           bc.admin_refund_number, bc.admin_refund_notes
+           bc.admin_refund_number, bc.admin_refund_notes, bc.admin_refund_amount
 	FROM barangay_clearances bc
 	JOIN users u ON u.id = bc.user_id
 	LEFT JOIN document_types dt ON dt.name = 'Barangay Clearance'
@@ -114,7 +115,7 @@ $stmt = $pdo->query("
 	       dr.payment_receipt, dr.payment_status, dr.created_at,
 	       COALESCE(dr.payment_amount_paid, dt.price) AS amount_paid,
            dt.price AS expected_amount, dr.refund_number, dr.refund_notes, dr.refund_receipt, dr.notes,
-           dr.admin_refund_number, dr.admin_refund_notes
+           dr.admin_refund_number, dr.admin_refund_notes, dr.admin_refund_amount
 	FROM document_requests dr
 	JOIN users u ON u.id = dr.user_id
 	LEFT JOIN document_types dt ON dt.name = dr.doc_type
@@ -319,6 +320,7 @@ require_once __DIR__ . '/header.php';
 								'notes'                => $pay['notes'] ?? '',
 								'admin_refund_number'  => $pay['admin_refund_number'] ?? '',
 								'admin_refund_notes'   => $pay['admin_refund_notes'] ?? '',
+								'admin_refund_amount'  => $pay['admin_refund_amount'] ?? '',
 							];
 							$json_attr = htmlspecialchars(json_encode($j), ENT_QUOTES);
 							?>
@@ -374,15 +376,6 @@ require_once __DIR__ . '/header.php';
 											onclick="openDetailModal(<?= $json_attr ?>)">
 											<i class="fas fa-eye" style="font-size:.85rem;"></i>
 										</button>
-										<?php if ($pay_status === 'refund_pending'): ?>
-											<button type="button"
-												class="btn btn-sm btn-outline-purple rounded-circle d-flex align-items-center justify-content-center"
-												style="width: 34px; height: 34px; color: #6b21a8; border-color: #d8b4fe !important; background: #faf5ff; border: 1px solid #d8b4fe;"
-												title="Submit Refund"
-												onclick="openRefundModal(<?= (int)$pay['id'] ?>, '<?= htmlspecialchars($pay['pay_type']) ?>')">
-												<i class="fas fa-undo-alt" style="font-size:.8rem;"></i>
-											</button>
-										<?php endif; ?>
 									</div>
 								</td>
 							</tr>
@@ -471,6 +464,11 @@ require_once __DIR__ . '/header.php';
 								<div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-light-subtle" style="border-bottom-style: dashed !important;">
 									<span class="text-secondary small">Transaction / Ref No.</span>
 									<span class="fw-bold text-dark small" id="detailRefundNumber" style="font-family: monospace;"></span>
+								</div>
+
+								<div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-light-subtle" style="border-bottom-style: dashed !important;">
+									<span class="text-secondary small">Amount Refunded</span>
+									<span class="fw-bold text-dark small" id="detailRefundAmount"></span>
 								</div>
 
 								<div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-light-subtle" style="border-bottom-style: dashed !important;">
@@ -630,20 +628,33 @@ require_once __DIR__ . '/header.php';
 					<p class="text-secondary small mb-3">Provide the refund details below to mark this payment as refunded.</p>
 					
 					<div class="mb-3">
-						<label for="refund_number" class="form-label small fw-bold text-dark mb-1">Refund Reference / Transaction No. <span class="text-danger">*</span></label>
-						<input type="text" name="refund_number" id="refund_number_input" class="form-control rounded-3" placeholder="e.g. GCash Ref No." required>
+						<label for="refund_receipt" class="form-label small fw-bold text-dark mb-1">Upload Refund Receipt <span class="text-danger">*</span></label>
+						<input type="file" name="refund_receipt" id="refund_receipt_input" class="form-control rounded-3" accept="image/*" required>
+						<div class="form-text text-muted mb-2" style="font-size: 0.72rem;">Supported formats: JPG, JPEG, PNG, WEBP. Max 5MB.</div>
+						
+						<!-- OCR Status Indicator -->
+						<div id="refund_ocr_status" class="d-none p-2 border border-light-subtle rounded-3 bg-light bg-opacity-50 mt-2">
+							<div class="d-flex align-items-center gap-2">
+								<div class="spinner-border spinner-border-sm text-teal-600" id="refund_ocr_spinner" role="status" style="width: 1rem; height: 1rem;"></div>
+								<span id="refund_ocr_text" class="small text-secondary" style="font-size: 0.75rem;">Scanning receipt...</span>
+							</div>
+						</div>
 					</div>
 
 					<div class="mb-3">
-						<label for="refund_receipt" class="form-label small fw-bold text-dark mb-1">Upload Refund Receipt <span class="text-danger">*</span></label>
-						<input type="file" name="refund_receipt" id="refund_receipt_input" class="form-control rounded-3" accept="image/*" required>
-						<div class="form-text text-muted" style="font-size: 0.72rem;">Supported formats: JPG, JPEG, PNG, WEBP. Max 5MB.</div>
+						<label for="refund_number" class="form-label small fw-bold text-dark mb-1">Reference/transaction number <span class="text-danger">*</span></label>
+						<input type="text" name="refund_number" id="refund_number_input" class="form-control rounded-3" placeholder="Reference will auto-populate" required readonly>
+					</div>
+
+					<div class="mb-3">
+						<label for="refund_amount" class="form-label small fw-bold text-dark mb-1">Amount paid <span class="text-danger">*</span></label>
+						<input type="number" step="0.01" name="refund_amount" id="refund_amount_input" class="form-control rounded-3" placeholder="0.00" required readonly>
 					</div>
 
 					<div class="mb-2">
-						<label for="refund_notes" class="form-label small fw-bold text-dark mb-1">Refund Notes / Remarks <span class="text-danger">*</span></label>
-						<textarea name="refund_notes" id="refund_notes_input" class="form-control rounded-3" rows="3"
-							placeholder="e.g. Returned via GCash to resident request." required></textarea>
+						<label for="refund_notes" class="form-label small fw-bold text-dark mb-1">Refund Notes / Remarks</label>
+						<textarea name="refund_notes" id="refund_notes_input" class="form-control rounded-3" rows="2"
+							placeholder="e.g. Returned via GCash to resident request."></textarea>
 					</div>
 				</div>
 				<div class="modal-footer border-0 pt-0 gap-2">
@@ -656,6 +667,9 @@ require_once __DIR__ . '/header.php';
 		</div>
 	</div>
 </div>
+
+<!-- Tesseract.js for OCR -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <script>
 let _detailModal = null;
@@ -736,8 +750,9 @@ function openDetailModal(data) {
 	// ── Admin Refund Details card (what admin submitted when processing) ───────
 	const refundCard = document.getElementById('detailRefundCard');
 	if (data.pay_status === 'refunded') {
-		const adminNumEl   = document.getElementById('detailRefundNumber');
-		const adminNotesEl = document.getElementById('detailRefundNotes');
+		const adminNumEl    = document.getElementById('detailRefundNumber');
+		const adminAmountEl  = document.getElementById('detailRefundAmount');
+		const adminNotesEl   = document.getElementById('detailRefundNotes');
 
 		if (data.admin_refund_number) {
 			adminNumEl.textContent    = data.admin_refund_number;
@@ -748,6 +763,13 @@ function openDetailModal(data) {
 			adminNumEl.style.color    = '';
 			adminNumEl.style.fontStyle = '';
 		}
+
+		if (data.admin_refund_amount) {
+			adminAmountEl.textContent = '₱ ' + parseFloat(data.admin_refund_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+		} else {
+			adminAmountEl.textContent = '—';
+		}
+
 		adminNotesEl.textContent = data.admin_refund_notes || 'No remarks provided.';
 
 		const rcContainer = document.getElementById('detailRefundReceiptContainer');
@@ -853,6 +875,109 @@ function zoomReceipt(url) {
 		customClass: { popup: 'rounded-4 shadow' }
 	});
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+	const receiptInput = document.getElementById('refund_receipt_input');
+	if (receiptInput) {
+		receiptInput.addEventListener('change', async (e) => {
+			const file = e.target.files[0];
+			if (!file) return;
+
+			const statusDiv = document.getElementById('refund_ocr_status');
+			const spinner   = document.getElementById('refund_ocr_spinner');
+			const statusText = document.getElementById('refund_ocr_text');
+			const refInput   = document.getElementById('refund_number_input');
+			const amountInput = document.getElementById('refund_amount_input');
+
+			// Reset inputs
+			refInput.value = '';
+			amountInput.value = '';
+
+			// Show OCR status
+			statusDiv.classList.remove('d-none');
+			spinner.classList.remove('d-none');
+			statusText.innerHTML = 'Scanning receipt for details...';
+			statusText.className = 'small text-secondary';
+
+			try {
+				const imageUrl = URL.createObjectURL(file);
+				const worker = await Tesseract.createWorker('eng');
+				const ret = await worker.recognize(imageUrl);
+				const text = ret.data.text;
+				
+				await worker.terminate();
+				URL.revokeObjectURL(imageUrl);
+
+				// Split by line to scan
+				const lines = text.split(/\n/);
+				let foundRef = '';
+
+				// 1. Look for Ref labels
+				for (const line of lines) {
+					const refLineMatch = line.match(/(?:ref(?:erence)?\.?\s*(?:no\.?|num(?:ber)?)?|trans(?:action)?\.?\s*(?:no\.?|id)?)\s*[:.-]?\s*([\d\sA-Za-z]+)/i);
+					if (refLineMatch) {
+						const noSpaces = refLineMatch[1].replace(/\s+/g, '');
+						const digitsOnly = noSpaces.match(/\d{10,15}/);
+						if (digitsOnly) {
+							foundRef = digitsOnly[0];
+							break;
+						}
+					}
+				}
+
+				// 2. Standalone digits check
+				if (!foundRef) {
+					for (const line of lines) {
+						const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
+						if (digitsMatch) {
+							const clean = digitsMatch[1].replace(/\s+/g, '');
+							if (clean.length >= 10 && clean.length <= 15) {
+								foundRef = clean;
+								break;
+							}
+						}
+					}
+				}
+
+				// 3. Fallback check
+				if (!foundRef) {
+					const allDigits = text.replace(/\s/g, '').match(/\d{13}/);
+					if (allDigits) foundRef = allDigits[0];
+				}
+
+				// Find Amount
+				let foundAmount = '';
+				const amountMatch = text.match(/(?:amount|total|php|p|₱)\s*[:.-]?\s*([0-9,]+\.\d{2})/i);
+				if (amountMatch) {
+					foundAmount = amountMatch[1].replace(/,/g, '');
+				} else {
+					const fallbackMatch = text.match(/\b([0-9,]+\.\d{2})\b/);
+					if (fallbackMatch) {
+						foundAmount = fallbackMatch[1].replace(/,/g, '');
+					}
+				}
+
+				spinner.classList.add('d-none');
+
+				if (foundRef || foundAmount) {
+					if (foundRef) {
+						refInput.value = foundRef;
+					}
+					if (foundAmount) {
+						amountInput.value = foundAmount;
+					}
+					statusText.innerHTML = '<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Scan completed successfully!</span>';
+				} else {
+					statusText.innerHTML = '<span class="text-warning fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> Scanning finished.</span> Could not parse reference or amount.';
+				}
+			} catch (err) {
+				console.error(err);
+				spinner.classList.add('d-none');
+				statusText.innerHTML = '<span class="text-danger fw-bold"><i class="fas fa-times-circle me-1"></i> Scanning failed.</span> Please try uploading again.';
+			}
+		});
+	}
+});
 </script>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

@@ -639,7 +639,6 @@ $documents = $documents_stmt->fetchAll();
                                 <th class="py-3">Name</th>
                                 <th class="py-3">Type</th>
                                 <th class="py-3">Status</th>
-                                <th class="py-3">Payment</th>
                                 <th class="py-3">Date</th>
                                 <th class="py-3 pe-4 rounded-end text-center" style="width: 100px;">Action</th>
                             </tr>
@@ -721,7 +720,7 @@ $documents = $documents_stmt->fetchAll();
                             ?>
                             <?php if (empty($paginated_requests)): ?>
                                 <tr>
-                                    <td colspan="7" class="text-center py-5">
+                                    <td colspan="6" class="text-center py-5">
                                         <div class="text-dark opacity-50 mb-2">
                                             <i class="fas fa-folder-open fa-3x"></i>
                                         </div>
@@ -805,53 +804,6 @@ $documents = $documents_stmt->fetchAll();
                                                 <i class="fas <?php echo $icon; ?> me-1"></i>
                                                 <?php echo $statusLabel; ?>
                                             </div>
-                                        </td>
-                                        <!-- Payment -->
-                                        <td>
-                                            <?php
-                                            $payStatus = $req['payment_status'] ?? 'pending';
-                                            $payAmount = $req['payment_amount_paid'] ?? null;
-                                            $hasReceipt = !empty($req['payment_receipt']);
-                                            
-                                            if ($hasReceipt) {
-                                                // Has e-wallet payment
-                                                switch ($payStatus) {
-                                                    case 'confirmed':
-                                                        $payClass = 'bg-teal-50 text-teal-600';
-                                                        $payLabel = 'Confirmed';
-                                                        $payIcon = 'fa-check-circle';
-                                                        break;
-                                                    case 'rejected':
-                                                        $payClass = 'bg-rose-50 text-rose-600';
-                                                        $payLabel = 'Rejected';
-                                                        $payIcon = 'fa-times-circle';
-                                                        break;
-                                                    case 'refunded':
-                                                        $payClass = 'bg-blue-50 text-blue-600';
-                                                        $payLabel = 'Refunded';
-                                                        $payIcon = 'fa-undo';
-                                                        break;
-                                                    case 'refund_pending':
-                                                        $payClass = 'bg-amber-50 text-amber-600';
-                                                        $payLabel = 'Refund Pending';
-                                                        $payIcon = 'fa-hourglass-half';
-                                                        break;
-                                                    default:
-                                                        $payClass = 'bg-amber-50 text-amber-600';
-                                                        $payLabel = 'Pending';
-                                                        $payIcon = 'fa-clock';
-                                                        break;
-                                                }
-                                            ?>
-                                                <span class="badge <?php echo $payClass; ?> rounded-pill px-2 py-1 border-0" style="font-size: 0.75rem;">
-                                                    <i class="fas <?php echo $payIcon; ?> me-1"></i><?php echo $payLabel; ?>
-                                                </span>
-                                                <?php if ($payAmount): ?>
-                                                    <div class="text-dark opacity-50 small mt-1">₱ <?php echo number_format((float)$payAmount, 2); ?></div>
-                                                <?php endif; ?>
-                                            <?php } else { ?>
-                                                <span class="text-dark opacity-50 small">Walk-in</span>
-                                            <?php } ?>
                                         </td>
                                         <!-- Date -->
                                         <td class="text-dark opacity-75 small">

@@ -137,6 +137,11 @@ require_once __DIR__ . '/partials/user_dashboard_header.php';
 
 <script src="public/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
+window.onerror = function(message, source, lineno, colno, error) {
+    alert("JS Error: " + message + "\nLine: " + lineno + "\nSource: " + source);
+    return false;
+};
+
 var _refundModal = null;
 
 function openDetailModal(index) {
@@ -218,10 +223,18 @@ function openDetailModal(index) {
 		// Admin Refund Details card (visible only when refunded by admin)
 		var refundCard = document.getElementById('detailRefundCard');
 		if (data.pay_status === 'refunded') {
-			var adminNumEl   = document.getElementById('detailRefundNumber');
-			var adminNotesEl = document.getElementById('detailRefundNotes');
+			var adminNumEl    = document.getElementById('detailRefundNumber');
+			var adminAmountEl  = document.getElementById('detailRefundAmount');
+			var adminNotesEl   = document.getElementById('detailRefundNotes');
 
 			adminNumEl.textContent = data.admin_refund_number || '—';
+			
+			if (data.admin_refund_amount) {
+				adminAmountEl.textContent = '₱' + parseFloat(data.admin_refund_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+			} else {
+				adminAmountEl.textContent = '—';
+			}
+
 			adminNotesEl.textContent = data.admin_refund_notes || 'No remarks provided.';
 
 			var rcContainer = document.getElementById('detailRefundReceiptContainer');
@@ -276,10 +289,10 @@ function openRefundModal(reqId, reqType) {
     if (modalInstance) {
         modalInstance.hide();
     }
-    
+
     document.getElementById('refund_req_id').value = reqId;
     document.getElementById('refund_req_type').value = reqType;
-    
+
     var refundModalEl = document.getElementById('refundModal');
     var refundModalInstance = bootstrap.Modal.getOrCreateInstance(refundModalEl);
     refundModalInstance.show();
@@ -390,152 +403,6 @@ function showRefundDetails(number, notes) {
 	}
 </style>
 
-<div class="payment-card mb-4 animate__animated animate__fadeInUp">
-	<!-- Header -->
-	<div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3">
-		<div>
-			<h5 class="mb-0 fw-bold"><i class="fas fa-credit-card me-2 text-teal-600"></i>Online Payments</h5>
-			<p class="text-muted mb-0 small mt-1">Review and track your payment receipts submitted via e-wallet</p>
-		</div>
-		<div class="d-flex align-items-center gap-2">
-			<?php if ($pending_count > 0): ?>
-				<span class="stat-pill" style="background:#fef3c7;color:#92400e;">
-					<i class="fas fa-clock"></i><?php echo $pending_count; ?> Pending
-				</span>
-			<?php endif; ?>
-			<span class="stat-pill" style="background:#e0f2fe;color:#0369a1;">
-				<i class="fas fa-receipt"></i><?php echo $total_count; ?> Total
-			</span>
-		</div>
-	</div>
-
-	<?php if ($message): ?>
-		<div class="alert alert-success alert-dismissible fade show m-3 mb-0 rounded-3" role="alert">
-			<i class="fas fa-info-circle me-2"></i><?php echo htmlspecialchars($message); ?>
-			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-		</div>
-	<?php endif; ?>
-
-	<!-- Filter tabs -->
-	<div class="px-4 py-3 border-bottom d-flex align-items-center gap-1 flex-wrap">
-		<a href="payments.php?payment_status_filter=all" class="filter-tab <?php echo $status_filter === 'all' ? 'active' : ''; ?>">All</a>
-		<a href="payments.php?payment_status_filter=pending"   class="filter-tab <?php echo $status_filter === 'pending'   ? 'active' : ''; ?>">Pending</a>
-		<a href="payments.php?payment_status_filter=confirmed" class="filter-tab <?php echo $status_filter === 'confirmed' ? 'active' : ''; ?>">Confirmed</a>
-		<a href="payments.php?payment_status_filter=rejected"  class="filter-tab <?php echo $status_filter === 'rejected'  ? 'active' : ''; ?>">Rejected</a>
-		<a href="payments.php?payment_status_filter=refunded"  class="filter-tab <?php echo $status_filter === 'refunded'  ? 'active' : ''; ?>">Refunded</a>
-	</div>
-
-	<!-- Table -->
-	<div class="p-3">
-		<div class="table-responsive">
-			<table class="table table-hover align-middle">
-				<thead class="bg-light text-uppercase" style="font-size:.78rem;">
-					<tr>
-						<th class="py-3 ps-3" style="width: 44px;">#</th>
-						<th class="py-3">Name</th>
-						<th class="py-3">Type</th>
-						<th class="py-3">Amount</th>
-						<th class="py-3">Reference No.</th>
-						<th class="py-3">Status</th>
-						<th class="py-3">Date</th>
-						<th class="py-3 pe-3 text-center">Action</th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php if (empty($filtered_payments)): ?>
-						<tr>
-							<td colspan="8" class="text-center py-5">
-								<div class="py-4">
-									<i class="fas fa-receipt fa-3x text-muted opacity-25 mb-3 d-block"></i>
-									<p class="text-muted mb-0">Walang nahanap na record ng bayad.</p>
-								</div>
-							</td>
-						</tr>
-					<?php else: ?>
-						<?php foreach ($filtered_payments as $index => $p): ?>
-							<?php
-							$pay_status = $p['payment_status'] ?? 'pending';
-							$amount_paid = (float)($p['amount_paid'] ?? 0);
-							$ref_no = htmlspecialchars($p['reference_no'] ?? '—');
-							
-							// JSON data safe for detail modal population matching admin
-							$j = [
-								'id'              => (int)$p['id'],
-								'pay_type'        => $p['pay_type'],
-								'full_name'       => $p['fm_name'] ?? $_SESSION['full_name'],
-								'email'           => $p['user_email'] ?? '',
-								'doc_type'        => $p['doc_name'],
-								'doc_detail'      => $p['doc_detail'] ?? '',
-								'reference_no'    => $ref_no,
-								'amount'          => $amount_paid,
-								'expected_amount' => (float)($p['expected_amount'] ?? 0),
-								'date'            => date('M d, Y g:i A', strtotime($p['created_at'])),
-								'pay_status'      => $pay_status,
-								'receipt_url'     => $p['payment_receipt'],
-								'refund_number'        => $p['refund_number'] ?? '',
-								'refund_notes'         => $p['refund_notes'] ?? '',
-								'refund_receipt'       => $p['refund_receipt'] ?? '',
-								'notes'                => $p['notes'] ?? '',
-								'admin_refund_number'  => $p['admin_refund_number'] ?? '',
-								'admin_refund_notes'   => $p['admin_refund_notes'] ?? '',
-								'status'               => $p['status'] ?? 'pending',
-							];
-							?>
-							<textarea id="payment-data-<?php echo $index; ?>" class="d-none" style="display: none;"><?php echo htmlspecialchars(json_encode($j), ENT_QUOTES, 'UTF-8'); ?></textarea>
-							<tr>
-								<td class="ps-3 text-muted fw-semibold"><?php echo $index + 1; ?></td>
-								<td>
-									<div class="text-dark"><?php echo htmlspecialchars($p['fm_name'] ?? $_SESSION['full_name']); ?></div>
-								</td>
-								<td>
-									<span class="text-dark"><?php echo htmlspecialchars($p['doc_name']); ?></span>
-								</td>
-								<td>
-									<span class="fw-bold text-teal-600">
-										₱<?php echo number_format($amount_paid, 2); ?>
-									</span>
-								</td>
-								<td>
-									<span class="ref-code"><?php echo $ref_no; ?></span>
-								</td>
-								<td>
-									<?php
-									if ($pay_status === 'confirmed') {
-										echo '<span class="pay-badge confirmed"><i class="fas fa-check-circle"></i> Confirmed</span>';
-									} else if ($pay_status === 'pending') {
-										echo '<span class="pay-badge pending"><i class="fas fa-clock"></i> Pending</span>';
-									} else if ($pay_status === 'rejected') {
-										echo '<span class="pay-badge rejected"><i class="fas fa-times-circle"></i> Rejected</span>';
-									} else if ($pay_status === 'refunded') {
-										echo '<span class="pay-badge refunded"><i class="fas fa-undo-alt"></i> Refunded</span>';
-									} else if ($pay_status === 'refund_pending') {
-										echo '<span class="pay-badge refund_pending"><i class="fas fa-hourglass-half"></i> Refund Pending</span>';
-									}
-									?>
-								</td>
-								<td class="text-muted small">
-									<i class="far fa-calendar-alt me-1 opacity-50"></i>
-									<?php echo date('M d, Y', strtotime($p['created_at'])); ?>
-								</td>
-								<td class="pe-3 text-center">
-									<div class="d-flex align-items-center justify-content-center gap-1">
-										<button type="button" class="btn-view-detail" title="Tingnan Detalye" 
-												data-bs-toggle="modal" data-bs-target="#payDetailModal"
-												onclick="openDetailModal(<?php echo $index; ?>)">
-											<i class="fas fa-eye" style="font-size:.85rem;"></i>
-										</button>
-
-									</div>
-								</td>
-							</tr>
-						<?php endforeach; ?>
-					<?php endif; ?>
-				</tbody>
-			</table>
-		</div>
-	</div>
-</div>
-
 <!-- ─── Payment Detail Modal (Exact copy from Admin, adjusted for Resident view) ──────────────── -->
 <div class="modal fade" id="payDetailModal" tabindex="-1">
 	<div class="modal-dialog modal-dialog-centered modal-lg">
@@ -590,6 +457,11 @@ function showRefundDetails(number, notes) {
 								<div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-light-subtle" style="border-bottom-style: dashed !important;">
 									<span class="text-secondary small">Transaction / Ref No.</span>
 									<span class="fw-bold text-dark small" id="detailRefundNumber" style="font-family: monospace;"></span>
+								</div>
+
+								<div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-light-subtle" style="border-bottom-style: dashed !important;">
+									<span class="text-secondary small">Amount Refunded</span>
+									<span class="fw-bold text-dark small" id="detailRefundAmount"></span>
 								</div>
 
 								<div class="d-flex justify-content-between mb-2 pb-2 border-bottom border-light-subtle" style="border-bottom-style: dashed !important;">
@@ -699,7 +571,7 @@ function showRefundDetails(number, notes) {
     <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
         <div class="modal-content border-0 shadow-lg rounded-4">
             <form method="POST" id="refundForm">
-                <?php csrf_input(); ?>
+                <?php echo csrf_field(); ?>
                 <input type="hidden" name="action" value="refund">
                 <input type="hidden" name="req_id" id="refund_req_id">
                 <input type="hidden" name="req_type" id="refund_req_type">
@@ -714,18 +586,25 @@ function showRefundDetails(number, notes) {
                 <div class="modal-body p-4">
                     <div class="alert alert-warning rounded-3 border-0 small mb-3">
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Pakiusap, ilagay ang wastong detalye ng inyong GCash number para sa pagproseso ng refund.
+                        Please provide your correct GCash mobile number to process your refund request.
                     </div>
                     
                     <div class="mb-3">
                         <label class="form-label fw-bold text-dark small">GCash Mobile Number</label>
-                        <input type="text" name="refund_number" class="form-control rounded-3" placeholder="Halimbawa: 09123456789" required maxlength="11" pattern="^(09)\d{9}$">
-                        <div class="form-text small">Dapat magsimula sa 09 at may 11 na numero.</div>
+                        <input type="text" name="refund_number" class="form-control rounded-3" placeholder="Example: 09123456789" required maxlength="11" pattern="^(09)\d{9}$">
+                        <div class="form-text small">Must start with 09 and contain exactly 11 digits.</div>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label fw-bold text-dark small">Dahilan ng Pag-Refund (Reason)</label>
-                        <textarea name="refund_notes" rows="3" class="form-control rounded-3" placeholder="Paki-detalye ang dahilan kung bakit nais ninyong i-refund..." required></textarea>
+                        <label class="form-label fw-bold text-dark small">Reason for Refund</label>
+                        <select name="refund_notes" class="form-select rounded-3" required>
+                            <option value="" disabled selected>-- Select a Reason --</option>
+                            <option value="Accidental / Duplicate Payment">Accidental / Duplicate Payment</option>
+                            <option value="Incorrect Document Requested">Incorrect Document Requested</option>
+                            <option value="Decided to Cancel Request">Decided to Cancel Request</option>
+                            <option value="Overpaid / Sent Excess Amount">Overpaid / Sent Excess Amount</option>
+                            <option value="Other / Personal Reason">Other / Personal Reason</option>
+                        </select>
                     </div>
                 </div>
                 
@@ -737,6 +616,154 @@ function showRefundDetails(number, notes) {
         </div>
     </div>
 </div>
+<div class="payment-card mb-4 animate__animated animate__fadeInUp">
+	<!-- Header -->
+	<div class="p-4 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-3">
+		<div>
+			<h5 class="mb-0 fw-bold"><i class="fas fa-credit-card me-2 text-teal-600"></i>Online Payments</h5>
+			<p class="text-muted mb-0 small mt-1">Review and track your payment receipts submitted via e-wallet</p>
+		</div>
+		<div class="d-flex align-items-center gap-2">
+			<?php if ($pending_count > 0): ?>
+				<span class="stat-pill" style="background:#fef3c7;color:#92400e;">
+					<i class="fas fa-clock"></i><?php echo $pending_count; ?> Pending
+				</span>
+			<?php endif; ?>
+			<span class="stat-pill" style="background:#e0f2fe;color:#0369a1;">
+				<i class="fas fa-receipt"></i><?php echo $total_count; ?> Total
+			</span>
+		</div>
+	</div>
+
+	<?php if ($message): ?>
+		<div class="alert alert-success alert-dismissible fade show m-3 mb-0 rounded-3" role="alert">
+			<i class="fas fa-info-circle me-2"></i><?php echo htmlspecialchars($message); ?>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+	<?php endif; ?>
+
+	<!-- Filter tabs -->
+	<div class="px-4 py-3 border-bottom d-flex align-items-center gap-1 flex-wrap">
+		<a href="payments.php?payment_status_filter=all" class="filter-tab <?php echo $status_filter === 'all' ? 'active' : ''; ?>">All</a>
+		<a href="payments.php?payment_status_filter=pending"   class="filter-tab <?php echo $status_filter === 'pending'   ? 'active' : ''; ?>">Pending</a>
+		<a href="payments.php?payment_status_filter=confirmed" class="filter-tab <?php echo $status_filter === 'confirmed' ? 'active' : ''; ?>">Confirmed</a>
+		<a href="payments.php?payment_status_filter=rejected"  class="filter-tab <?php echo $status_filter === 'rejected'  ? 'active' : ''; ?>">Rejected</a>
+		<a href="payments.php?payment_status_filter=refunded"  class="filter-tab <?php echo $status_filter === 'refunded'  ? 'active' : ''; ?>">Refunded</a>
+	</div>
+
+	<!-- Table -->
+	<div class="p-3">
+		<div class="table-responsive">
+			<table class="table table-hover align-middle">
+				<thead class="bg-light text-uppercase" style="font-size:.78rem;">
+					<tr>
+						<th class="py-3 ps-3" style="width: 44px;">#</th>
+						<th class="py-3">Name</th>
+						<th class="py-3">Type</th>
+						<th class="py-3">Amount</th>
+						<th class="py-3">Reference No.</th>
+						<th class="py-3">Status</th>
+						<th class="py-3">Date</th>
+						<th class="py-3 pe-3 text-center">Action</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php if (empty($filtered_payments)): ?>
+						<tr>
+							<td colspan="8" class="text-center py-5">
+								<div class="py-4">
+									<i class="fas fa-receipt fa-3x text-muted opacity-25 mb-3 d-block"></i>
+									<p class="text-muted mb-0">Walang nahanap na record ng bayad.</p>
+								</div>
+							</td>
+						</tr>
+					<?php else: ?>
+						<?php foreach ($filtered_payments as $index => $p): ?>
+							<?php
+							$pay_status = $p['payment_status'] ?? 'pending';
+							$amount_paid = (float)($p['amount_paid'] ?? 0);
+							$ref_no = htmlspecialchars($p['reference_no'] ?? '—');
+							
+							// JSON data safe for detail modal population matching admin
+							$j = [
+								'id'              => (int)$p['id'],
+								'pay_type'        => $p['pay_type'],
+								'full_name'       => $p['fm_name'] ?? $_SESSION['full_name'],
+								'email'           => $p['user_email'] ?? '',
+								'doc_type'        => $p['doc_name'],
+								'doc_detail'      => $p['doc_detail'] ?? '',
+								'reference_no'    => $ref_no,
+								'amount'          => $amount_paid,
+								'expected_amount' => (float)($p['expected_amount'] ?? 0),
+								'date'            => date('M d, Y g:i A', strtotime($p['created_at'])),
+								'pay_status'      => $pay_status,
+								'receipt_url'     => $p['payment_receipt'],
+								'refund_number'        => $p['refund_number'] ?? '',
+								'refund_notes'         => $p['refund_notes'] ?? '',
+								'refund_receipt'       => $p['refund_receipt'] ?? '',
+								'notes'                => $p['notes'] ?? '',
+								'admin_refund_number'  => $p['admin_refund_number'] ?? '',
+								'admin_refund_notes'   => $p['admin_refund_notes'] ?? '',
+								'admin_refund_amount'  => $p['admin_refund_amount'] ?? '',
+								'status'               => $p['status'] ?? 'pending',
+							];
+							?>
+							<textarea id="payment-data-<?php echo $index; ?>" class="d-none" style="display: none;"><?php echo htmlspecialchars(json_encode($j), ENT_QUOTES, 'UTF-8'); ?></textarea>
+							<tr>
+								<td class="ps-3 text-muted fw-semibold"><?php echo $index + 1; ?></td>
+								<td>
+									<div class="text-dark"><?php echo htmlspecialchars($p['fm_name'] ?? $_SESSION['full_name']); ?></div>
+								</td>
+								<td>
+									<span class="text-dark"><?php echo htmlspecialchars($p['doc_name']); ?></span>
+								</td>
+								<td>
+									<span class="fw-bold text-teal-600">
+										₱<?php echo number_format($amount_paid, 2); ?>
+									</span>
+								</td>
+								<td>
+									<span class="ref-code"><?php echo $ref_no; ?></span>
+								</td>
+								<td>
+									<?php
+									if ($pay_status === 'confirmed') {
+										echo '<span class="pay-badge confirmed"><i class="fas fa-check-circle"></i> Confirmed</span>';
+									} else if ($pay_status === 'pending') {
+										echo '<span class="pay-badge pending"><i class="fas fa-clock"></i> Pending</span>';
+									} else if ($pay_status === 'rejected') {
+										echo '<span class="pay-badge rejected"><i class="fas fa-times-circle"></i> Rejected</span>';
+									} else if ($pay_status === 'refunded') {
+										echo '<span class="pay-badge refunded"><i class="fas fa-undo-alt"></i> Refunded</span>';
+									} else if ($pay_status === 'refund_pending') {
+										echo '<span class="pay-badge refund_pending"><i class="fas fa-hourglass-half"></i> Refund Pending</span>';
+									}
+									?>
+								</td>
+								<td class="text-muted small">
+									<i class="far fa-calendar-alt me-1 opacity-50"></i>
+									<?php echo date('M d, Y', strtotime($p['created_at'])); ?>
+								</td>
+								<td class="pe-3 text-center">
+									<div class="d-flex align-items-center justify-content-center gap-1">
+										<button type="button" class="btn-view-detail" title="Tingnan Detalye" 
+												data-bs-toggle="modal" data-bs-target="#payDetailModal"
+												onclick="openDetailModal(<?php echo $index; ?>)">
+											<i class="fas fa-eye" style="font-size:.85rem;"></i>
+										</button>
+
+									</div>
+								</td>
+							</tr>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+
+
 
 
 

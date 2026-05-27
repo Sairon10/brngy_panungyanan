@@ -26,7 +26,7 @@
 		}
 	</style>
 	<div id="chatbot-root" data-user-logged-in="true"></div>
-	<script src="public/js/chatbot.js?v=3"></script>
+	<script src="public/js/chatbot.js?v=<?php echo time(); ?>"></script>
 	<script>
 		// Global Notifications (Topbar) for Residents
 		let pollingTimer = null;

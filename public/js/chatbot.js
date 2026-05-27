@@ -278,10 +278,17 @@
 				</div>
 			</div>
 			<div class="chatbot-suggestions" id="chatbotSuggestions">
-				<button class="suggestion-btn" data-query="Where is Barangay Panungyanan?">Location</button>
-				<button class="suggestion-btn" data-query="How to request documents?">Request Documents</button>
-				<button class="suggestion-btn" data-query="What community programs are available?">Programs</button>
-				<button class="suggestion-btn" data-query="What is ID verification?">ID Verification</button>
+				<button class="suggestions-toggle" id="suggestionsToggle" aria-label="Toggle suggestions">
+					<i class="fas fa-chevron-down" id="suggestionsToggleIcon"></i>
+					<span class="small" style="font-size: 0.7rem; color: #94a3b8;">Quick Options</span>
+				</button>
+				<div class="suggestions-pills" id="suggestionsPills">
+					<button class="suggestion-btn" data-query="Where is Barangay Panungyanan?">Location</button>
+					<button class="suggestion-btn" data-query="How to request documents?">Request Documents</button>
+					<button class="suggestion-btn" data-query="What community programs are available?">Programs</button>
+					<button class="suggestion-btn" data-query="What is ID verification?">ID Verification</button>
+					<button class="suggestion-btn" data-query="contact support">Contact Support</button>
+				</div>
 			</div>
 			<div class="chatbot-input-container">
 				<input type="text" class="chatbot-input" id="chatbotInput" placeholder="Type your question here..." autocomplete="off">
@@ -427,8 +434,8 @@
 		messages.appendChild(messageDiv);
 		messages.scrollTop = messages.scrollHeight;
 		
-		// Hide suggestions after first user message
-		if (!isBot) {
+		// Hide suggestions only when entering support chat mode
+		if (!isBot && supportChatMode) {
 			suggestions.style.display = 'none';
 		}
 	}
@@ -916,6 +923,18 @@
 			handleSend();
 		});
 	});
+
+	// Toggle suggestions collapse/expand
+	const suggestionsToggleBtn = document.getElementById('suggestionsToggle');
+	const suggestionsPills = document.getElementById('suggestionsPills');
+	const suggestionsToggleIcon = document.getElementById('suggestionsToggleIcon');
+	if (suggestionsToggleBtn && suggestionsPills) {
+		suggestionsToggleBtn.addEventListener('click', () => {
+			const isHidden = suggestionsPills.style.display === 'none';
+			suggestionsPills.style.display = isHidden ? 'flex' : 'none';
+			suggestionsToggleIcon.className = isHidden ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+		});
+	}
 
 	// Close on outside click (optional)
 	document.addEventListener('click', (e) => {
