@@ -27,7 +27,7 @@ if ($action === 'list') {
 
     // Fetch notifications
     $stmt = $pdo->prepare("
-        SELECT * FROM notifications 
+        SELECT *, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS diff_seconds FROM notifications 
         WHERE user_id = ? 
         ORDER BY created_at DESC 
         LIMIT ? OFFSET ?
@@ -39,7 +39,7 @@ if ($action === 'list') {
     foreach ($notifications as &$n) {
         $n['link'] = build_notification_link($n);
         $n['created_at_formatted'] = date('M j, Y g:i A', strtotime($n['created_at']));
-        $n['time_ago'] = time_ago(strtotime($n['created_at']));
+        $n['time_ago'] = time_ago((int)($n['diff_seconds'] ?? 0), strtotime($n['created_at']));
     }
 
     echo json_encode([
@@ -57,7 +57,7 @@ if ($action === 'list') {
     $stmt->execute([$id, $_SESSION['user_id']]);
 
     // Return the link so JS can redirect after marking read
-    $notif_stmt = $pdo->prepare("SELECT * FROM notifications WHERE id = ? AND user_id = ?");
+    $notif_stmt = $pdo->prepare("SELECT *, TIMESTAMPDIFF(SECOND, created_at, NOW()) AS diff_seconds FROM notifications WHERE id = ? AND user_id = ?");
     $notif_stmt->execute([$id, $_SESSION['user_id']]);
     $notif = $notif_stmt->fetch(PDO::FETCH_ASSOC);
     $link = $notif ? build_notification_link($notif) : 'index.php';
@@ -113,11 +113,20 @@ function build_notification_link(array $n): string {
     return 'dashboard.php';
 }
 
-function time_ago(int $timestamp): string {
-    $diff = time() - $timestamp;
-    if ($diff < 60) return 'just now';
-    if ($diff < 3600) return floor($diff / 60) . 'm ago';
-    if ($diff < 86400) return floor($diff / 3600) . 'h ago';
-    if ($diff < 604800) return floor($diff / 86400) . 'd ago';
-    return date('M j', $timestamp);
+function time_ago(int $diff_seconds, int $timestamp = 0): string {
+    // Fallback to PHP time if diff_seconds is not available
+    if ($diff_seconds === 0 && $timestamp > 0) {
+        $diff_seconds = time() - $timestamp;
+    }
+    
+    // Prevent negative time due to slight sync issues
+    if ($diff_seconds < 0) $diff_seconds = 0;
+    
+    if ($diff_seconds < 60) return 'just now';
+    if ($diff_seconds < 3600) return floor($diff_seconds / 60) . 'm ago';
+    if ($diff_seconds < 86400) return floor($diff_seconds / 3600) . 'h ago';
+    if ($diff_seconds < 604800) return floor($diff_seconds / 86400) . 'd ago';
+    
+    // If we only have diff_seconds, we can compute the date relative to PHP time
+    return date('M j', time() - $diff_seconds);
 }
