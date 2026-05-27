@@ -370,7 +370,7 @@ $residents_data = $residents->fetchAll();
                                 href="?status=<?php echo $status_filter; ?>&page=<?php echo $page - 1; ?>"><i class="fas fa-chevron-left me-1"></i> Prev</a>
                         </li>
                         <?php
-                        $max_visible = 5;
+                        $max_visible = 10;
                         $start = max(1, $page - floor($max_visible / 2));
                         $end = min($total_pages, $start + $max_visible - 1);
                         if ($end - $start + 1 < $max_visible) {

@@ -639,7 +639,7 @@ $wi_residents_inc = $pdo->query("
                                 <a class="page-link" href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $current_page - 1; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
                             </li>
                             <?php
-                            $max_visible = 5;
+                            $max_visible = 10;
                             $start_p = max(1, $current_page - floor($max_visible / 2));
                             $end_p = min($total_pages, $start_p + $max_visible - 1);
                             if ($end_p - $start_p + 1 < $max_visible) { $start_p = max(1, $end_p - $max_visible + 1); }

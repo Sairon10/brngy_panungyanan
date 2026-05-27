@@ -1028,24 +1028,32 @@ require_once __DIR__ . '/header.php';
 					</li>
 
 					<?php
-					$start_loop = max(1, $page - 2);
-					$end_loop = min($total_pages, $page + 2);
-
-					if ($start_loop > 1) {
-						echo '<li class="page-item"><a class="page-link" href="' . $base_url . 'page=1">1</a></li>';
-						if ($start_loop > 2)
-							echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+					$max_visible = 10;
+					$start = max(1, $page - floor($max_visible / 2));
+					$end = min($total_pages, $start + $max_visible - 1);
+					if ($end - $start + 1 < $max_visible) {
+						$start = max(1, $end - $max_visible + 1);
 					}
 
-					for ($i = $start_loop; $i <= $end_loop; $i++): ?>
-						<li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
+					if ($start > 1): ?>
+						<li class="page-item">
+							<a class="page-link" href="<?php echo $base_url; ?>page=1">1</a>
+						</li>
+						<?php if ($start > 2): ?>
+							<li class="page-item disabled"><span class="page-link">...</span></li>
+						<?php endif; ?>
+					<?php endif; ?>
+
+					<?php for ($i = $start; $i <= $end; $i++): ?>
+						<li class="page-item <?php echo $page == $i ? 'active' : ''; ?>">
 							<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $i; ?>"><?php echo $i; ?></a>
 						</li>
 					<?php endfor; ?>
 
-					<?php if ($end_loop < $total_pages): ?>
-						<?php if ($end_loop < $total_pages - 1)
-							echo '<li class="page-item disabled"><span class="page-link">...</span></li>'; ?>
+					<?php if ($end < $total_pages): ?>
+						<?php if ($end < $total_pages - 1): ?>
+							<li class="page-item disabled"><span class="page-link">...</span></li>
+						<?php endif; ?>
 						<li class="page-item"><a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a></li>
 					<?php endif; ?>
 

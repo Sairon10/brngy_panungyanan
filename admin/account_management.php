@@ -372,7 +372,7 @@ $display_rows = array_slice($rows, $offset, $limit);
 				<a class="page-link" href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
 			</li>
 			<?php
-			$max_visible = 5;
+			$max_visible = 10;
 			$start = max(1, $current_page - floor($max_visible / 2));
 			$end = min($total_pages, $start + $max_visible - 1);
 			if ($end - $start + 1 < $max_visible) { $start = max(1, $end - $max_visible + 1); }
