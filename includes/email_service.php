@@ -859,8 +859,8 @@ function send_payment_status_email($email, $status, $paymentData) {
                             <td style='padding: 40px 30px;'>
                                 <div style='text-align: center; margin-bottom: 30px;'>
                                     <div style='font-size: 48px; margin-bottom: 15px;'>{$statusIcon}</div>
-                                    <h2 style='color: {$statusColor}; margin: 0; font-size: 24px;'>Payment " . ucfirst($status) . "</h2>
-                                </div>";
+                                    <h2 style='color: {$statusColor}; margin: 0; font-size: 24px;'>Payment {$status}</h2>
+                                </div>
     
     <p style='color: #475569; font-size: 16px; line-height: 1.6;'>
         Hello <strong>" . htmlspecialchars($paymentData['resident_name'] ?? 'Resident') . "</strong>,<br><br>
