@@ -1679,13 +1679,21 @@ $documents = $documents_stmt->fetchAll();
                 
                 // 1. Look for a line with "Ref" label and extract ONLY the continuous block of digits from it
                 for (const line of lines) {
-                    const refLineMatch = line.match(/(?:ref(?:erence)?\.?\s*(?:no\.?|num(?:ber)?)?|trans(?:action)?\.?\s*(?:no\.?|id)?)\s*[:.-]?\s*([\d\sA-Za-z]+)/i);
+                    const refLineMatch = line.match(/(?:ref(?:erence)?\.?\s*(?:no\.?|num(?:ber)?|id)?|trans(?:action)?\.?\s*(?:no\.?|id)?)\s*[:.-]?\s*([\d\sA-Za-z]+)/i);
                     if (refLineMatch) {
                         // Remove spaces first, then find the first block of 10-15 digits
                         const noSpaces = refLineMatch[1].replace(/\s+/g, '');
-                        const digitsOnly = noSpaces.match(/\d{10,15}/);
-                        if (digitsOnly) {
-                            foundRef = digitsOnly[0];
+                        // Check for GCash (10-15 digits)
+                        const gcashMatch = noSpaces.match(/\d{10,15}/);
+                        if (gcashMatch) {
+                            foundRef = gcashMatch[0];
+                            break;
+                        }
+                        
+                        // Check for Maya (strictly 12 alphanumeric chars)
+                        const mayaMatch = noSpaces.match(/[A-Za-z0-9]{12}/);
+                        if (mayaMatch && /[A-Z]/i.test(mayaMatch[0]) && /[0-9]/.test(mayaMatch[0])) {
+                            foundRef = mayaMatch[0].toUpperCase();
                             break;
                         }
                     }
@@ -1695,6 +1703,13 @@ $documents = $documents_stmt->fetchAll();
                 if (!foundRef) {
                     for (const line of lines) {
                         // Extract all digits from the line, check if there's a 10-15 digit cluster
+                        // Maya standalone check (12 alphanumeric)
+                        const mayaMatch = line.match(/\b([A-Z0-9]{12})\b/i);
+                        if (mayaMatch && /[A-Z]/i.test(mayaMatch[1]) && /[0-9]/.test(mayaMatch[1])) {
+                            foundRef = mayaMatch[1].toUpperCase();
+                            break;
+                        }
+                        
                         const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
                         if (digitsMatch) {
                             const clean = digitsMatch[1].replace(/\s+/g, '');

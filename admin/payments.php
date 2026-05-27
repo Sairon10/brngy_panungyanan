@@ -1040,28 +1040,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
 				// 1. Look for Ref labels
 				for (const line of lines) {
-					const refLineMatch = line.match(/(?:ref(?:erence)?\.?\s*(?:no\.?|num(?:ber)?)?|trans(?:action)?\.?\s*(?:no\.?|id)?)\s*[:.-]?\s*([\d\sA-Za-z]+)/i);
+					const refLineMatch = line.match(/(?:ref(?:erence)?\.?\s*(?:no\.?|num(?:ber)?|id)?|trans(?:action)?\.?\s*(?:no\.?|id)?)\s*[:.-]?\s*([\d\sA-Za-z]+)/i);
 					if (refLineMatch) {
 						const noSpaces = refLineMatch[1].replace(/\s+/g, '');
-						const digitsOnly = noSpaces.match(/\d{10,15}/);
-						if (digitsOnly) {
-							foundRef = digitsOnly[0];
-							break;
-						}
+                        // Check for GCash (10-15 digits)
+                        const gcashMatch = noSpaces.match(/\d{10,15}/);
+                        if (gcashMatch) {
+                            foundRef = gcashMatch[0];
+                            break;
+                        }
+                        
+                        // Check for Maya (strictly 12 alphanumeric chars)
+                        const mayaMatch = noSpaces.match(/[A-Za-z0-9]{12}/);
+                        if (mayaMatch && /[A-Z]/i.test(mayaMatch[0]) && /[0-9]/.test(mayaMatch[0])) {
+                            foundRef = mayaMatch[0].toUpperCase();
+                            break;
+                        }
 					}
 				}
 
 				// 2. Standalone digits check
 				if (!foundRef) {
 					for (const line of lines) {
-						const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
-						if (digitsMatch) {
-							const clean = digitsMatch[1].replace(/\s+/g, '');
-							if (clean.length >= 10 && clean.length <= 15) {
-								foundRef = clean;
-								break;
-							}
-						}
+						// Maya standalone check (12 alphanumeric)
+                        const mayaMatch = line.match(/\b([A-Z0-9]{12})\b/i);
+                        if (mayaMatch && /[A-Z]/i.test(mayaMatch[1]) && /[0-9]/.test(mayaMatch[1])) {
+                            foundRef = mayaMatch[1].toUpperCase();
+                            break;
+                        }
+                        
+                        const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
+                        if (digitsMatch) {
+                            const clean = digitsMatch[1].replace(/\s+/g, '');
+                            if (clean.length >= 10 && clean.length <= 15) {
+                                foundRef = clean;
+                                break;
+                            }
+                        }
 					}
 				}
 
