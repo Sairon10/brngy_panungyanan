@@ -341,6 +341,42 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 		.chatbot-toggle {
 			display: none !important;
 		}
+
+		/* Sidebar collapse/submenu support */
+		.admin-sidebar .collapse.show {
+			display: block !important;
+		}
+
+		.admin-sidebar .collapse:not(.show) {
+			display: none !important;
+		}
+
+		#documentsSubmenu .nav-link:not(.active) {
+			background-color: transparent !important;
+			color: rgba(255, 255, 255, 0.6) !important;
+			border-left: 3px solid transparent;
+		}
+
+		#documentsSubmenu .nav-link:not(.active):hover {
+			color: rgba(255, 255, 255, 0.95) !important;
+			background-color: rgba(255, 255, 255, 0.06) !important;
+		}
+
+		#documentsSubmenu .nav-link.active {
+			color: #fff !important;
+			background-color: rgba(255, 255, 255, 0.1) !important;
+			box-shadow: none !important;
+			border-left: 3px solid #14b8a6 !important;
+			font-weight: bold;
+		}
+
+		@media (min-width: 768px) {
+			/* Hide submenus and arrows when sidebar is collapsed */
+			body.sidebar-collapsed .admin-sidebar .collapse,
+			body.sidebar-collapsed .admin-sidebar .dropdown-icon {
+				display: none !important;
+			}
+		}
 	</style>
 </head>
 
@@ -405,27 +441,43 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 							href="portal_announcements.php">
 							<i class="fas fa-bullhorn"></i> Announcements
 						</a>
-						<a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'requests.php' ? 'active' : ''; ?>"
-							href="requests.php">
-							<i class="fas fa-file-alt"></i> Documents
+						<?php
+						$current_page = basename($_SERVER['PHP_SELF']);
+						$is_doc_section = ($current_page == 'requests.php' || $current_page == 'payments.php');
+						?>
+						<a class="nav-link <?php echo $is_doc_section ? 'active' : ''; ?>"
+							href="javascript:void(0)" onclick="manualSidebarCollapse('documentsSubmenu')"
+							style="cursor:pointer;" title="Documents">
+							<i class="fas fa-file-alt"></i>
+							<span>Documents</span>
+							<i class="fas fa-chevron-down ms-auto dropdown-icon" style="font-size: 0.7rem; transition: transform 0.2s; <?php echo $is_doc_section ? 'transform: rotate(180deg);' : ''; ?>"></i>
 						</a>
+						<div class="collapse <?php echo $is_doc_section ? 'show' : ''; ?>" id="documentsSubmenu">
+							<a class="nav-link ps-5 py-2 <?php echo ($current_page === 'requests.php') ? 'active' : ''; ?>"
+								href="requests.php" style="font-size: 0.85rem;" title="Document Requests">Document Requests</a>
+							<a class="nav-link ps-5 py-2 <?php echo ($current_page === 'payments.php') ? 'active' : ''; ?>"
+								href="payments.php" style="font-size: 0.85rem;" title="Payment">Payment History</a>
+						</div>
 						<a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'incidents.php' ? 'active' : ''; ?>"
 							href="incidents.php">
 							<i class="fas fa-exclamation-triangle"></i> Report Incident
 						</a>
 						<script>
-							// Script for chevron rotation
-							document.addEventListener('DOMContentLoaded', function () {
-								var profileMenu = document.getElementById('profileSubmenu');
-								if (profileMenu) {
-									profileMenu.addEventListener('show.bs.collapse', function () {
-										document.querySelector('[data-bs-target="#profileSubmenu"] .dropdown-icon').style.transform = 'rotate(180deg)';
-									});
-									profileMenu.addEventListener('hide.bs.collapse', function () {
-										document.querySelector('[data-bs-target="#profileSubmenu"] .dropdown-icon').style.transform = 'rotate(0deg)';
-									});
+							function manualSidebarCollapse(id) {
+								var el = document.getElementById(id);
+								if (!el) return;
+								var isShowing = el.classList.contains('show');
+								var parentLink = document.querySelector('[onclick="manualSidebarCollapse(\'' + id + '\')"]');
+								var chevron = parentLink ? parentLink.querySelector('.dropdown-icon') : null;
+								
+								if (isShowing) {
+									el.classList.remove('show');
+									if (chevron) chevron.style.transform = 'rotate(0deg)';
+								} else {
+									el.classList.add('show');
+									if (chevron) chevron.style.transform = 'rotate(180deg)';
 								}
-							});
+							}
 						</script>
 					</nav>
 

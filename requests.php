@@ -637,7 +637,9 @@ $documents = $documents_stmt->fetchAll();
                             <tr>
                                 <th class="py-3 ps-4 rounded-start" style="width: 50px;">#</th>
                                 <th class="py-3">Name</th>
+                                <th class="py-3">Type</th>
                                 <th class="py-3">Status</th>
+                                <th class="py-3">Payment</th>
                                 <th class="py-3">Date</th>
                                 <th class="py-3 pe-4 rounded-end text-center" style="width: 100px;">Action</th>
                             </tr>
@@ -661,6 +663,7 @@ $documents = $documents_stmt->fetchAll();
                                     'user_name' => $c['user_name'] ?? '',
                                     'payment_receipt' => $c['payment_receipt'] ?? null,
                                     'payment_status' => $c['payment_status'] ?? 'pending',
+                                    'payment_amount_paid' => $c['payment_amount_paid'] ?? null,
                                     'refund_number' => $c['refund_number'] ?? null,
                                     'refund_notes' => $c['refund_notes'] ?? null,
                                     'refund_receipt' => $c['refund_receipt'] ?? null,
@@ -683,6 +686,7 @@ $documents = $documents_stmt->fetchAll();
                                     'user_name' => $d['user_name'] ?? '',
                                     'payment_receipt' => $d['payment_receipt'] ?? null,
                                     'payment_status' => $d['payment_status'] ?? 'pending',
+                                    'payment_amount_paid' => $d['payment_amount_paid'] ?? null,
                                     'refund_number' => $d['refund_number'] ?? null,
                                     'refund_notes' => $d['refund_notes'] ?? null,
                                     'refund_receipt' => $d['refund_receipt'] ?? null,
@@ -717,7 +721,7 @@ $documents = $documents_stmt->fetchAll();
                             ?>
                             <?php if (empty($paginated_requests)): ?>
                                 <tr>
-                                    <td colspan="5" class="text-center py-5">
+                                    <td colspan="7" class="text-center py-5">
                                         <div class="text-dark opacity-50 mb-2">
                                             <i class="fas fa-folder-open fa-3x"></i>
                                         </div>
@@ -771,6 +775,10 @@ $documents = $documents_stmt->fetchAll();
                                             <div class="fw-bold text-dark mb-0"><?php echo htmlspecialchars($requesterName); ?>
                                             </div>
                                         </td>
+                                        <!-- Type -->
+                                        <td>
+                                            <span class="text-dark"><?php echo htmlspecialchars($displayDocType); ?></span>
+                                        </td>
                                         <!-- Status -->
                                         <td>
                                             <div role="button"
@@ -797,6 +805,53 @@ $documents = $documents_stmt->fetchAll();
                                                 <i class="fas <?php echo $icon; ?> me-1"></i>
                                                 <?php echo $statusLabel; ?>
                                             </div>
+                                        </td>
+                                        <!-- Payment -->
+                                        <td>
+                                            <?php
+                                            $payStatus = $req['payment_status'] ?? 'pending';
+                                            $payAmount = $req['payment_amount_paid'] ?? null;
+                                            $hasReceipt = !empty($req['payment_receipt']);
+                                            
+                                            if ($hasReceipt) {
+                                                // Has e-wallet payment
+                                                switch ($payStatus) {
+                                                    case 'confirmed':
+                                                        $payClass = 'bg-teal-50 text-teal-600';
+                                                        $payLabel = 'Confirmed';
+                                                        $payIcon = 'fa-check-circle';
+                                                        break;
+                                                    case 'rejected':
+                                                        $payClass = 'bg-rose-50 text-rose-600';
+                                                        $payLabel = 'Rejected';
+                                                        $payIcon = 'fa-times-circle';
+                                                        break;
+                                                    case 'refunded':
+                                                        $payClass = 'bg-blue-50 text-blue-600';
+                                                        $payLabel = 'Refunded';
+                                                        $payIcon = 'fa-undo';
+                                                        break;
+                                                    case 'refund_pending':
+                                                        $payClass = 'bg-amber-50 text-amber-600';
+                                                        $payLabel = 'Refund Pending';
+                                                        $payIcon = 'fa-hourglass-half';
+                                                        break;
+                                                    default:
+                                                        $payClass = 'bg-amber-50 text-amber-600';
+                                                        $payLabel = 'Pending';
+                                                        $payIcon = 'fa-clock';
+                                                        break;
+                                                }
+                                            ?>
+                                                <span class="badge <?php echo $payClass; ?> rounded-pill px-2 py-1 border-0" style="font-size: 0.75rem;">
+                                                    <i class="fas <?php echo $payIcon; ?> me-1"></i><?php echo $payLabel; ?>
+                                                </span>
+                                                <?php if ($payAmount): ?>
+                                                    <div class="text-dark opacity-50 small mt-1">₱ <?php echo number_format((float)$payAmount, 2); ?></div>
+                                                <?php endif; ?>
+                                            <?php } else { ?>
+                                                <span class="text-dark opacity-50 small">Walk-in</span>
+                                            <?php } ?>
                                         </td>
                                         <!-- Date -->
                                         <td class="text-dark opacity-75 small">
@@ -1748,6 +1803,25 @@ $documents = $documents_stmt->fetchAll();
                     if (foundAmount && amountInput) {
                         amountInput.value = foundAmount;
                         document.getElementById('amount_paid_display').textContent = '₱ ' + foundAmount;
+                        
+                        // ── Insufficient Payment Check ──────────────────
+                        const docTypeSelect = document.getElementById('doc_type');
+                        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+                        const amountDue = selectedOption && selectedOption.value !== "" ? parseFloat(selectedOption.getAttribute('data-price') || "0") : 0;
+                        const numericFoundAmount = parseFloat(foundAmount.replace(/,/g, ''));
+                        
+                        if (amountDue > 0 && numericFoundAmount < amountDue) {
+                            statusText.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> Insufficient payment!</span> Amount paid (₱ ${numericFoundAmount.toFixed(2)}) is less than the required amount (₱ ${amountDue.toFixed(2)}).`;
+                            
+                            // Disable submit button
+                            const submitBtn = document.getElementById('btn_submit_request');
+                            if (submitBtn) {
+                                submitBtn.disabled = true;
+                                submitBtn.title = 'Cannot submit: insufficient payment amount.';
+                            }
+                            spinner.classList.add('d-none');
+                            return; // stop here
+                        }
                     }
                     
                     statusText.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Scan complete!</span> Details extracted from receipt.`;

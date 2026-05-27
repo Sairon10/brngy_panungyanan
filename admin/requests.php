@@ -1675,6 +1675,23 @@ require_once __DIR__ . '/header.php';
 					if (foundAmount && amountInput) {
 						amountInput.value = foundAmount;
 						document.getElementById('amount_paid_display_admin').textContent = 'PHP ' + parseFloat(foundAmount).toFixed(2);
+
+						// ── Insufficient Payment Check ──────────────────
+						const docTypeSelect = document.getElementById('wiDocType');
+						const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+						const amountDue = selectedOption && selectedOption.value !== "" ? parseFloat(selectedOption.getAttribute('data-price') || 0) : 0;
+						const numericFoundAmount = parseFloat(foundAmount.replace(/,/g, ''));
+
+						if (amountDue > 0 && numericFoundAmount < amountDue) {
+							statusText.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-exclamation-triangle me-1"></i> Insufficient payment!</span> Amount paid (₱ ${numericFoundAmount.toFixed(2)}) is less than the required amount (₱ ${amountDue.toFixed(2)}).`;
+							const submitBtn = document.getElementById('btn_wi_add_request');
+							if (submitBtn) {
+								submitBtn.disabled = true;
+								submitBtn.title = 'Cannot submit: insufficient payment amount.';
+							}
+							spinner.classList.add('d-none');
+							return; // stop here
+						}
 					}
 					
 					statusText.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i> Scan complete!</span> Details extracted from receipt.`;

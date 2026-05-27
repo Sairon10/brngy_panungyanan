@@ -92,7 +92,7 @@ try {
             <div class="row g-4">
                 <!-- Pending Card -->
                 <div class="col-md-6">
-                    <a href="requests.php" class="text-decoration-none"
+                    <a href="requests.php?status_filter=pending" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
                         <div class="admin-stats-card warning mb-0"
                             style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
@@ -111,7 +111,7 @@ try {
                 </div>
                 <!-- Ready to Pickup Card -->
                 <div class="col-md-6">
-                    <a href="requests.php" class="text-decoration-none"
+                    <a href="requests.php?status_filter=approved" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
                         <div class="admin-stats-card success mb-0"
                             style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
@@ -131,7 +131,7 @@ try {
                 </div>
                 <!-- Released Card -->
                 <div class="col-md-6">
-                    <a href="requests.php" class="text-decoration-none"
+                    <a href="requests.php?status_filter=released" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
                         <div class="admin-stats-card info mb-0"
                             style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
@@ -150,7 +150,7 @@ try {
                 </div>
                 <!-- Rejected Card -->
                 <div class="col-md-6">
-                    <a href="requests.php" class="text-decoration-none"
+                    <a href="requests.php?status_filter=rejected" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
                         <div class="admin-stats-card danger mb-0"
                             style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
@@ -259,55 +259,7 @@ try {
 
 
 
-    <!-- Quick Access Menu -->
-    <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-bars me-2 text-primary"></i>Quick Access Options</h5>
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <a href="requests.php" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 h-100 btn-hover-effect bg-white">
-                    <div class="card-body p-4 text-center">
-                        <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3"
-                            style="width: 65px; height: 65px;">
-                            <i class="fas fa-file-alt fa-2x"></i>
-                        </div>
-                        <h5 class="text-dark fw-bold mb-2">Documents</h5>
-                        <p class="text-dark opacity-75 small mb-0 px-2">Request barangay clearance, indigency, and other
-                            important certificates easily.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a href="incidents.php" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 h-100 btn-hover-effect bg-white">
-                    <div class="card-body p-4 text-center">
-                        <div class="rounded-circle bg-danger bg-opacity-10 text-danger d-inline-flex align-items-center justify-content-center mb-3"
-                            style="width: 65px; height: 65px;">
-                            <i class="fas fa-exclamation-triangle fa-2x"></i>
-                        </div>
-                        <h5 class="text-dark fw-bold mb-2">Report Incident</h5>
-                        <p class="text-dark opacity-75 small mb-0 px-2">Report an emergency, concern, or incident in
-                            your area directly to the barangay.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a href="profile.php" class="text-decoration-none">
-                <div class="card border-0 shadow-sm rounded-4 h-100 btn-hover-effect bg-white">
-                    <div class="card-body p-4 text-center">
-                        <div class="rounded-circle bg-info bg-opacity-10 text-info d-inline-flex align-items-center justify-content-center mb-3"
-                            style="width: 65px; height: 65px;">
-                            <i class="fas fa-user-shield fa-2x"></i>
-                        </div>
-                        <h5 class="text-dark fw-bold mb-2">Profile</h5>
-                        <p class="text-dark opacity-75 small mb-0 px-2">Manage your account information and ID
-                            verification.</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
+
 </div>
 
 <style>
