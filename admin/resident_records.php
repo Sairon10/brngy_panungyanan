@@ -641,16 +641,6 @@ $display_records = array_slice($unified_records, $offset, $limit);
                             <td>
                                 <div class="d-flex align-items-center flex-wrap gap-1">
                                     <span class="fw-bold text-dark me-1"><?php echo htmlspecialchars($row['full_name']); ?></span>
-                                    <?php if (!empty($row['is_senior'])): ?>
-                                        <a href="?filter=senior&search=<?php echo urlencode($search); ?>" 
-                                           class="badge bg-warning text-dark border border-warning text-decoration-none" 
-                                           style="font-size: 0.65rem; padding: 2px 6px;">SENIOR</a>
-                                    <?php endif; ?>
-                                    <?php if (!empty($row['is_pwd'])): ?>
-                                        <a href="?filter=pwd&search=<?php echo urlencode($search); ?>" 
-                                           class="badge bg-info text-dark border border-info text-decoration-none" 
-                                           style="font-size: 0.65rem; padding: 2px 6px;">PWD</a>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                             <td>
