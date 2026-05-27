@@ -5,6 +5,8 @@ if (!is_admin()) {
 }
 
 $pdo = get_db_connection();
+require_once __DIR__ . '/../includes/email_service.php';
+require_once __DIR__ . '/../includes/sms_service.php';
 
 $page_title = 'Payments';
 $breadcrumb = [['title' => 'Payments']];
@@ -65,6 +67,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
 					->execute([$refund_number, $refund_notes, $refund_amount, $refund_receipt_path, $pay_id]);
 				
 				$message = 'Payment has been marked as <strong>refunded</strong> successfully.';
+            
+            // --- Send Notification ---
+            // Fetch user info and payment details
+            $table = $pay_type === 'clearance' ? 'barangay_clearances' : 'document_requests';
+            $doc_type_name = $pay_type === 'clearance' ? 'Barangay Clearance' : 'Document Request';
+            
+            // For document requests, we can fetch the actual doc_type
+            $docTypeCol = $pay_type === 'clearance' ? "'Barangay Clearance' AS doc_type" : "p.doc_type";
+            
+            $stmt = $pdo->prepare("
+                SELECT u.email, u.full_name, u.first_name, r.phone,
+                       p.payment_reference_no, p.payment_amount_paid,
+                       $docTypeCol
+                FROM $table p
+                JOIN users u ON u.id = p.user_id
+                LEFT JOIN residents r ON r.user_id = u.id
+                WHERE p.id = ? LIMIT 1
+            ");
+            $stmt->execute([$pay_id]);
+            $paymentInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($paymentInfo) {
+                $paymentData = [
+                    'resident_name' => $paymentInfo['first_name'] ?: ($paymentInfo['full_name'] ?: 'Resident'),
+                    'reference_no'  => $paymentInfo['payment_reference_no'],
+                    'amount'        => $paymentInfo['payment_amount_paid'],
+                    'doc_type'      => $paymentInfo['doc_type'],
+                    'notes'         => $pay_action === 'refunded' ? ($refund_notes ?? '') : '',
+                    'admin_refund_amount' => $pay_action === 'refunded' ? ($refund_amount ?? null) : null
+                ];
+                
+                if (!empty($paymentInfo['email'])) {
+                    send_payment_status_email($paymentInfo['email'], $pay_action, $paymentData);
+                }
+                if (!empty($paymentInfo['phone'])) {
+                    send_payment_status_sms($paymentInfo['phone'], $pay_action, $paymentData);
+                }
+            }
+            // --- End Notification ---
 				$message_type = 'success';
 			}
 		} else {
@@ -79,6 +120,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
 				? 'Payment has been <strong>confirmed</strong> successfully.'
 				: 'Payment has been <strong>rejected</strong>.';
 			$message_type = $pay_action === 'confirmed' ? 'success' : 'danger';
+            
+            // --- Send Notification ---
+            // Fetch user info and payment details
+            $table = $pay_type === 'clearance' ? 'barangay_clearances' : 'document_requests';
+            $doc_type_name = $pay_type === 'clearance' ? 'Barangay Clearance' : 'Document Request';
+            
+            // For document requests, we can fetch the actual doc_type
+            $docTypeCol = $pay_type === 'clearance' ? "'Barangay Clearance' AS doc_type" : "p.doc_type";
+            
+            $stmt = $pdo->prepare("
+                SELECT u.email, u.full_name, u.first_name, r.phone,
+                       p.payment_reference_no, p.payment_amount_paid,
+                       $docTypeCol
+                FROM $table p
+                JOIN users u ON u.id = p.user_id
+                LEFT JOIN residents r ON r.user_id = u.id
+                WHERE p.id = ? LIMIT 1
+            ");
+            $stmt->execute([$pay_id]);
+            $paymentInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($paymentInfo) {
+                $paymentData = [
+                    'resident_name' => $paymentInfo['first_name'] ?: ($paymentInfo['full_name'] ?: 'Resident'),
+                    'reference_no'  => $paymentInfo['payment_reference_no'],
+                    'amount'        => $paymentInfo['payment_amount_paid'],
+                    'doc_type'      => $paymentInfo['doc_type'],
+                    'notes'         => $pay_action === 'refunded' ? ($refund_notes ?? '') : '',
+                    'admin_refund_amount' => $pay_action === 'refunded' ? ($refund_amount ?? null) : null
+                ];
+                
+                if (!empty($paymentInfo['email'])) {
+                    send_payment_status_email($paymentInfo['email'], $pay_action, $paymentData);
+                }
+                if (!empty($paymentInfo['phone'])) {
+                    send_payment_status_sms($paymentInfo['phone'], $pay_action, $paymentData);
+                }
+            }
+            // --- End Notification ---
 		}
 	}
 }

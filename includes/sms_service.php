@@ -409,3 +409,44 @@ function send_incident_status_sms($phoneNumber, $status, $incidentData) {
     
     return send_sms($phoneNumber, $smsText);
 }
+
+/**
+ * Send payment status update SMS
+ */
+function send_payment_status_sms($phoneNumber, $status, $paymentData) {
+    if (empty($phoneNumber)) {
+        return ['success' => false, 'error' => 'No phone number provided'];
+    }
+
+    $refNo = $paymentData['reference_no'] ?? 'N/A';
+    $docType = $paymentData['doc_type'] ?? 'Document';
+    
+    $message = "Brgy Panungyanan\n";
+    
+    switch(strtolower($status)) {
+        case 'confirmed':
+            $message .= "Your payment for {$docType} (Ref: {$refNo}) has been CONFIRMED. Thank you!";
+            break;
+        case 'rejected':
+            $message .= "Your payment for {$docType} (Ref: {$refNo}) was REJECTED. Please check your account for details.";
+            break;
+        case 'refunded':
+            $message .= "Your payment for {$docType} (Ref: {$refNo}) has been REFUNDED.";
+            if (!empty($paymentData['admin_refund_amount'])) {
+                $message .= " Amount: PHP " . number_format((float)$paymentData['admin_refund_amount'], 2);
+            }
+            break;
+        default:
+            $message .= "Your payment status for {$docType} is now: " . strtoupper($status) . ".";
+    }
+    
+    if (!empty($paymentData['notes'])) {
+        $notes = $paymentData['notes'];
+        if (strlen($notes) > 30) {
+            $notes = substr($notes, 0, 27) . '...';
+        }
+        $message .= "\nNote: " . $notes;
+    }
+    
+    return send_sms($phoneNumber, $message);
+}
