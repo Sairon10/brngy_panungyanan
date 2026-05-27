@@ -420,15 +420,17 @@ function send_payment_status_sms($phoneNumber, $status, $paymentData) {
 
     $refNo = $paymentData['reference_no'] ?? 'N/A';
     $docType = $paymentData['doc_type'] ?? 'Document';
+    $amountDue = isset($paymentData['amount_due']) ? number_format((float)$paymentData['amount_due'], 2) : 'N/A';
+    $amountPaid = isset($paymentData['amount_paid']) ? number_format((float)$paymentData['amount_paid'], 2) : 'N/A';
     
     $message = "Brgy Panungyanan\n";
     
     switch(strtolower($status)) {
         case 'confirmed':
-            $message .= "Your payment for {$docType} (Ref: {$refNo}) has been CONFIRMED. Thank you!";
+            $message .= "Your payment for {$docType} (Ref: {$refNo}) has been CONFIRMED. Amount Due: P{$amountDue}, Paid: P{$amountPaid}. Thank you!";
             break;
         case 'rejected':
-            $message .= "Your payment for {$docType} (Ref: {$refNo}) was REJECTED. Please check your account for details.";
+            $message .= "Your payment for {$docType} (Ref: {$refNo}) was REJECTED. Paid: P{$amountPaid}. Please check your account.";
             break;
         case 'refunded':
             $message .= "Your payment for {$docType} (Ref: {$refNo}) has been REFUNDED.";

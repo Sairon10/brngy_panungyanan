@@ -44,11 +44,11 @@ $rejected_clear = (int) ($pdo->query("SELECT COUNT(*) as c FROM barangay_clearan
 $total_rejected = $rejected_docs + $rejected_clear;
 
 // --- Incidents Stats ---
-$incidents_submitted = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='submitted' $date_where")->fetch()['c'] ?? 0);
-$incidents_review = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='in_review' $date_where")->fetch()['c'] ?? 0);
-$incidents_resolved = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='resolved' $date_where")->fetch()['c'] ?? 0);
-$incidents_rejected = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='closed' $date_where")->fetch()['c'] ?? 0);
-$incidents_canceled = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='canceled' $date_where")->fetch()['c'] ?? 0);
+$incidents_submitted = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='submitted' " . str_replace('created_at', 'i.created_at', $date_where) . "")->fetch()['c'] ?? 0);
+$incidents_review = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='in_review' " . str_replace('created_at', 'i.created_at', $date_where) . "")->fetch()['c'] ?? 0);
+$incidents_resolved = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='resolved' " . str_replace('created_at', 'i.created_at', $date_where) . "")->fetch()['c'] ?? 0);
+$incidents_rejected = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='closed' " . str_replace('created_at', 'i.created_at', $date_where) . "")->fetch()['c'] ?? 0);
+$incidents_canceled = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i JOIN users u ON i.user_id = u.id WHERE i.status='canceled' " . str_replace('created_at', 'i.created_at', $date_where) . "")->fetch()['c'] ?? 0);
 
 // --- General Stats (Population Overview) ---
 $pop_date_query = !empty($date_where) ? " WHERE " . substr($date_where, 5) : "";
@@ -64,7 +64,7 @@ $total_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members $pop_da
 $total_orphaned_rr = (int) ($pdo->query("
     SELECT COUNT(*) as c FROM resident_records rr 
     WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
-    " . str_replace("WHERE", "AND", $pop_date_query))->fetch()['c'] ?? 0);
+    " . str_replace('created_at', 'rr.created_at', str_replace('WHERE', 'AND', $pop_date_query)))->fetch()['c'] ?? 0);
 
 $solo_parents_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE is_solo_parent = 1 $date_where")->fetch()['c'] ?? 0);
 $solo_parents_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE is_solo_parent = 1 $date_where")->fetch()['c'] ?? 0);

@@ -76,13 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
             // For document requests, we can fetch the actual doc_type
             $docTypeCol = $pay_type === 'clearance' ? "'Barangay Clearance' AS doc_type" : "p.doc_type";
             
+            $dtJoin = $pay_type === 'clearance' ? "ON dt.name = 'Barangay Clearance'" : "ON dt.name = p.doc_type";
+            
             $stmt = $pdo->prepare("
                 SELECT u.email, u.full_name, u.first_name, r.phone,
                        p.payment_reference_no, p.payment_amount_paid,
-                       $docTypeCol
+                       $docTypeCol, dt.price as amount_due
                 FROM $table p
                 JOIN users u ON u.id = p.user_id
                 LEFT JOIN residents r ON r.user_id = u.id
+                LEFT JOIN document_types dt $dtJoin
                 WHERE p.id = ? LIMIT 1
             ");
             $stmt->execute([$pay_id]);
@@ -92,7 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
                 $paymentData = [
                     'resident_name' => $paymentInfo['first_name'] ?: ($paymentInfo['full_name'] ?: 'Resident'),
                     'reference_no'  => $paymentInfo['payment_reference_no'],
-                    'amount'        => $paymentInfo['payment_amount_paid'],
+                    'amount_paid'   => $paymentInfo['payment_amount_paid'],
+                    'amount_due'    => $paymentInfo['amount_due'],
                     'doc_type'      => $paymentInfo['doc_type'],
                     'notes'         => $pay_action === 'refunded' ? ($refund_notes ?? '') : '',
                     'admin_refund_amount' => $pay_action === 'refunded' ? ($refund_amount ?? null) : null
@@ -129,13 +133,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
             // For document requests, we can fetch the actual doc_type
             $docTypeCol = $pay_type === 'clearance' ? "'Barangay Clearance' AS doc_type" : "p.doc_type";
             
+            $dtJoin = $pay_type === 'clearance' ? "ON dt.name = 'Barangay Clearance'" : "ON dt.name = p.doc_type";
+            
             $stmt = $pdo->prepare("
                 SELECT u.email, u.full_name, u.first_name, r.phone,
                        p.payment_reference_no, p.payment_amount_paid,
-                       $docTypeCol
+                       $docTypeCol, dt.price as amount_due
                 FROM $table p
                 JOIN users u ON u.id = p.user_id
                 LEFT JOIN residents r ON r.user_id = u.id
+                LEFT JOIN document_types dt $dtJoin
                 WHERE p.id = ? LIMIT 1
             ");
             $stmt->execute([$pay_id]);
@@ -145,7 +152,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
                 $paymentData = [
                     'resident_name' => $paymentInfo['first_name'] ?: ($paymentInfo['full_name'] ?: 'Resident'),
                     'reference_no'  => $paymentInfo['payment_reference_no'],
-                    'amount'        => $paymentInfo['payment_amount_paid'],
+                    'amount_paid'   => $paymentInfo['payment_amount_paid'],
+                    'amount_due'    => $paymentInfo['amount_due'],
                     'doc_type'      => $paymentInfo['doc_type'],
                     'notes'         => $pay_action === 'refunded' ? ($refund_notes ?? '') : '',
                     'admin_refund_amount' => $pay_action === 'refunded' ? ($refund_amount ?? null) : null
@@ -331,11 +339,16 @@ require_once __DIR__ . '/header.php';
 	</div>
 
 	<?php if ($message): ?>
-		<div class="alert alert-<?= $message_type ?> alert-dismissible fade show m-3 mb-0 rounded-3" role="alert">
-			<i class="fas fa-<?= $message_type === 'success' ? 'check-circle' : 'exclamation-circle' ?> me-2"></i>
-			<?= $message ?>
-			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-		</div>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				Swal.fire({
+					icon: '<?= $message_type === 'success' ? 'success' : 'error' ?>',
+					title: '<?= $message_type === 'success' ? 'Success' : 'Error' ?>',
+					html: '<?= addslashes($message) ?>',
+					confirmButtonColor: '#0d9488'
+				});
+			});
+		</script>
 	<?php endif; ?>
 
 	<!-- Filter tabs -->

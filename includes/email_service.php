@@ -825,7 +825,8 @@ function send_payment_status_email($email, $status, $paymentData) {
             break;
     }
     
-    $amount = isset($paymentData['amount']) ? '₱' . number_format((float)$paymentData['amount'], 2) : 'N/A';
+    $amountDue = isset($paymentData['amount_due']) ? '₱' . number_format((float)$paymentData['amount_due'], 2) : 'N/A';
+    $amountPaid = isset($paymentData['amount_paid']) ? '₱' . number_format((float)$paymentData['amount_paid'], 2) : 'N/A';
     $refNo = htmlspecialchars($paymentData['reference_no'] ?? 'N/A');
     $docType = htmlspecialchars($paymentData['doc_type'] ?? 'Document');
     $notes = isset($paymentData['notes']) ? htmlspecialchars($paymentData['notes']) : '';
@@ -854,8 +855,12 @@ function send_payment_status_email($email, $status, $paymentData) {
                 <td style='padding: 8px 0; color: #0f172a; font-weight: 600;'>{$refNo}</td>
             </tr>
             <tr>
-                <td style='padding: 8px 0; color: #64748b; font-weight: 500;'>Amount:</td>
-                <td style='padding: 8px 0; color: #0f172a; font-weight: 600;'>{$amount}</td>
+                <td style='padding: 8px 0; color: #64748b; font-weight: 500;'>Amount Due:</td>
+                <td style='padding: 8px 0; color: #0f172a; font-weight: 600;'>{$amountDue}</td>
+            </tr>
+            <tr>
+                <td style='padding: 8px 0; color: #64748b; font-weight: 500;'>Amount Paid:</td>
+                <td style='padding: 8px 0; color: #0f172a; font-weight: 600;'>{$amountPaid}</td>
             </tr>";
             
     if ($status === 'refunded' && !empty($paymentData['admin_refund_amount'])) {
@@ -889,7 +894,8 @@ function send_payment_status_email($email, $status, $paymentData) {
     $textContent .= "Payment Details:\n";
     $textContent .= "- Document: {$docType}\n";
     $textContent .= "- Reference No: {$refNo}\n";
-    $textContent .= "- Amount: {$amount}\n";
+    $textContent .= "- Amount Due: {$amountDue}\n";
+    $textContent .= "- Amount Paid: {$amountPaid}\n";
     if ($status === 'refunded' && !empty($paymentData['admin_refund_amount'])) {
         $textContent .= "- Refund Amount: ₱" . number_format((float)$paymentData['admin_refund_amount'], 2) . "\n";
     }
@@ -897,5 +903,5 @@ function send_payment_status_email($email, $status, $paymentData) {
         $textContent .= "- Notes: {$notes}\n";
     }
     
-    return send_email($email, $subject, $htmlContent, $textContent);
+    return send_resend_email($email, $subject, $htmlContent, $textContent);
 }
