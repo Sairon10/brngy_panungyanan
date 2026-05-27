@@ -138,7 +138,7 @@ $display_rows = array_slice($rows, $offset, $limit);
     </div>
 </div>
 
-<div class="card staff-card">
+<div class="table-card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
             <thead>
@@ -234,28 +234,55 @@ $display_rows = array_slice($rows, $offset, $limit);
         </table>
     </div>
 
-    <!-- Pagination -->
+    <!-- Pagination & Info Bar inside table-card -->
     <?php if ($total_pages > 1): ?>
-        <div class="px-4 py-3 border-top bg-light d-flex justify-content-between align-items-center">
-            <div class="text-secondary small font-monospace">
-                Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $limit, $total_records); ?> of <?php echo $total_records; ?> records
+        <div class="table-info-bar">
+            <div>
+                Showing <strong><?php echo $offset + 1; ?></strong> to <strong><?php echo min($offset + $limit, $total_records); ?></strong> of <strong><?php echo $total_records; ?></strong> records
             </div>
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>">Previous</a>
-                    </li>
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <li class="page-item <?php echo $current_page == $i ? 'active' : ''; ?>">
-                            <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>"><?php echo $i; ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
-                        <a class="page-link" href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search); ?>">Next</a>
-                    </li>
-                </ul>
-            </nav>
         </div>
+        <nav class="table-pagination">
+            <ul class="pagination">
+                <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
+                </li>
+                <?php
+                $max_visible = 5;
+                $start = max(1, $current_page - floor($max_visible / 2));
+                $end = min($total_pages, $start + $max_visible - 1);
+                if ($end - $start + 1 < $max_visible) {
+                    $start = max(1, $end - $max_visible + 1);
+                }
+
+                if ($start > 1): ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&search=<?php echo urlencode($search); ?>">1</a>
+                    </li>
+                    <?php if ($start > 2): ?>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                    <li class="page-item <?php echo $current_page == $i ? 'active' : ''; ?>">
+                        <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>"><?php echo $i; ?></a>
+                    </li>
+                <?php endfor; ?>
+
+                <?php if ($end < $total_pages): ?>
+                    <?php if ($end < $total_pages - 1): ?>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <?php endif; ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<?php echo $total_pages; ?>&search=<?php echo urlencode($search); ?>"><?php echo $total_pages; ?></a>
+                    </li>
+                <?php endif; ?>
+
+                <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search); ?>">Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i></a>
+                </li>
+            </ul>
+        </nav>
     <?php endif; ?>
 </div>
 

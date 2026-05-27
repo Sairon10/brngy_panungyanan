@@ -269,6 +269,7 @@ require_once __DIR__ . '/header.php';
 
 	<!-- Table -->
 	<div class="p-3">
+		<div class="table-card">
 		<div class="table-responsive">
 			<table class="table table-hover align-middle" id="paymentsTable">
 				<thead class="bg-light text-uppercase" style="font-size:.78rem;">
@@ -384,24 +385,55 @@ require_once __DIR__ . '/header.php';
 				</tbody>
 			</table>
 		</div>
+		</div>
 
 		<!-- Pagination -->
 		<?php if ($total_pages > 1): ?>
-			<nav class="d-flex justify-content-center mt-3">
-				<ul class="pagination pagination-sm mb-0 gap-1">
+			<nav class="table-pagination">
+				<ul class="pagination">
+					<!-- Previous Page Link -->
 					<li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-						<a class="page-link rounded-3" href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">
-							<i class="fas fa-chevron-left" style="font-size:.7rem;"></i>
+						<a class="page-link rounded-3 px-3 py-2 border-light-subtle d-inline-flex align-items-center gap-1 fw-bold" href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">
+							<i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev
 						</a>
 					</li>
-					<?php for ($p = 1; $p <= $total_pages; $p++): ?>
+
+					<?php
+					$max_visible = 5;
+					$start = max(1, $page - floor($max_visible / 2));
+					$end = min($total_pages, $start + $max_visible - 1);
+					if ($end - $start + 1 < $max_visible) {
+						$start = max(1, $end - $max_visible + 1);
+					}
+
+					if ($start > 1): ?>
+						<li class="page-item">
+							<a class="page-link rounded-3 px-3 py-2 border-light-subtle" href="?<?= http_build_query(array_merge($_GET, ['page' => 1])) ?>">1</a>
+						</li>
+						<?php if ($start > 2): ?>
+							<li class="page-item disabled"><span class="page-link rounded-3 px-2 py-2 border-light-subtle">...</span></li>
+						<?php endif; ?>
+					<?php endif; ?>
+
+					<?php for ($p = $start; $p <= $end; $p++): ?>
 						<li class="page-item <?= $p === $page ? 'active' : '' ?>">
-							<a class="page-link rounded-3" href="?<?= http_build_query(array_merge($_GET, ['page' => $p])) ?>"><?= $p ?></a>
+							<a class="page-link rounded-3 px-3 py-2 border-light-subtle" href="?<?= http_build_query(array_merge($_GET, ['page' => $p])) ?>"><?= $p ?></a>
 						</li>
 					<?php endfor; ?>
+
+					<?php if ($end < $total_pages): ?>
+						<?php if ($end < $total_pages - 1): ?>
+							<li class="page-item disabled"><span class="page-link rounded-3 px-2 py-2 border-light-subtle">...</span></li>
+						<?php endif; ?>
+						<li class="page-item">
+							<a class="page-link rounded-3 px-3 py-2 border-light-subtle" href="?<?= http_build_query(array_merge($_GET, ['page' => $total_pages])) ?>"><?= $total_pages ?></a>
+						</li>
+					<?php endif; ?>
+
+					<!-- Next Page Link -->
 					<li class="page-item <?= $page >= $total_pages ? 'disabled' : '' ?>">
-						<a class="page-link rounded-3" href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>">
-							<i class="fas fa-chevron-right" style="font-size:.7rem;"></i>
+						<a class="page-link rounded-3 px-3 py-2 border-light-subtle d-inline-flex align-items-center gap-1 fw-bold" href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>">
+							Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i>
 						</a>
 					</li>
 				</ul>

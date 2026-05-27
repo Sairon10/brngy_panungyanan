@@ -435,6 +435,7 @@ $wi_residents_inc = $pdo->query("
                     </div>
                 </div>
 
+                <div class="table-card">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="bg-light">
@@ -629,28 +630,37 @@ $wi_residents_inc = $pdo->query("
                         </tbody>
                     </table>
                 </div>
+                </div>
 
                 <?php if ($total_pages > 1): ?>
-                    <div class="p-3 border-top bg-light bg-opacity-10">
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination pagination-sm justify-content-center mb-0 gap-1">
-                                <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
-                                    <a class="page-link border-0 rounded-3 shadow-sm"
-                                        href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $current_page - 1; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>">&laquo;</a>
+                    <nav class="table-pagination">
+                        <ul class="pagination">
+                            <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $current_page - 1; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
+                            </li>
+                            <?php
+                            $max_visible = 5;
+                            $start_p = max(1, $current_page - floor($max_visible / 2));
+                            $end_p = min($total_pages, $start_p + $max_visible - 1);
+                            if ($end_p - $start_p + 1 < $max_visible) { $start_p = max(1, $end_p - $max_visible + 1); }
+                            if ($start_p > 1): ?>
+                                <li class="page-item"><a class="page-link" href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=1<?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>">1</a></li>
+                                <?php if ($start_p > 2): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                            <?php endif; ?>
+                            <?php for ($i = $start_p; $i <= $end_p; $i++): ?>
+                                <li class="page-item <?php echo $current_page == $i ? 'active' : ''; ?>">
+                                    <a class="page-link" href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $i; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>"><?php echo $i; ?></a>
                                 </li>
-                                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                    <li class="page-item <?php echo $current_page == $i ? 'active' : ''; ?>">
-                                        <a class="page-link border-0 rounded-3 shadow-sm <?php echo $current_page == $i ? 'bg-primary text-white' : 'bg-white text-dark'; ?>"
-                                            href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $i; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>"><?php echo $i; ?></a>
-                                    </li>
-                                <?php endfor; ?>
-                                <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
-                                    <a class="page-link border-0 rounded-3 shadow-sm"
-                                        href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $current_page + 1; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>">&raquo;</a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
+                            <?php endfor; ?>
+                            <?php if ($end_p < $total_pages): ?>
+                                <?php if ($end_p < $total_pages - 1): ?><li class="page-item disabled"><span class="page-link">...</span></li><?php endif; ?>
+                                <li class="page-item"><a class="page-link" href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $total_pages; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>"><?php echo $total_pages; ?></a></li>
+                            <?php endif; ?>
+                            <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo basename($_SERVER['PHP_SELF']); ?>?page=<?php echo $current_page + 1; ?><?php echo isset($_GET['status']) ? '&status=' . htmlspecialchars($_GET['status']) : ''; ?>">Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i></a>
+                            </li>
+                        </ul>
+                    </nav>
                 <?php endif; ?>
             </div>
         </div>

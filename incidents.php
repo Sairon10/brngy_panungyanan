@@ -326,6 +326,7 @@ unset($row);
                     </div>
                 <?php endif; ?>
 
+                <div class="table-card">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                         <thead class="bg-light">
@@ -404,8 +405,40 @@ unset($row);
                                     </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
-                        </tbody>
                     </table>
+                </div>
+
+                <!-- Pagination UI inside table-card -->
+                <?php if ($total_pages > 1): ?>
+                    <nav class="table-pagination">
+                        <ul class="pagination">
+                            <?php
+                            $q_status = isset($_GET['status_filter']) ? '&status_filter=' . urlencode($_GET['status_filter']) : '';
+                            ?>
+                            <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo ($page <= 1) ? '#' : '?p=' . ($page - 1) . $q_status; ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
+                            </li>
+
+                            <?php
+                            $start_p = max(1, $page - 1);
+                            $end_p = min($total_pages, $start_p + 2);
+                            if ($end_p - $start_p < 2)
+                                $start_p = max(1, $end_p - 2);
+
+                            for ($i = $start_p; $i <= $end_p; $i++):
+                                if ($i > 0): ?>
+                                    <li class="page-item <?php echo ($i === $page) ? 'active' : ''; ?>">
+                                        <a class="page-link" href="?p=<?php echo $i . $q_status; ?>"><?php echo $i; ?></a>
+                                    </li>
+                                <?php endif;
+                            endfor; ?>
+
+                            <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="<?php echo ($page >= $total_pages) ? '#' : '?p=' . ($page + 1) . $q_status; ?>">Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i></a>
+                            </li>
+                        </ul>
+                    </nav>
+                <?php endif; ?>
                 </div>
 
                 <!-- View Incident Modal -->
@@ -676,48 +709,6 @@ unset($row);
                     </div>
                 </div>
 
-                <!-- Pagination UI -->
-                <?php if ($total_pages > 1): ?>
-                    <div class="mt-4 d-flex justify-content-center">
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination pagination-sm gap-1 border-0">
-                                <?php
-                                $q_status = isset($_GET['status_filter']) ? '&status_filter=' . urlencode($_GET['status_filter']) : '';
-                                ?>
-                                <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                                    <a class="page-link border-0 rounded-3 bg-light text-dark"
-                                        href="<?php echo ($page <= 1) ? '#' : '?p=' . ($page - 1) . $q_status; ?>">
-                                        <i class="fas fa-chevron-left small"></i>
-                                    </a>
-                                </li>
-
-                                <?php
-                                $start = max(1, $page - 1);
-                                $end = min($total_pages, $start + 2);
-                                if ($end - $start < 2)
-                                    $start = max(1, $end - 2);
-
-                                for ($i = $start; $i <= $end; $i++):
-                                    if ($i > 0): ?>
-                                        <li class="page-item">
-                                            <a class="page-link border-0 rounded-3 <?php echo ($i === $page) ? 'btn-teal text-white shadow-sm' : 'bg-light text-dark'; ?> px-3"
-                                                href="?p=<?php echo $i . $q_status; ?>">
-                                                <?php echo $i; ?>
-                                            </a>
-                                        </li>
-                                    <?php endif;
-                                endfor; ?>
-
-                                <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                                    <a class="page-link border-0 rounded-3 bg-light text-dark"
-                                        href="<?php echo ($page >= $total_pages) ? '#' : '?p=' . ($page + 1) . $q_status; ?>">
-                                        <i class="fas fa-chevron-right small"></i>
-                                    </a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>

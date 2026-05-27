@@ -181,8 +181,9 @@ if (isset($_GET['edit'])) {
 	<?php endif; ?>
 
 	<div class="p-3">
+		<div class="table-card">
 		<div class="table-responsive">
-			<table class="table table-striped align-middle">
+			<table class="table table-hover align-middle">
 				<thead>
 					<tr>
 						<th>Name</th>
@@ -242,6 +243,7 @@ if (isset($_GET['edit'])) {
 					<?php endif; ?>
 				</tbody>
 			</table>
+		</div>
 		</div>
 	</div>
 </div>

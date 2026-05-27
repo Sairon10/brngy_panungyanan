@@ -588,6 +588,7 @@ $display_records = array_slice($unified_records, $offset, $limit);
         </a>
     </div>
 
+    <div class="table-card">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
             <thead class="bg-light">
@@ -624,118 +625,141 @@ $display_records = array_slice($unified_records, $offset, $limit);
                 </tr>
             </thead>
             <tbody>
-                <?php
-                $counter = $offset + 1;
-                foreach ($display_records as $row):
-                    ?>
+                <?php if (!empty($display_records)): ?>
+                    <?php
+                    $counter = $offset + 1;
+                    foreach ($display_records as $row):
+                        ?>
+                        <tr class="align-middle">
+                            <td class="ps-4">
+                                <input type="checkbox" class="form-check-input resident-checkbox"
+                                    data-id="<?php echo $row['id']; ?>" data-user-id="<?php echo $row['user_id'] ?? 0; ?>"
+                                    data-type="<?php echo $row['resident_type']; ?>"
+                                    data-fm-id="<?php echo $row['fm_id'] ?? 0; ?>">
+                            </td>
+                            <td class="text-muted font-monospace small"><?php echo $counter++; ?></td>
+                            <td>
+                                <div class="d-flex align-items-center flex-wrap gap-1">
+                                    <span class="fw-bold text-dark me-1"><?php echo htmlspecialchars($row['full_name']); ?></span>
+                                    <?php if (!empty($row['is_senior'])): ?>
+                                        <a href="?filter=senior&search=<?php echo urlencode($search); ?>" 
+                                           class="badge bg-warning text-dark border border-warning text-decoration-none" 
+                                           style="font-size: 0.65rem; padding: 2px 6px;">SENIOR</a>
+                                    <?php endif; ?>
+                                    <?php if (!empty($row['is_pwd'])): ?>
+                                        <a href="?filter=pwd&search=<?php echo urlencode($search); ?>" 
+                                           class="badge bg-info text-dark border border-info text-decoration-none" 
+                                           style="font-size: 0.65rem; padding: 2px 6px;">PWD</a>
+                                    <?php endif; ?>
+                                    <?php if (!empty($row['is_solo_parent'])): ?>
+                                        <a href="?filter=solo_parent&search=<?php echo urlencode($search); ?>" 
+                                           class="badge bg-secondary text-white border border-secondary text-decoration-none" 
+                                           style="font-size: 0.65rem; padding: 2px 6px;">SOLO PARENT</a>
+                                    <?php endif; ?>
+                                </div>
+                            </td>
+                            <td>
+                                <?php if ($row['resident_type'] === 'OWNER'): ?>
+                                    <span class="badge bg-primary">OWNER</span>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary">MEMBER</span>
+                                <?php endif; ?>
+                            </td>
+                            <td class="small text-muted"><?php echo htmlspecialchars($row['address'] ?? 'N/A'); ?></td>
+                            <td class="font-monospace small"><?php echo htmlspecialchars($row['phone'] ?? 'N/A'); ?></td>
+                            <td>
+                                <?php if (($row['verification_status'] ?? '') === 'verified'): ?>
+                                    <span class="badge bg-success">Verified</span>
+                                <?php else: ?>
+                                    <span class="badge bg-danger">Unverified</span>
+                                <?php endif; ?>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center justify-content-center gap-2">
+                                    <a href="resident_record_view.php?id=<?php echo $row['id']; ?>&user_id=<?php echo $row['user_id'] ?? 0; ?><?php echo $row['resident_type'] === 'MEMBER' ? '&fm_id=' . $row['fm_id'] : ''; ?>"
+                                        class="btn btn-sm btn-outline-info" title="View details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="resident_record_view.php?id=<?php echo $row['id']; ?>&user_id=<?php echo $row['user_id'] ?? 0; ?>&edit=1<?php echo $row['resident_type'] === 'MEMBER' ? '&fm_id=' . $row['fm_id'] : ''; ?>"
+                                        class="btn btn-sm btn-outline-primary" title="Edit details">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="POST" class="d-inline delete-record-form">
+                                        <?php echo csrf_field(); ?>
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="record_id"
+                                            value="<?php echo $row['resident_type'] === 'OWNER' ? $row['id'] : $row['fm_id']; ?>">
+                                        <input type="hidden" name="user_id" value="<?php echo $row['user_id'] ?? 0; ?>">
+                                        <input type="hidden" name="type" value="<?php echo $row['resident_type']; ?>">
+                                        <button type="button" class="btn btn-sm btn-outline-danger btn-delete-record"
+                                            data-name="<?php echo htmlspecialchars($row['full_name']); ?>" title="Delete record">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
                     <tr>
-                        <td class="ps-4">
-                            <input type="checkbox" class="form-check-input resident-checkbox"
-                                data-id="<?php echo $row['id']; ?>" data-user-id="<?php echo $row['user_id'] ?? 0; ?>"
-                                data-type="<?php echo $row['resident_type']; ?>"
-                                data-fm-id="<?php echo $row['fm_id'] ?? 0; ?>">
-                        </td>
-                        <td class="text-muted small fw-bold"><?php echo $counter++; ?></td>
-                        <td>
-                            <div class="d-flex align-items-center flex-wrap gap-1">
-                                <span class="fw-bold text-dark me-1"><?php echo htmlspecialchars($row['full_name']); ?></span>
-                                <?php if (!empty($row['is_senior'])): ?>
-                                    <a href="?filter=senior" class="badge bg-warning text-dark border border-warning text-decoration-none" style="font-size: 0.65rem; padding: 2px 6px;">SENIOR</a>
-                                <?php endif; ?>
-                                <?php if (!empty($row['is_pwd'])): ?>
-                                    <a href="?filter=pwd" class="badge bg-info text-dark border border-info text-decoration-none" style="font-size: 0.65rem; padding: 2px 6px;">PWD</a>
-                                <?php endif; ?>
-                                <?php if (!empty($row['is_solo_parent'])): ?>
-                                    <a href="?filter=solo_parent" class="badge bg-secondary text-white border border-secondary text-decoration-none" style="font-size: 0.65rem; padding: 2px 6px;">SOLO PARENT</a>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <?php if ($row['resident_type'] === 'OWNER'): ?>
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1"
-                                    style="font-size: 0.7rem;">OWNER</span>
-                            <?php else: ?>
-                                <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1"
-                                    style="font-size: 0.7rem;">MEMBER</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="small text-muted"><?php echo htmlspecialchars($row['address'] ?? 'N/A'); ?></td>
-                        <td class="small text-muted"><?php echo htmlspecialchars($row['phone'] ?? 'N/A'); ?></td>
-                        <td>
-                            <?php if (($row['verification_status'] ?? '') === 'verified'): ?>
-                                <span
-                                    class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3 py-1"
-                                    style="font-size: 0.75rem;">Verified</span>
-                            <?php else: ?>
-                                <span
-                                    class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3 py-1"
-                                    style="font-size: 0.75rem;">Unverified</span>
-                            <?php endif; ?>
-                        </td>
-                        <td class="text-center">
-                            <div class="d-flex justify-content-center align-items-center gap-3">
-                                <a href="resident_record_view.php?id=<?php echo $row['id']; ?>&user_id=<?php echo $row['user_id'] ?? 0; ?><?php echo $row['resident_type'] === 'MEMBER' ? '&fm_id=' . $row['fm_id'] : ''; ?>"
-                                    class="action-btn text-primary" title="View Profile">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="resident_record_view.php?id=<?php echo $row['id']; ?>&user_id=<?php echo $row['user_id'] ?? 0; ?>&edit=1<?php echo $row['resident_type'] === 'MEMBER' ? '&fm_id=' . $row['fm_id'] : ''; ?>"
-                                    class="action-btn text-warning" title="Edit Record">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <form method="POST" class="d-inline delete-record-form">
-                                    <?php echo csrf_field(); ?>
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="record_id"
-                                        value="<?php echo $row['resident_type'] === 'OWNER' ? $row['id'] : $row['fm_id']; ?>">
-                                    <input type="hidden" name="user_id" value="<?php echo $row['user_id'] ?? 0; ?>">
-                                    <input type="hidden" name="type" value="<?php echo $row['resident_type']; ?>">
-                                    <button type="button"
-                                        class="action-btn border-0 bg-transparent text-danger btn-delete-record"
-                                        title="Delete Record"
-                                        data-name="<?php echo htmlspecialchars($row['full_name']); ?>">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                <?php if (empty($unified_records)): ?>
-                    <tr>
-                        <td colspan="7" class="text-center py-5 text-muted">No resident records found.</td>
+                        <td colspan="8" class="text-center py-5 text-muted">No resident records found.</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
 
-    <!-- Pagination Links -->
+    <!-- Pagination Links & Info Bar inside table-card -->
     <?php if ($total_pages > 1): ?>
-        <div class="px-4 py-3 border-top bg-light d-flex justify-content-between align-items-center">
-            <div class="text-muted small font-monospace">
-                Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $limit, $total_records); ?> of
-                <?php echo $total_records; ?> records
+        <div class="table-info-bar">
+            <div>
+                Showing <strong><?php echo $offset + 1; ?></strong> to <strong><?php echo min($offset + $limit, $total_records); ?></strong> of <strong><?php echo $total_records; ?></strong> records
             </div>
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
-                        <a class="page-link"
-                            href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>">Previous</a>
-                    </li>
-                    <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                        <li class="page-item <?php echo $i == $current_page ? 'active' : ''; ?>">
-                            <a class="page-link"
-                                href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>"><?php echo $i; ?></a>
-                        </li>
-                    <?php endfor; ?>
-                    <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
-                        <a class="page-link"
-                            href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>">Next</a>
-                    </li>
-                </ul>
-            </nav>
         </div>
+        <nav class="table-pagination">
+            <ul class="pagination">
+                <li class="page-item <?php echo $current_page <= 1 ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?php echo $current_page - 1; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
+                </li>
+                <?php
+                $max_visible = 5;
+                $start = max(1, $current_page - floor($max_visible / 2));
+                $end = min($total_pages, $start + $max_visible - 1);
+                if ($end - $start + 1 < $max_visible) {
+                    $start = max(1, $end - $max_visible + 1);
+                }
+
+                if ($start > 1): ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>">1</a>
+                    </li>
+                    <?php if ($start > 2): ?>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php for ($i = $start; $i <= $end; $i++): ?>
+                    <li class="page-item <?php echo $i == $current_page ? 'active' : ''; ?>">
+                        <a class="page-link" href="?page=<?php echo $i; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>"><?php echo $i; ?></a>
+                    </li>
+                <?php endfor; ?>
+
+                <?php if ($end < $total_pages): ?>
+                    <?php if ($end < $total_pages - 1): ?>
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    <?php endif; ?>
+                    <li class="page-item">
+                        <a class="page-link" href="?page=<?php echo $total_pages; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>"><?php echo $total_pages; ?></a>
+                    </li>
+                <?php endif; ?>
+
+                <li class="page-item <?php echo $current_page >= $total_pages ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?php echo $current_page + 1; ?>&search=<?php echo urlencode($search); ?>&filter=<?php echo urlencode($filter); ?>">Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i></a>
+                </li>
+            </ul>
+        </nav>
     <?php endif; ?>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

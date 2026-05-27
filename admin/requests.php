@@ -547,7 +547,7 @@ require_once __DIR__ . '/header.php';
 		<div id="bulkSelectedFields"></div>
 	</form>
 
-	<div class="p-3">
+	<div class="table-card">
 		<div class="table-responsive">
 			<table class="table table-hover align-middle">
 				<thead class="bg-light text-uppercase">
@@ -1007,56 +1007,53 @@ require_once __DIR__ . '/header.php';
 			</table>
 		</div>
 
-		<!-- Pagination UI -->
+		<!-- Pagination UI & Info Bar inside table-card -->
 		<?php if ($total_pages > 1): ?>
-			<div class="d-flex justify-content-between align-items-center p-3 border-top bg-light-subtle">
-				<div class="text-muted small">
-					Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $limit, $total_requests); ?> of
-					<?php echo $total_requests; ?> entries
+			<div class="table-info-bar">
+				<div>
+					Showing <strong><?php echo $offset + 1; ?></strong> to <strong><?php echo min($offset + $limit, $total_requests); ?></strong> of <strong><?php echo $total_requests; ?></strong> entries
 				</div>
-				<nav>
-					<ul class="pagination pagination-sm mb-0">
-						<?php
-						$params = $_GET;
-						unset($params['page']);
-						$query_string = http_build_query($params);
-						$base_url = '?' . ($query_string ? $query_string . '&' : '');
-						?>
-
-						<li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-							<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page - 1; ?>">Previous</a>
-						</li>
-
-						<?php
-						$start_loop = max(1, $page - 2);
-						$end_loop = min($total_pages, $page + 2);
-
-						if ($start_loop > 1) {
-							echo '<li class="page-item"><a class="page-link" href="' . $base_url . 'page=1">1</a></li>';
-							if ($start_loop > 2)
-								echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
-						}
-
-						for ($i = $start_loop; $i <= $end_loop; $i++): ?>
-							<li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
-								<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $i; ?>"><?php echo $i; ?></a>
-							</li>
-						<?php endfor; ?>
-
-						<?php if ($end_loop < $total_pages): ?>
-							<?php if ($end_loop < $total_pages - 1)
-								echo '<li class="page-item disabled"><span class="page-link">...</span></li>'; ?>
-							<li class="page-item"><a class="page-link"
-									href="<?php echo $base_url; ?>page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a>
-							</li>
-						<?php endif; ?>
-
-						<li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-							<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page + 1; ?>">Next</a>
-						</li>
-					</ul>
-				</nav>
 			</div>
+			<nav class="table-pagination">
+				<ul class="pagination">
+					<?php
+					$params = $_GET;
+					unset($params['page']);
+					$query_string = http_build_query($params);
+					$base_url = '?' . ($query_string ? $query_string . '&' : '');
+					?>
+
+					<li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
+						<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page - 1; ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
+					</li>
+
+					<?php
+					$start_loop = max(1, $page - 2);
+					$end_loop = min($total_pages, $page + 2);
+
+					if ($start_loop > 1) {
+						echo '<li class="page-item"><a class="page-link" href="' . $base_url . 'page=1">1</a></li>';
+						if ($start_loop > 2)
+							echo '<li class="page-item disabled"><span class="page-link">...</span></li>';
+					}
+
+					for ($i = $start_loop; $i <= $end_loop; $i++): ?>
+						<li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
+							<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $i; ?>"><?php echo $i; ?></a>
+						</li>
+					<?php endfor; ?>
+
+					<?php if ($end_loop < $total_pages): ?>
+						<?php if ($end_loop < $total_pages - 1)
+							echo '<li class="page-item disabled"><span class="page-link">...</span></li>'; ?>
+						<li class="page-item"><a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a></li>
+					<?php endif; ?>
+
+					<li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
+						<a class="page-link" href="<?php echo $base_url; ?>page=<?php echo $page + 1; ?>">Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i></a>
+					</li>
+				</ul>
+			</nav>
 		<?php endif; ?>
 	</div>
 </div>

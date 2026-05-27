@@ -132,6 +132,15 @@ foreach ($all_payments as $p) {
     }
 }
 
+// Pagination setup to match admin
+$page         = max(1, (int) ($_GET['page'] ?? 1));
+$limit        = 10;
+$total        = count($filtered_payments);
+$total_pages  = max(1, (int) ceil($total / $limit));
+if ($page > $total_pages) $page = $total_pages;
+$offset       = ($page - 1) * $limit;
+$display_rows = array_slice($filtered_payments, $offset, $limit);
+
 require_once __DIR__ . '/partials/user_dashboard_header.php';
 ?>
 
@@ -653,6 +662,7 @@ function showRefundDetails(number, notes) {
 
 	<!-- Table -->
 	<div class="p-3">
+		<div class="table-card">
 		<div class="table-responsive">
 			<table class="table table-hover align-middle">
 				<thead class="bg-light text-uppercase" style="font-size:.78rem;">
@@ -668,7 +678,7 @@ function showRefundDetails(number, notes) {
 					</tr>
 				</thead>
 				<tbody>
-					<?php if (empty($filtered_payments)): ?>
+					<?php if (empty($display_rows)): ?>
 						<tr>
 							<td colspan="8" class="text-center py-5">
 								<div class="py-4">
@@ -678,8 +688,10 @@ function showRefundDetails(number, notes) {
 							</td>
 						</tr>
 					<?php else: ?>
-						<?php foreach ($filtered_payments as $index => $p): ?>
+						<?php $row_n = $offset + 1; ?>
+						<?php foreach ($display_rows as $slice_idx => $p): ?>
 							<?php
+							$index = $offset + $slice_idx;
 							$pay_status = $p['payment_status'] ?? 'pending';
 							$amount_paid = (float)($p['amount_paid'] ?? 0);
 							$ref_no = htmlspecialchars($p['reference_no'] ?? '—');
@@ -710,7 +722,7 @@ function showRefundDetails(number, notes) {
 							?>
 							<textarea id="payment-data-<?php echo $index; ?>" class="d-none" style="display: none;"><?php echo htmlspecialchars(json_encode($j), ENT_QUOTES, 'UTF-8'); ?></textarea>
 							<tr>
-								<td class="ps-3 text-muted fw-semibold"><?php echo $index + 1; ?></td>
+								<td class="ps-3 text-muted fw-semibold"><?php echo $row_n++; ?></td>
 								<td>
 									<div class="text-dark"><?php echo htmlspecialchars($p['fm_name'] ?? $_SESSION['full_name']); ?></div>
 								</td>
@@ -760,6 +772,60 @@ function showRefundDetails(number, notes) {
 				</tbody>
 			</table>
 		</div>
+		</div>
+
+		<!-- Pagination -->
+		<?php if ($total_pages > 1): ?>
+			<nav class="table-pagination">
+				<ul class="pagination">
+					<!-- Previous Page Link -->
+					<li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+						<a class="page-link rounded-3 px-3 py-2 border-light-subtle d-inline-flex align-items-center gap-1 fw-bold" href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page - 1])); ?>">
+							<i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev
+						</a>
+					</li>
+
+					<?php
+					$max_visible = 5;
+					$start = max(1, $page - floor($max_visible / 2));
+					$end = min($total_pages, $start + $max_visible - 1);
+					if ($end - $start + 1 < $max_visible) {
+						$start = max(1, $end - $max_visible + 1);
+					}
+
+					if ($start > 1): ?>
+						<li class="page-item">
+							<a class="page-link rounded-3 px-3 py-2 border-light-subtle" href="?<?php echo http_build_query(array_merge($_GET, ['page' => 1])); ?>">1</a>
+						</li>
+						<?php if ($start > 2): ?>
+							<li class="page-item disabled"><span class="page-link rounded-3 px-2 py-2 border-light-subtle">...</span></li>
+						<?php endif; ?>
+					<?php endif; ?>
+
+					<?php for ($p = $start; $p <= $end; $p++): ?>
+						<li class="page-item <?php echo $p === $page ? 'active' : ''; ?>">
+							<a class="page-link rounded-3 px-3 py-2 border-light-subtle" href="?<?php echo http_build_query(array_merge($_GET, ['page' => $p])); ?>"><?php echo $p; ?></a>
+						</li>
+					<?php endfor; ?>
+
+					<?php if ($end < $total_pages): ?>
+						<?php if ($end < $total_pages - 1): ?>
+							<li class="page-item disabled"><span class="page-link rounded-3 px-2 py-2 border-light-subtle">...</span></li>
+						<?php endif; ?>
+						<li class="page-item">
+							<a class="page-link rounded-3 px-3 py-2 border-light-subtle" href="?<?php echo http_build_query(array_merge($_GET, ['page' => $total_pages])); ?>"><?php echo $total_pages; ?></a>
+						</li>
+					<?php endif; ?>
+
+					<!-- Next Page Link -->
+					<li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
+						<a class="page-link rounded-3 px-3 py-2 border-light-subtle d-inline-flex align-items-center gap-1 fw-bold" href="?<?php echo http_build_query(array_merge($_GET, ['page' => $page + 1])); ?>">
+							Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i>
+						</a>
+					</li>
+				</ul>
+			</nav>
+		<?php endif; ?>
 	</div>
 </div>
 

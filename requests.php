@@ -631,6 +631,7 @@ $documents = $documents_stmt->fetchAll();
                     </div>
                 </div>
 
+                <div class="table-card">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="bg-light">
@@ -859,45 +860,35 @@ $documents = $documents_stmt->fetchAll();
 
                                 <?php endforeach; ?>
                             <?php endif; ?>
-                        </tbody>
                     </table>
                 </div>
 
                 <?php if (!empty($all_requests) && $total_pages > 1): ?>
-                    <div class="px-4 py-3 border-top bg-light mt-auto rounded-bottom-4">
-                        <nav aria-label="Request history pagination"
-                            class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                            <span class="text-dark opacity-75 small">
-                                Showing <?php echo $offset + 1; ?> to
-                                <?php echo min($offset + $per_page, $total_requests); ?> of <?php echo $total_requests; ?>
-                                requests
-                            </span>
+                    <div class="table-info-bar">
+                        <div>
+                            Showing <strong><?php echo $offset + 1; ?></strong> to <strong><?php echo min($offset + $per_page, $total_requests); ?></strong> of <strong><?php echo $total_requests; ?></strong> requests
+                        </div>
+                    </div>
+                    <nav class="table-pagination">
+                        <ul class="pagination">
                             <?php
                             $q_status = isset($_GET['status_filter']) ? '&status_filter=' . urlencode($_GET['status_filter']) : '';
                             ?>
-                            <ul class="pagination pagination-sm mx-0 mb-0">
-                                <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
-                                    <a class="page-link shadow-sm border-0"
-                                        href="?page=<?php echo $page - 1; ?><?php echo $q_status; ?>" <?php echo $page <= 1 ? 'tabindex="-1" aria-disabled="true"' : ''; ?>>
-                                        <i class="fas fa-chevron-left"></i>
-                                    </a>
+                            <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="?page=<?php echo $page - 1; ?><?php echo $q_status; ?>"><i class="fas fa-chevron-left" style="font-size:.65rem;"></i> Prev</a>
+                            </li>
+                            <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                                <li class="page-item <?php echo $page === $i ? 'active' : ''; ?>">
+                                    <a class="page-link" href="?page=<?php echo $i; ?><?php echo $q_status; ?>"><?php echo $i; ?></a>
                                 </li>
-                                <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                    <li class="page-item <?php echo $page === $i ? 'active' : ''; ?>">
-                                        <a class="page-link <?php echo $page === $i ? 'bg-primary text-white border-primary shadow' : 'text-primary shadow-sm border-0'; ?>"
-                                            href="?page=<?php echo $i; ?><?php echo $q_status; ?>"><?php echo $i; ?></a>
-                                    </li>
-                                <?php endfor; ?>
-                                <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
-                                    <a class="page-link shadow-sm border-0"
-                                        href="?page=<?php echo $page + 1; ?><?php echo $q_status; ?>" <?php echo $page >= $total_pages ? 'tabindex="-1" aria-disabled="true"' : ''; ?>>
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
+                            <?php endfor; ?>
+                            <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
+                                <a class="page-link" href="?page=<?php echo $page + 1; ?><?php echo $q_status; ?>">Next <i class="fas fa-chevron-right" style="font-size:.65rem;"></i></a>
+                            </li>
+                        </ul>
+                    </nav>
                 <?php endif; ?>
+                </div>
             </div>
         </div>
     </div>

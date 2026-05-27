@@ -238,6 +238,7 @@ $residents_data = $residents->fetchAll();
                 placeholder="Search residents...">
         </div>
     </div>
+    <div class="table-card">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0" id="idVerificationsTable">
             <thead class="bg-light">
@@ -354,6 +355,7 @@ $residents_data = $residents->fetchAll();
             </tbody>
         </table>
     </div>
+    </div>
     <!-- Pagination Footer -->
     <div class="card-footer bg-white border-0 py-3 px-4">
         <div class="d-flex justify-content-between align-items-center">
@@ -361,23 +363,48 @@ $residents_data = $residents->fetchAll();
                 Showing <?php echo count($residents_data); ?> of <?php echo $total_records; ?> residents
             </div>
             <?php if ($total_pages > 1): ?>
-                <nav aria-label="Page navigation">
-                    <ul class="pagination pagination-sm mb-0 gap-1">
+                <nav class="table-pagination" aria-label="Page navigation">
+                    <ul class="pagination">
                         <li class="page-item <?php echo ($page <= 1) ? 'disabled' : ''; ?>">
-                            <a class="page-link border-0 rounded-circle shadow-sm"
-                                href="?status=<?php echo $status_filter; ?>&page=<?php echo $page - 1; ?>"><i
-                                    class="fas fa-chevron-left"></i></a>
+                            <a class="page-link border-0 rounded-pill shadow-sm px-3"
+                                href="?status=<?php echo $status_filter; ?>&page=<?php echo $page - 1; ?>"><i class="fas fa-chevron-left me-1"></i> Prev</a>
                         </li>
-                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <?php
+                        $max_visible = 5;
+                        $start = max(1, $page - floor($max_visible / 2));
+                        $end = min($total_pages, $start + $max_visible - 1);
+                        if ($end - $start + 1 < $max_visible) {
+                            $start = max(1, $end - $max_visible + 1);
+                        }
+
+                        if ($start > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link border-0 rounded-circle shadow-sm px-3" href="?status=<?php echo $status_filter; ?>&page=1">1</a>
+                            </li>
+                            <?php if ($start > 2): ?>
+                                <li class="page-item disabled"><span class="page-link border-0 rounded-circle shadow-sm px-2">...</span></li>
+                            <?php endif; ?>
+                        <?php endif; ?>
+
+                        <?php for ($i = $start; $i <= $end; $i++): ?>
                             <li class="page-item <?php echo ($page == $i) ? 'active' : ''; ?>">
                                 <a class="page-link border-0 rounded-circle shadow-sm px-3"
                                     href="?status=<?php echo $status_filter; ?>&page=<?php echo $i; ?>"><?php echo $i; ?></a>
                             </li>
                         <?php endfor; ?>
+
+                        <?php if ($end < $total_pages): ?>
+                            <?php if ($end < $total_pages - 1): ?>
+                                <li class="page-item disabled"><span class="page-link border-0 rounded-circle shadow-sm px-2">...</span></li>
+                            <?php endif; ?>
+                            <li class="page-item">
+                                <a class="page-link border-0 rounded-circle shadow-sm px-3" href="?status=<?php echo $status_filter; ?>&page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a>
+                            </li>
+                        <?php endif; ?>
+
                         <li class="page-item <?php echo ($page >= $total_pages) ? 'disabled' : ''; ?>">
-                            <a class="page-link border-0 rounded-circle shadow-sm"
-                                href="?status=<?php echo $status_filter; ?>&page=<?php echo $page + 1; ?>"><i
-                                    class="fas fa-chevron-right"></i></a>
+                            <a class="page-link border-0 rounded-pill shadow-sm px-3"
+                                href="?status=<?php echo $status_filter; ?>&page=<?php echo $page + 1; ?>">Next <i class="fas fa-chevron-right ms-1"></i></a>
                         </li>
                     </ul>
                 </nav>
@@ -633,27 +660,7 @@ $residents_data = $residents->fetchAll();
         border-color: #dc2626;
     }
 
-    /* Pagination styling */
-    .pagination .page-link {
-        color: #4b5563;
-        font-weight: 500;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 2px;
-    }
 
-    .pagination .page-item.active .page-link {
-        background-color: #0f766e;
-        color: white;
-    }
-
-    .pagination .page-item.disabled .page-link {
-        background-color: #f9fafb;
-        color: #9ca3af;
-    }
 </style>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

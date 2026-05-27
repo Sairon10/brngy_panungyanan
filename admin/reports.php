@@ -555,8 +555,9 @@ require_once __DIR__ . '/header.php';
                 <div class="col-6 col-md-4"><div class="p-3 border rounded bg-white shadow-sm"><div class="h4 mb-0 fw-bold text-teal">${data.total_inhabitants}</div><div class="small text-muted">Total Inhabitants</div></div></div>
                 <div class="col-6 col-md-4"><div class="p-3 border rounded bg-white shadow-sm"><div class="h4 mb-0 fw-bold text-teal">${data.total_households}</div><div class="small text-muted">Total Households</div></div></div>
             </div>
+            <div class="table-card">
             <div class="table-responsive">
-                <table class="table table-sm table-bordered align-middle" style="font-size:0.85rem;">
+                <table class="table table-sm table-bordered align-middle mb-0" style="font-size:0.85rem;">
                     <thead class="table-teal-light"><tr><th class="w-50">INDICATORS</th><th>MALE</th><th>FEMALE</th><th>TOTAL</th></tr></thead>
                     <tbody>
                         <tr class="table-light fw-bold"><td colspan="4">Population by Age Bracket</td></tr>
@@ -565,6 +566,7 @@ require_once __DIR__ . '/header.php';
                         ${sectorRows}
                     </tbody>
                 </table>
+            </div>
             </div>`;
         } else if (type === 'incidents') {
             headers = '<th>#</th><th>Date</th><th>Resident Name</th><th>Description</th><th>Status</th>';
@@ -598,11 +600,13 @@ require_once __DIR__ . '/header.php';
         <div class="d-flex justify-content-between align-items-center mb-3">
             <span class="text-muted small">Showing <strong>${data.length}</strong> record(s)</span>
         </div>
+        <div class="table-card">
         <div class="table-responsive">
             <table class="table table-hover table-bordered align-middle mb-0" style="font-size:0.9rem;">
                 <thead class="table-dark"><tr>${headers}</tr></thead>
                 <tbody>${rows}</tbody>
             </table>
+        </div>
         </div>`;
     }
 
