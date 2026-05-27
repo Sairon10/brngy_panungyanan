@@ -177,6 +177,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle family member addition from admin side
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_family_member') {
+    if (!csrf_validate()) {
+        $errors[] = 'Invalid CSRF token.';
+    } else {
+        $target_user_id = (int) ($_POST['user_id'] ?? 0);
+        $fname = trim($_POST['fm_first_name'] ?? '');
+        $mname = trim($_POST['fm_middle_name'] ?? '');
+        $lname = trim($_POST['fm_last_name'] ?? '');
+        $suffix = trim($_POST['fm_suffix'] ?? '');
+        $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
+
+        $relationship = trim($_POST['fm_relationship'] ?? '');
+        $philsys = trim($_POST['fm_philsys_card_no'] ?? '');
+        $citizenship = trim($_POST['fm_citizenship'] ?? 'FILIPINO');
+
+        $birthdate = $_POST['fm_birthdate'] ?? null;
+        $sex = $_POST['fm_sex'] ?? null;
+        $civil_status = $_POST['fm_civil_status'] ?? 'Single';
+        $religion = trim($_POST['fm_religion'] ?? '');
+        $birth_place = trim($_POST['fm_birth_place'] ?? '');
+        $occupation = trim($_POST['fm_occupation'] ?? '');
+
+        $edu = $_POST['fm_educational_attainment'] ?? '';
+        $edu_status = $_POST['fm_educational_status'] ?? 'N/A';
+
+        // Boolean classifications
+        $is_pwd = isset($_POST['fm_is_pwd']) ? 1 : 0;
+        $is_senior = isset($_POST['fm_is_senior']) ? 1 : 0;
+        $is_minor = isset($_POST['fm_is_minor']) ? 1 : 0;
+        $is_solo_parent = isset($_POST['fm_is_solo_parent']) ? 1 : 0;
+
+        $classifications = [];
+        if ($is_pwd) $classifications[] = 'PWD';
+        if ($is_senior) $classifications[] = 'Senior';
+        if ($is_solo_parent) $classifications[] = 'Solo Parent';
+        $classification_json = json_encode($classifications);
+
+        if ($target_user_id > 0 && !empty($fname) && !empty($lname)) {
+            try {
+                $stmt = $pdo->prepare('INSERT INTO family_members (
+                    user_id, first_name, middle_name, last_name, suffix, full_name, 
+                    relationship, philsys_card_no, citizenship, 
+                    birthdate, sex, civil_status, religion, birth_place, occupation, 
+                    educational_attainment, educational_status, 
+                    is_pwd, is_senior, is_minor, is_solo_parent, classification
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([
+                    $target_user_id, $fname, $mname, $lname, $suffix, $fullname,
+                    $relationship, $philsys, $citizenship,
+                    $birthdate ?: null, $sex ?: null, $civil_status, $religion, $birth_place, $occupation,
+                    $edu, $edu_status,
+                    $is_pwd, $is_senior, $is_minor, $is_solo_parent, $classification_json
+                ]);
+                $success = 'Family member added successfully.';
+            } catch (Exception $e) {
+                $errors[] = 'Error adding family member: ' . $e->getMessage();
+            }
+        } else {
+            $errors[] = 'First name, last name, and user link are required.';
+        }
+    }
+}
+
 if (isset($_GET['msg']))
     $success = htmlspecialchars($_GET['msg']);
 
@@ -878,11 +942,23 @@ if ($linked_resident) {
                             </div>
                         <?php endif; ?>
 
-                        <?php if (!empty($family_members)): ?>
+                        <?php if (true): // Always show so admin can add ?>
                             <div class="col-12 mt-2">
-                                <h6 class="text-uppercase text-muted fw-bold small mb-3">
-                                    <i class="fas fa-users me-1"></i>Family Members (<?php echo count($family_members); ?>)
-                                </h6>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="text-uppercase text-muted fw-bold small mb-0">
+                                        <i class="fas fa-users me-1"></i>Family Members (<?php echo count($family_members); ?>)
+                                    </h6>
+                                    <?php if ($linked_user && $linked_user['user_id'] > 0): ?>
+                                    <button class="btn btn-sm btn-teal shadow-sm" onclick="addFamilyMember()">
+                                        <i class="fas fa-plus me-1"></i> Add Family Member
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                                <?php if (empty($family_members)): ?>
+                                    <div class="alert alert-light text-center border text-muted small py-3 mb-0">
+                                        <i class="fas fa-info-circle me-1"></i> No family members registered.
+                                    </div>
+                                <?php else: ?>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered">
                                         <thead class="table-light">
@@ -953,6 +1029,7 @@ if ($linked_resident) {
                                         </tbody>
                                     </table>
                                 </div>
+                                <?php endif; ?>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -1287,13 +1364,14 @@ if ($linked_resident) {
         <div class="modal-content border-0 rounded-4 shadow-lg">
             <div class="modal-header border-0 pb-0 px-4 pt-4">
                 <h5 class="modal-title fw-bold" id="fmEditModalTitle"><i
-                        class="fas fa-user-edit me-2 text-primary"></i>Update Record</h5>
+                        class="fas fa-user-edit me-2 text-primary"></i><span id="fmModalLabelText">Update Record</span></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="post" id="adminFamilyEditForm">
                 <?php echo csrf_field(); ?>
-                <input type="hidden" name="action" value="edit_family_member">
+                <input type="hidden" name="action" id="fm_action" value="edit_family_member">
                 <input type="hidden" name="fm_id" id="fm_edit_id">
+                <input type="hidden" name="user_id" id="fm_user_id" value="<?php echo htmlspecialchars($linked_user['user_id'] ?? 0); ?>">
                 <div class="modal-body p-4">
                     <div class="row g-4">
                         <!-- Personal Info Section -->
@@ -1664,7 +1742,17 @@ if ($linked_resident) {
         new bootstrap.Modal(document.getElementById('editModal')).show();
     }
 
+    function addFamilyMember() {
+        document.getElementById('fm_action').value = 'add_family_member';
+        document.getElementById('fm_edit_id').value = '';
+        document.getElementById('adminFamilyEditForm').reset();
+        document.getElementById('fmModalLabelText').textContent = 'Add Family Member';
+        new bootstrap.Modal(document.getElementById('familyMemberEditModal')).show();
+    }
+
     function editFamilyMember(fm) {
+        document.getElementById('fm_action').value = 'edit_family_member';
+        document.getElementById('fmModalLabelText').textContent = 'Update Record';
         document.getElementById('fm_edit_id').value = fm.id;
         document.getElementById('fm_edit_first_name').value = fm.first_name || '';
         document.getElementById('fm_edit_middle_name').value = fm.middle_name || '';

@@ -264,6 +264,7 @@ require_once __DIR__ . '/header.php';
 		<a href="payments.php?filter=pending"   class="filter-tab <?= $filter_val === 'pending'   ? 'active' : '' ?>">Pending</a>
 		<a href="payments.php?filter=confirmed" class="filter-tab <?= $filter_val === 'confirmed' ? 'active' : '' ?>">Confirmed</a>
 		<a href="payments.php?filter=rejected"  class="filter-tab <?= $filter_val === 'rejected'  ? 'active' : '' ?>">Rejected</a>
+		<a href="payments.php?filter=refund_pending"  class="filter-tab <?= $filter_val === 'refund_pending'  ? 'active' : '' ?>">Refund Pending</a>
 		<a href="payments.php?filter=refunded"  class="filter-tab <?= $filter_val === 'refunded'  ? 'active' : '' ?>">Refunded</a>
 	</div>
 

@@ -73,3 +73,28 @@ POST: Array
     [rejection_notes] => dacz
 )
 
+2026-05-27 15:42:13 - /admin/resident_record_view?id=9&user_id=16
+POST: Array
+(
+    [csrf_token] => 13d67814175444fa9f88f4931372eef3bcd102e59538fc25c855ec66d767a8bf
+    [action] => add_family_member
+    [fm_id] => 
+    [user_id] => 16
+    [fm_first_name] => Mary Jane
+    [fm_middle_name] => Panergo
+    [fm_last_name] => Garcia
+    [fm_suffix] => 
+    [fm_relationship] => Parent
+    [fm_philsys_card_no] => 
+    [fm_citizenship] => FILIPINO
+    [fm_birthdate] => 1976-06-29
+    [fm_sex] => Female
+    [fm_civil_status] => Single
+    [fm_religion] => Born Again
+    [fm_birth_place] => Meycuayan, Bulacan
+    [fm_occupation] => Senior Supervisor
+    [fm_educational_attainment] => Vocational
+    [fm_educational_status] => Not Enrolled
+    [fm_is_solo_parent] => on
+)
+

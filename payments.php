@@ -700,7 +700,7 @@ function showRefundDetails(number, notes) {
 							$j = [
 								'id'              => (int)$p['id'],
 								'pay_type'        => $p['pay_type'],
-								'full_name'       => $p['fm_name'] ?? $_SESSION['full_name'],
+								'full_name'       => $p['fm_name'] ?? $p['user_name'],
 								'email'           => $p['user_email'] ?? '',
 								'doc_type'        => $p['doc_name'],
 								'doc_detail'      => $p['doc_detail'] ?? '',
@@ -724,7 +724,7 @@ function showRefundDetails(number, notes) {
 							<tr>
 								<td class="ps-3 text-muted fw-semibold"><?php echo $row_n++; ?></td>
 								<td>
-									<div class="text-dark"><?php echo htmlspecialchars($p['fm_name'] ?? $_SESSION['full_name']); ?></div>
+									<div class="text-dark"><?php echo htmlspecialchars($p['fm_name'] ?? $p['user_name']); ?></div>
 								</td>
 								<td>
 									<span class="text-dark"><?php echo htmlspecialchars($p['doc_name']); ?></span>

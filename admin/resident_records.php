@@ -651,11 +651,6 @@ $display_records = array_slice($unified_records, $offset, $limit);
                                            class="badge bg-info text-dark border border-info text-decoration-none" 
                                            style="font-size: 0.65rem; padding: 2px 6px;">PWD</a>
                                     <?php endif; ?>
-                                    <?php if (!empty($row['is_solo_parent'])): ?>
-                                        <a href="?filter=solo_parent&search=<?php echo urlencode($search); ?>" 
-                                           class="badge bg-secondary text-white border border-secondary text-decoration-none" 
-                                           style="font-size: 0.65rem; padding: 2px 6px;">SOLO PARENT</a>
-                                    <?php endif; ?>
                                 </div>
                             </td>
                             <td>

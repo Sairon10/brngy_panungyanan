@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $last_name = trim($_POST['last_name'] ?? '');
             $middle_name = trim($_POST['middle_name'] ?? '');
             $suffix = trim($_POST['suffix'] ?? '');
+            $birth_place = trim($_POST['birth_place'] ?? '');
             $birthdate = trim($_POST['birthdate'] ?? '');
             $citizenship = trim($_POST['citizenship'] ?? '');
             $civil_status = trim($_POST['civil_status'] ?? '');
@@ -87,11 +88,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $user_id = $pdo->lastInsertId();
                         $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, citizenship, civil_status, sex, purok, verification_status, is_solo_parent, is_pwd, is_senior) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'verified\', ?, ?, ?)');
-                        $stmt->execute([ $user_id, $address, $phone ?: null, $birthdate ?: null, $citizenship ?: null, $civil_status ?: null, $sex ?: null, $purok ?: null, $is_solo_parent, $is_pwd, $is_senior ]);
+                        $stmt->execute([ $user_id, $address, $phone ?: null, $birthdate ?: null, $birth_place ?: null, $citizenship ?: null, $civil_status ?: null, $sex ?: null, $purok ?: null, $is_solo_parent, $is_pwd, $is_senior ]);
 
                         if ($role === 'resident') {
-                           $pdo->prepare('INSERT INTO resident_records (first_name, last_name, middle_name, suffix, full_name, email, address, phone, birthdate, sex, citizenship, civil_status, purok, is_solo_parent, is_pwd, is_senior, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-                               ->execute([$first_name, $last_name, $middle_name, $suffix, $full_name, $email, $address, $phone, $birthdate, $sex, $citizenship, $civil_status, $purok, $is_solo_parent, $is_pwd, $is_senior, $_SESSION['user_id']]);
+                           $pdo->prepare('INSERT INTO resident_records (first_name, last_name, middle_name, suffix, full_name, email, address, phone, birthdate, birth_place, sex, citizenship, civil_status, purok, is_solo_parent, is_pwd, is_senior, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
+                               ->execute([$first_name, $last_name, $middle_name, $suffix, $full_name, $email, $address, $phone, $birthdate, $birth_place, $sex, $citizenship, $civil_status, $purok, $is_solo_parent, $is_pwd, $is_senior, $_SESSION['user_id']]);
                         }
 
                         $info = ($role === 'admin' ? 'Sub-admin' : 'Resident') . ' account and record created successfully.';
@@ -152,6 +153,7 @@ require_once __DIR__ . '/header.php';
                     <div class="col-md-3"><label class="form-label">Last Name</label><input type="text" name="last_name" class="form-control" placeholder="Dela Cruz" required></div>
                     <div class="col-md-3"><label class="form-label">Suffix</label><input type="text" name="suffix" class="form-control" placeholder="Jr."></div>
                     
+                    <div class="col-md-4"><label class="form-label">Place of Birth</label><input type="text" name="birth_place" class="form-control" placeholder="City, Province" required></div>
                     <div class="col-md-4"><label class="form-label">Birthdate</label><input type="date" name="birthdate" class="form-control" max="<?php echo date('Y-m-d', strtotime('-18 years')); ?>" required></div>
                     <div class="col-md-4"><label class="form-label">Sex</label>
                         <select name="sex" class="form-select" required>
@@ -163,7 +165,7 @@ require_once __DIR__ . '/header.php';
                             <option value="">Select...</option><option value="Single">Single</option><option value="Married">Married</option><option value="Widowed">Widowed</option><option value="Separated">Separated</option>
                         </select>
                     </div>
-                    <div class="col-md-6"><label class="form-label">Citizenship</label><input type="text" name="citizenship" class="form-control" value="Filipino" required></div>
+                    <div class="col-md-4"><label class="form-label">Citizenship</label><input type="text" name="citizenship" class="form-control" value="Filipino" required></div>
                     <div class="col-md-6 d-flex align-items-center gap-4 pt-3">
                         <div class="form-check"><input type="checkbox" name="is_solo_parent" class="form-check-input"> <label class="form-label mb-0">Solo Parent</label></div>
                         <div class="form-check"><input type="checkbox" name="is_pwd" class="form-check-input"> <label class="form-label mb-0">PWD</label></div>

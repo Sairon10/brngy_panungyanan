@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $sex = $_POST['sex'];
         $civil_status = $_POST['civil_status'];
         $birthdate = $_POST['birthdate'];
+        $birth_place = trim($_POST['birth_place'] ?? '');
         $citizenship = filter_input(INPUT_POST, 'citizenship', FILTER_SANITIZE_SPECIAL_CHARS);
         $purok = filter_input(INPUT_POST, 'purok', FILTER_SANITIZE_SPECIAL_CHARS);
 
@@ -47,11 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $pdo->prepare('SELECT user_id FROM residents WHERE user_id = ?');
             $stmt->execute([$admin_id]);
             if ($stmt->fetch()) {
-                $stmt = $pdo->prepare('UPDATE residents SET address = ?, phone = ?, sex = ?, civil_status = ?, birthdate = ?, citizenship = ?, purok = ?, avatar = ? WHERE user_id = ?');
-                $stmt->execute([$address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $profile_picture, $admin_id]);
+                $stmt = $pdo->prepare('UPDATE residents SET address = ?, phone = ?, sex = ?, civil_status = ?, birthdate = ?, birth_place = ?, citizenship = ?, purok = ?, avatar = ? WHERE user_id = ?');
+                $stmt->execute([$address, $phone, $sex, $civil_status, $birthdate, $birth_place, $citizenship, $purok, $profile_picture, $admin_id]);
             } else {
-                $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, sex, civil_status, birthdate, citizenship, purok, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$admin_id, $address, $phone, $sex, $civil_status, $birthdate, $citizenship, $purok, $profile_picture]);
+                $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, sex, civil_status, birthdate, birth_place, citizenship, purok, avatar) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$admin_id, $address, $phone, $sex, $civil_status, $birthdate, $birth_place, $citizenship, $purok, $profile_picture]);
             }
             $pdo->commit();
             redirect('admin_info.php?updated=1');
@@ -80,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 $stmt = $pdo->prepare('
-    SELECT u.*, r.address, r.phone, r.birthdate, r.sex, r.civil_status, r.citizenship, r.purok
+    SELECT u.*, r.address, r.phone, r.birthdate, r.birth_place, r.sex, r.civil_status, r.citizenship, r.purok
     FROM users u 
     LEFT JOIN residents r ON r.user_id = u.id 
     WHERE u.id = ?
@@ -190,14 +191,21 @@ require_once __DIR__ . '/header.php';
                                         <?php else: ?><div class="info-value"><?php echo htmlspecialchars($admin['citizenship'] ?: 'Filipino'); ?></div><?php endif; ?>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
+                                    <div class="info-card">
+                                        <div class="section-label"><i class="fas fa-map-marker-alt"></i> Place of Birth</div>
+                                        <?php if ($is_editing): ?><input type="text" name="birth_place" class="form-control" value="<?php echo htmlspecialchars($admin['birth_place'] ?? ''); ?>" placeholder="e.g. Manila" required>
+                                        <?php else: ?><div class="info-value"><?php echo htmlspecialchars($admin['birth_place'] ?: 'N/A'); ?></div><?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
                                     <div class="info-card">
                                         <div class="section-label"><i class="fas fa-calendar"></i> Birthdate</div>
                                         <?php if ($is_editing): ?><input type="date" name="birthdate" class="form-control" value="<?php echo $admin['birthdate']; ?>">
                                         <?php else: ?><div class="info-value"><?php echo $admin['birthdate'] ? date('M d, Y', strtotime($admin['birthdate'])) : 'N/A'; ?></div><?php endif; ?>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="info-card">
                                         <div class="section-label"><i class="fas fa-venus-mars"></i> Sex</div>
                                         <?php if ($is_editing): ?>
@@ -208,7 +216,7 @@ require_once __DIR__ . '/header.php';
                                         <?php else: ?><div class="info-value"><?php echo htmlspecialchars($admin['sex'] ?: 'N/A'); ?></div><?php endif; ?>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-6">
                                     <div class="info-card">
                                         <div class="section-label"><i class="fas fa-heart"></i> Civil Status</div>
                                         <?php if ($is_editing): ?>

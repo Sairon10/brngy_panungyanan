@@ -97,7 +97,7 @@ switch ($type) {
         $stmt = $pdo->query("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE u.role = 'resident'
+            WHERE 1=1
             
             UNION ALL
             
@@ -110,7 +110,7 @@ switch ($type) {
             
             SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, rr.address, rr.phone, '' as owner_name
             FROM resident_records rr
-            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
+            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
             
             ORDER BY full_name
         ");
@@ -158,13 +158,13 @@ switch ($type) {
         $stmt = $pdo->query("
             SELECT 'Head' as role, r.user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, r.address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status, r.citizenship
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE u.role = 'resident'
+            WHERE 1=1
             
             UNION ALL
             
             SELECT 'Head' as role, 0 as user_id, rr.first_name, rr.middle_name, rr.last_name, rr.suffix, rr.full_name, rr.email, rr.birthdate, rr.sex, rr.civil_status, rr.address, rr.purok, rr.phone, NULL as birth_place, NULL as occupation, '' as classification, NULL as religion, '' as educational_attainment, '' as educational_status, rr.citizenship
             FROM resident_records rr
-            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
+            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
             
             UNION ALL
             
@@ -172,7 +172,7 @@ switch ($type) {
             FROM family_members fm
             JOIN residents r2 ON fm.user_id = r2.user_id
             JOIN users u2 ON r2.user_id = u2.id
-            WHERE u2.role = 'resident'
+            WHERE 1=1
             
             ORDER BY address, role DESC, full_name
         ");
@@ -185,13 +185,13 @@ switch ($type) {
         $residents = $pdo->query("
             SELECT r.birthdate, r.sex, r.civil_status, r.is_senior, r.is_pwd, r.is_solo_parent, r.occupation, r.classification, r.citizenship, u.full_name 
             FROM residents r JOIN users u ON u.id = r.user_id 
-            WHERE u.role = 'resident'
+            WHERE 1=1
             
             UNION ALL
             
             SELECT rr.birthdate, rr.sex, rr.civil_status, rr.is_senior, rr.is_pwd, rr.is_solo_parent, NULL as occupation, '' as classification, rr.citizenship, rr.full_name 
             FROM resident_records rr 
-            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
+            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
         ")->fetchAll(PDO::FETCH_ASSOC);
         
         $family = $pdo->query("SELECT fm.*, r.address, r.purok FROM family_members fm JOIN residents r ON fm.user_id = r.user_id")->fetchAll(PDO::FETCH_ASSOC);
@@ -202,9 +202,9 @@ switch ($type) {
             'total_inhabitants' => count($all),
             'total_households' => $pdo->query("
                 SELECT COUNT(DISTINCT address) FROM (
-                    SELECT address FROM residents r JOIN users u ON u.id = r.user_id WHERE u.role = 'resident'
+                    SELECT address FROM residents r JOIN users u ON u.id = r.user_id WHERE 1=1
                     UNION
-                    SELECT address FROM resident_records rr WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name))
+                    SELECT address FROM resident_records rr WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
                 ) t
             ")->fetchColumn(),
             'age_brackets' => [],

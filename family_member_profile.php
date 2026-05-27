@@ -1,5 +1,5 @@
 <?php
-$page_title = 'Profile Settings';
+$page_title = 'Family Member Profile';
 require_once __DIR__ . '/partials/user_dashboard_header.php';
 ?>
 <?php if (!is_logged_in())
@@ -13,36 +13,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!csrf_validate()) {
             $msg = 'Invalid session. Please reload and try again.';
         } else {
-            // Get form data
-            $first_name = trim($_POST['first_name'] ?? '');
+                        $first_name = trim($_POST['first_name'] ?? '');
             $last_name = trim($_POST['last_name'] ?? '');
             $middle_name = trim($_POST['middle_name'] ?? '');
             $suffix = trim($_POST['suffix'] ?? '');
-            $email = trim($_POST['email'] ?? '');
-            // Address components
-            $province = trim($_POST['province'] ?? '');
-            $municipality = trim($_POST['municipality'] ?? '');
-            $barangay = trim($_POST['barangay'] ?? '');
-            
-            $address_direct = trim($_POST['address'] ?? '');
-            if ($address_direct !== '') {
-                $address = $address_direct;
-            } else {
-                $address = implode(', ', array_filter([$barangay, $municipality, $province]));
-            }
-            $phone = trim($_POST['phone'] ?? '');
+            $relationship = trim($_POST['relationship'] ?? '');
             $birthdate = $_POST['birthdate'] ?? null;
             $sex = $_POST['sex'] ?? null;
             $citizenship = trim($_POST['citizenship'] ?? '');
             $civil_status = trim($_POST['civil_status'] ?? '');
-            
-            $barangay_id = date('Y') . '-' . str_pad((string) $_SESSION['user_id'], 4, '0', STR_PAD_LEFT);
-            $purok = trim($_POST['purok'] ?? '');
-            $is_solo_parent = isset($_POST['is_solo_parent']) ? 1 : 0;
-            $is_pwd = isset($_POST['is_pwd']) ? 1 : 0;
-            $is_senior = isset($_POST['is_senior']) ? 1 : 0;
             $religion = trim($_POST['religion'] ?? '');
             $occupation = trim($_POST['occupation'] ?? '');
+            $philsys_card_no = trim($_POST['philsys_card_no'] ?? '');
             
             $edu_base = trim($_POST['educational_attainment'] ?? '');
             $edu_status = trim($_POST['edu_status'] ?? '');
@@ -50,15 +32,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (empty(trim($educational_attainment))) {
                 $educational_attainment = trim($_POST['educational_attainment_text'] ?? '');
             }
+            
             $classifications = $_POST['classifications'] ?? [];
             $classification_json = json_encode($classifications);
+
+            $is_solo_parent = in_array('Solo Parent', $classifications) ? 1 : 0;
+            $is_pwd = in_array('PWD', $classifications) ? 1 : 0;
+            $is_senior = in_array('Senior Citizen', $classifications) ? 1 : 0;
+            $is_others = in_array('Indigenous People', $classifications) ? 1 : 0;
 
             $name_parts = array_filter([$first_name, $middle_name, $last_name, $suffix]);
             $full_name = implode(' ', $name_parts);
 
             $errors = [];
 
-            // Handle profile picture upload
+            // Handle avatar upload
             $avatarPath = null;
             if (isset($_FILES['profile_picture']) && $_FILES['profile_picture']['error'] === UPLOAD_ERR_OK) {
                 $file = $_FILES['profile_picture'];
@@ -71,17 +59,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = 'Profile picture size must not exceed 5MB.';
                 } else {
                     $uploadDir = __DIR__ . '/uploads/profile_pictures/';
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0777, true);
-                    }
+                    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-                    $stmt = $pdo->prepare('SELECT avatar FROM residents WHERE user_id = ?');
-                    $stmt->execute([$_SESSION['user_id']]);
-                    $existingResident = $stmt->fetch();
-                    $oldAvatarPath = $existingResident['avatar'] ?? null;
-
+                    $oldAvatarPath = $data['avatar'] ?? null;
                     $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-                    $filename = 'profile_' . $_SESSION['user_id'] . '_' . time() . '_' . uniqid() . '.' . $extension;
+                    $filename = 'fm_' . $fm_id . '_' . time() . '_' . uniqid() . '.' . $extension;
                     $uploadPath = $uploadDir . $filename;
 
                     if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
@@ -97,19 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             if ($first_name === '') $errors[] = 'First name is required';
             if ($last_name === '') $errors[] = 'Last name is required';
-            if ($email === '') {
-                $errors[] = 'Email is required';
-            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $errors[] = 'Valid email is required';
-            }
-            if ($phone === '') $errors[] = 'Phone is required';
+            if ($relationship === '') $errors[] = 'Relationship is required';
 
             if ($birthdate !== '' && $birthdate !== null) {
                 try {
                     $birth_date = new DateTime($birthdate);
                     $today = new DateTime();
-                    if ($today->diff($birth_date)->y < 18) {
-                        $errors[] = 'You must be at least 18 years old';
+                    if ($birth_date >= $today) {
+                        $errors[] = 'Birthdate must be in the past';
                     }
                 } catch (Exception $dtE) {
                     $errors[] = 'Invalid birthdate format.';
@@ -117,41 +94,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($errors)) {
-                // Get current data for fallback
-                $stmt = $pdo->prepare('SELECT * FROM residents WHERE user_id = ?');
-                $stmt->execute([$_SESSION['user_id']]);
-                $current = $stmt->fetch();
+                $sql = 'UPDATE family_members SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, relationship=?, birthdate=?, sex=?, citizenship=?, civil_status=?, religion=?, occupation=?, educational_attainment=?, classification=?, is_pwd=?, is_senior=?, is_solo_parent=?, is_others=?, philsys_card_no=?';
+                $params = [$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $relationship, $birthdate, $sex, $citizenship, $civil_status, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json, $is_pwd, $is_senior, $is_solo_parent, $is_others, $philsys_card_no];
 
-                // Fallback logic in PHP to avoid SQL collation issues (NULLIF/COALESCE)
-                $final_religion = !empty($religion) ? $religion : ($current['religion'] ?? null);
-                $final_occupation = !empty($occupation) ? $occupation : ($current['occupation'] ?? null);
-                $final_edu = !empty($educational_attainment) ? $educational_attainment : ($current['educational_attainment'] ?? null);
-                
-                // If classifications is empty, keep old ones
-                $final_classification = ($classification_json !== '[]') ? $classification_json : ($current['classification'] ?? '[]');
-
-                // Update users table
-                $stmt = $pdo->prepare('UPDATE users SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, email=? WHERE id=?');
-                $stmt->execute([$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $email, $_SESSION['user_id']]);
-
-                if ($current) {
-                    if ($avatarPath !== null) {
-                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, avatar=?, religion=?, occupation=?, educational_attainment=?, classification=? WHERE user_id=?')
-                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $final_religion, $final_occupation, $final_edu, $final_classification, $_SESSION['user_id']]);
-                    } else {
-                        $pdo->prepare('UPDATE residents SET address=?, phone=?, birthdate=?, sex=?, citizenship=?, civil_status=?, barangay_id=?, purok=?, is_solo_parent=?, is_pwd=?, is_senior=?, religion=?, occupation=?, educational_attainment=?, classification=? WHERE user_id=?')
-                            ->execute([$address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $final_religion, $final_occupation, $final_edu, $final_classification, $_SESSION['user_id']]);
-                    }
-                } else {
-                    $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, sex, citizenship, civil_status, barangay_id, purok, is_solo_parent, is_pwd, is_senior, avatar, religion, occupation, educational_attainment, classification) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-                        ->execute([$_SESSION['user_id'], $address, $phone, $birthdate, $sex, $citizenship, $civil_status, $barangay_id, $purok, $is_solo_parent, $is_pwd, $is_senior, $avatarPath, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json]);
+                if ($avatarPath !== null) {
+                    $sql .= ', avatar=?';
+                    $params[] = $avatarPath;
                 }
-                $_SESSION['full_name'] = $full_name;
+                
+                $sql .= ' WHERE id=? AND user_id=?';
+                $params[] = $fm_id;
+                $params[] = $_SESSION['user_id'];
+                
+                $pdo->prepare($sql)->execute($params);
                 $msg = 'Profile saved successfully.';
+                
+                // Refresh data
+                $stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ? AND user_id = ?');
+                $stmt->execute([$fm_id, $_SESSION['user_id']]);
+                $data = $stmt->fetch();
             } else {
                 $msg = implode('. ', $errors);
-            }
-        }
+            }        }
     } catch (Exception $e) {
         file_put_contents(__DIR__ . '/profile_error_log.txt', date('Y-m-d H:i:s') . ' - POST ERROR: ' . $e->getMessage() . "\n", FILE_APPEND);
         $msg = 'A server error occurred while saving: ' . $e->getMessage();
@@ -161,52 +125,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Handle avatar removal
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'remove_avatar') {
     try {
-        if (csrf_validate()) {
-            $stmt = $pdo->prepare('SELECT avatar FROM residents WHERE user_id = ?');
-            $stmt->execute([$_SESSION['user_id']]);
-            $res = $stmt->fetch();
-            if ($res && !empty($res['avatar'])) {
-                if (file_exists(__DIR__ . '/' . $res['avatar'])) {
-                    @unlink(__DIR__ . '/' . $res['avatar']);
+                if (csrf_validate()) {
+            if ($data && !empty($data['avatar'])) {
+                if (file_exists(__DIR__ . '/' . $data['avatar'])) {
+                    @unlink(__DIR__ . '/' . $data['avatar']);
                 }
-                $pdo->prepare('UPDATE residents SET avatar = NULL WHERE user_id = ?')->execute([$_SESSION['user_id']]);
+                $pdo->prepare('UPDATE family_members SET avatar = NULL WHERE id = ?')->execute([$fm_id]);
                 $msg = 'Profile picture removed successfully.';
+                $data['avatar'] = null;
             }
-        }
-    } catch (Exception $e) {
+        }} catch (Exception $e) {
         $msg = 'Error removing picture: ' . $e->getMessage();
     }
 }
 
-// Data fetching block
-try {
-    $stmt = $pdo->prepare('SELECT u.first_name, u.last_name, u.middle_name, u.suffix, u.full_name, u.email, r.* FROM users u LEFT JOIN residents r ON r.user_id = u.id WHERE u.id = ?');
-    $stmt->execute([$_SESSION['user_id']]);
-    $data = $stmt->fetch();
+$fm_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($fm_id === 0) {
+    redirect('family_members.php');
+}
 
-    $barangay_id_display = date('Y') . '-' . str_pad((string) $_SESSION['user_id'], 4, '0', STR_PAD_LEFT);
+// Ensure the family member belongs to the current user
+$stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ? AND user_id = ?');
+$stmt->execute([$fm_id, $_SESSION['user_id']]);
+$data = $stmt->fetch();
 
-    $provinceValue = $municipalityValue = $barangayValue = '';
-    if (!empty($data['address'])) {
-        $storedAddressParts = array_map('trim', explode(',', $data['address']));
-        if (count($storedAddressParts) >= 3) {
-            $barangayValue = $storedAddressParts[0];
-            $municipalityValue = $storedAddressParts[1];
-            $provinceValue = $storedAddressParts[2];
-        } elseif (count($storedAddressParts) === 2) {
-            $barangayValue = $storedAddressParts[0];
-            $municipalityValue = $storedAddressParts[1];
-        } elseif (count($storedAddressParts) === 1) {
-            $municipalityValue = $storedAddressParts[0];
-        }
-    }
-} catch (Exception $e) {
-    file_put_contents(__DIR__ . '/profile_error_log.txt', date('Y-m-d H:i:s') . ' - FETCH ERROR: ' . $e->getMessage() . "\n", FILE_APPEND);
-    die('A critical error occurred while loading your profile data. Please check the error log.');
+if (!$data) {
+    redirect('family_members.php');
 }
 
 ?>
 
+<div class="mb-4">
+    <a href="family_members.php" class="btn btn-light shadow-sm rounded-pill px-4 text-secondary">
+        <i class="fas fa-arrow-left me-2"></i>Back to Household Members
+    </a>
+</div>
 <div class="row justify-content-center animate__animated animate__fadeInUp">
     <div class="col-lg-10">
         <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
@@ -232,7 +185,7 @@ try {
                 <h3 class="text-white fw-bold mb-1 position-relative z-1">
                     <?php echo htmlspecialchars($data['full_name'] ?? 'User'); ?></h3>
                 <p class="text-white-50 mb-2 position-relative z-1">
-                    <?php echo htmlspecialchars($data['email'] ?? ''); ?></p>
+                    <?php echo htmlspecialchars($data['relationship'] ?? ''); ?></p>
                 <div class="position-relative z-1">
                     <?php
                     $status = $data['verification_status'] ?? 'unverified';
@@ -331,17 +284,15 @@ try {
                                 placeholder="e.g. Jr., Sr., III">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Email <span
-                                    class="text-danger">*</span></label>
-                            <input type="email" name="email" class="form-control"
-                                value="<?php echo htmlspecialchars($data['email'] ?? ''); ?>"
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Relationship to Head <span class="text-danger">*</span></label>
+                            <input type="text" name="relationship" class="form-control"
+                                value="<?php echo htmlspecialchars($data['relationship'] ?? ''); ?>"
                                 placeholder="name@example.com" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Phone <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" name="phone" class="form-control"
-                                value="<?php echo htmlspecialchars($data['phone'] ?? ''); ?>"
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">PhilSys Card Number</label>
+                            <input type="text" name="philsys_card_no" class="form-control"
+                                value="<?php echo htmlspecialchars($data['philsys_card_no'] ?? ''); ?>"
                                 placeholder="e.g. 09123456789" required>
                         </div>
                         <div class="col-md-4">
@@ -471,17 +422,7 @@ try {
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase mb-1">Barangay ID</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-light text-secondary"><i class="fas fa-id-badge"></i></span>
-                                <input type="text" name="barangay_id" class="form-control bg-light fw-bold"
-                                    value="<?php echo htmlspecialchars($barangay_id_display); ?>" readonly>
-                                <span class="input-group-text bg-light text-secondary" title="Auto-generated"><i class="fas fa-lock"></i></span>
-                            </div>
-                            <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>Auto-generated</div>
-                        </div>
-                    </div>
+                        </div></div>
             </div>
 
             <div class="d-flex justify-content-end mt-3">
@@ -535,142 +476,6 @@ try {
                 this.classList.remove('is-invalid');
             });
         }
-
-        // ===== PSGC API Cascading Dropdowns =====
-        const PSGC_API = 'https://psgc.gitlab.io/api';
-        const provinceSelect = document.getElementById('province');
-        const municipalitySelect = document.getElementById('municipality');
-        const barangaySelect = document.getElementById('barangay');
-
-        if (!provinceSelect || !municipalitySelect || !barangaySelect) {
-            console.log('Address dropdowns not found, skipping PSGC initialization.');
-            return;
-        }
-
-        const selectedProv = provinceSelect.dataset.selected;
-        const selectedMun = municipalitySelect.dataset.selected;
-        const selectedBrgy = barangaySelect.dataset.selected;
-
-        // Load all provinces
-        fetch(`${PSGC_API}/provinces/`)
-            .then(res => res.json())
-            .then(data => {
-                data.sort((a, b) => a.name.localeCompare(b.name));
-                data.forEach(prov => {
-                    const opt = document.createElement('option');
-                    opt.value = prov.name;
-                    opt.textContent = prov.name;
-                    opt.dataset.code = prov.code;
-                    if (prov.name === selectedProv) opt.selected = true;
-                    provinceSelect.appendChild(opt);
-                });
-
-                if (selectedProv) {
-                    provinceSelect.dispatchEvent(new Event('change'));
-                }
-            })
-            .catch(() => {
-                // Fallback: allow text input if API fails
-                provinceSelect.outerHTML = '<input type="text" name="province" id="province" class="form-control" value="' + selectedProv + '" required>';
-                municipalitySelect.outerHTML = '<input type="text" name="municipality" id="municipality" class="form-control" value="' + selectedMun + '" required>';
-                barangaySelect.outerHTML = '<input type="text" name="barangay" id="barangay" class="form-control" value="' + selectedBrgy + '" required>';
-            });
-
-        // When province changes, load municipalities
-        provinceSelect.addEventListener('change', function () {
-            const selected = this.options[this.selectedIndex];
-            if (!selected) return;
-            const code = selected.dataset.code;
-
-            municipalitySelect.innerHTML = '<option value="">Loading...</option>';
-            municipalitySelect.disabled = true;
-            barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-            barangaySelect.disabled = true;
-
-            if (!code) {
-                municipalitySelect.innerHTML = '<option value="">Select Municipality</option>';
-                return;
-            }
-
-            fetch(`${PSGC_API}/provinces/${code}/cities-municipalities/`)
-                .then(res => res.json())
-                .then(data => {
-                    municipalitySelect.innerHTML = '<option value="">Select Municipality</option>';
-                    data.sort((a, b) => a.name.localeCompare(b.name));
-                    data.forEach(mun => {
-                        const opt = document.createElement('option');
-                        opt.value = mun.name;
-                        opt.textContent = mun.name;
-                        opt.dataset.code = mun.code;
-                        if (mun.name === selectedMun) opt.selected = true;
-                        municipalitySelect.appendChild(opt);
-                    });
-                    municipalitySelect.disabled = false;
-
-                    if (selectedMun && selected.value === selectedProv) {
-                        municipalitySelect.dispatchEvent(new Event('change'));
-                    }
-                });
-        });
-
-        // When municipality changes, load barangays
-        municipalitySelect.addEventListener('change', function () {
-            const selected = this.options[this.selectedIndex];
-            if (!selected) return;
-            const code = selected.dataset.code;
-
-            barangaySelect.innerHTML = '<option value="">Loading...</option>';
-            barangaySelect.disabled = true;
-
-            if (!code) {
-                barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-                return;
-            }
-
-            // Helper function to load barangays from a specific path
-            const loadBarangays = (path) => {
-                return fetch(`${PSGC_API}/${path}/${code}/barangays/`)
-                    .then(res => {
-                        if (!res.ok) throw new Error('Not found ' + path);
-                        return res.json();
-                    });
-            };
-
-            // Try the combined endpoint first, then fall back to city or municipality specific ones
-            loadBarangays('cities-municipalities')
-                .catch(() => loadBarangays('cities')) // Fallback 1: Try as city
-                .catch(() => loadBarangays('municipalities')) // Fallback 2: Try as municipality
-                .then(data => {
-                    barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-                    if (!data || !Array.isArray(data) || data.length === 0) {
-                        barangaySelect.innerHTML = '<option value="">No barangays found</option>';
-                        barangaySelect.disabled = false;
-                        return;
-                    }
-                    data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-                    data.forEach(brgy => {
-                        const opt = document.createElement('option');
-                        opt.value = brgy.name;
-                        opt.textContent = brgy.name;
-                        if (brgy.name === selectedBrgy) opt.selected = true;
-                        barangaySelect.appendChild(opt);
-                    });
-                    barangaySelect.disabled = false;
-                })
-                .catch(err => {
-                    console.error('Final fetch error:', err);
-                    barangaySelect.innerHTML = '<option value="">Manual Entry Mode</option>';
-                    // If all API calls fail, allow manual entry as fallback
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.name = 'barangay';
-                    input.id = 'barangay';
-                    input.className = 'form-control';
-                    input.value = selectedBrgy || '';
-                    input.required = true;
-                    barangaySelect.replaceWith(input);
-                });
-        });
 
         // Save Button Loading State
         const profileForm = document.getElementById('profileForm');

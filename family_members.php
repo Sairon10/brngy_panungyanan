@@ -195,7 +195,9 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                         <?php foreach ($family_members as $fm): ?>
                             <div class="col-md-6 col-xl-4">
                                 <div
-                                    class="card border-0 shadow-sm rounded-4 h-100 transition-all hover-translate-y-2 overflow-hidden">
+                                    class="card border-0 shadow-sm rounded-4 h-100 transition-all hover-translate-y-2 overflow-hidden"
+                                    style="cursor: pointer;"
+                                    onclick="window.location.href='family_member_profile.php?id=<?php echo $fm['id']; ?>'">
                                     <div class="card-body p-4">
                                         <div class="d-flex justify-content-between align-items-start mb-3">
                                             <div class="d-flex align-items-center gap-3">
@@ -241,9 +243,8 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                                     <?php endif; ?>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="dropdown">
-                                            <button class="btn btn-icon btn-light rounded-circle" data-bs-toggle="dropdown">
+                                            <div class="dropdown" onclick="event.stopPropagation();">
+                                                <button class="btn btn-icon btn-light rounded-circle" data-bs-toggle="dropdown">
                                                 <i class="fas fa-ellipsis-h"></i>
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
@@ -269,18 +270,22 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                         </div>
                                     </div>
 
-                                    <div class="grid grid-cols-2 gap-3 mt-4 text-xs font-medium">
-                                        <div class="bg-light p-2 rounded-3 border border-light">
-                                            <div class="text-dark fw-bold text-uppercase letter-spacing-1 mb-1"
-                                                style="font-size: 0.6rem; opacity: 0.8;">PhilSys No</div>
-                                            <div class="text-dark fw-semibold">
-                                                <?php echo $fm['philsys_card_no'] ?: '<span class="opacity-30">N/A</span>'; ?>
+                                    <div class="row g-3 mt-4 text-dark small fw-medium">
+                                        <div class="col-6">
+                                            <div class="bg-light p-2 rounded-3 border border-light h-100">
+                                                <div class="text-dark fw-bold text-uppercase letter-spacing-1 mb-1"
+                                                    style="font-size: 0.6rem; opacity: 0.8;">PhilSys No</div>
+                                                <div class="text-dark fw-semibold">
+                                                    <?php echo $fm['philsys_card_no'] ?: '<span class="opacity-30">N/A</span>'; ?>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="bg-light p-2 rounded-3 border border-light">
-                                            <div class="text-dark fw-bold text-uppercase letter-spacing-1 mb-1"
-                                                style="font-size: 0.6rem; opacity: 0.8;">Status</div>
-                                            <div class="text-dark fw-semibold"><?php echo $fm['civil_status'] ?: 'Single'; ?>
+                                        <div class="col-6">
+                                            <div class="bg-light p-2 rounded-3 border border-light h-100">
+                                                <div class="text-dark fw-bold text-uppercase letter-spacing-1 mb-1"
+                                                    style="font-size: 0.6rem; opacity: 0.8;">Status</div>
+                                                <div class="text-dark fw-semibold"><?php echo $fm['civil_status'] ?: 'Single'; ?>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
