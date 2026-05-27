@@ -1656,10 +1656,15 @@ require_once __DIR__ . '/header.php';
                             break;
                         }
                         
-                        const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
+                                                const digitsMatch = line.match(/\b(\d[\d\s]{9,16}\d)\b/);
                         if (digitsMatch) {
                             const clean = digitsMatch[1].replace(/\s+/g, '');
                             if (clean.length >= 10 && clean.length <= 15) {
+                                // Skip if it looks like a PH phone number (09... or 639...)
+                                if ((clean.startsWith('09') && clean.length === 11) || 
+                                    (clean.startsWith('639') && clean.length === 12)) {
+                                    continue; // Skip phone number, keep looking for reference
+                                }
                                 foundRef = clean;
                                 break;
                             }
