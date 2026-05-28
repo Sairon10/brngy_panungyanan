@@ -95,20 +95,20 @@ switch ($type) {
 
     case 'total_residents':
         $stmt = $pdo->query("
-            SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
-            FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE 1=1
+            SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.phone, '' as owner_name
+            FROM users u LEFT JOIN residents r ON u.id = r.user_id
+            WHERE u.role IN ('resident', 'admin', 'sub_admin')
             
             UNION ALL
             
-            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, COALESCE(ro.address, 'N/A') as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
             
             UNION ALL
             
-            SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, rr.address, rr.phone, '' as owner_name
+            SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.phone, '' as owner_name
             FROM resident_records rr
             WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
             
@@ -156,22 +156,22 @@ switch ($type) {
 
     case 'households':
         $stmt = $pdo->query("
-            SELECT 'Head' as role, r.user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, r.address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status, r.citizenship
-            FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE 1=1
+            SELECT 'Head' as role, u.id as user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status, r.citizenship
+            FROM users u LEFT JOIN residents r ON u.id = r.user_id
+            WHERE u.role IN ('resident', 'admin', 'sub_admin')
             
             UNION ALL
             
-            SELECT 'Head' as role, 0 as user_id, rr.first_name, rr.middle_name, rr.last_name, rr.suffix, rr.full_name, rr.email, rr.birthdate, rr.sex, rr.civil_status, rr.address, rr.purok, rr.phone, NULL as birth_place, NULL as occupation, '' as classification, NULL as religion, '' as educational_attainment, '' as educational_status, rr.citizenship
+            SELECT 'Head' as role, 0 as user_id, rr.first_name, rr.middle_name, rr.last_name, rr.suffix, rr.full_name, rr.email, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.purok, rr.phone, NULL as birth_place, NULL as occupation, '' as classification, NULL as religion, '' as educational_attainment, '' as educational_status, rr.citizenship
             FROM resident_records rr
             WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
             
             UNION ALL
             
-            SELECT 'Member' as role, fm.user_id, fm.first_name, fm.middle_name, fm.last_name, fm.suffix, fm.full_name, '' as email, fm.birthdate, fm.sex, fm.civil_status, r2.address, r2.purok, r2.phone, fm.birth_place, fm.occupation, fm.classification, fm.religion, fm.educational_attainment, fm.educational_status, fm.citizenship
+            SELECT 'Member' as role, fm.user_id, fm.first_name, fm.middle_name, fm.last_name, fm.suffix, fm.full_name, '' as email, fm.birthdate, fm.sex, fm.civil_status, COALESCE(r2.address, 'N/A') as address, r2.purok, r2.phone, fm.birth_place, fm.occupation, fm.classification, fm.religion, fm.educational_attainment, fm.educational_status, fm.citizenship
             FROM family_members fm
-            JOIN residents r2 ON fm.user_id = r2.user_id
-            JOIN users u2 ON r2.user_id = u2.id
+            JOIN users u2 ON fm.user_id = u2.id
+            LEFT JOIN residents r2 ON fm.user_id = r2.user_id
             WHERE 1=1
             
             ORDER BY address, role DESC, full_name
@@ -184,8 +184,8 @@ switch ($type) {
         // Select only specific shared columns to avoid UNION mismatch errors
         $residents = $pdo->query("
             SELECT r.birthdate, r.sex, r.civil_status, r.is_senior, r.is_pwd, r.is_solo_parent, r.occupation, r.classification, r.citizenship, u.full_name 
-            FROM residents r JOIN users u ON u.id = r.user_id 
-            WHERE 1=1
+            FROM users u LEFT JOIN residents r ON u.id = r.user_id 
+            WHERE u.role IN ('resident', 'admin', 'sub_admin')
             
             UNION ALL
             
@@ -202,9 +202,9 @@ switch ($type) {
             'total_inhabitants' => count($all),
             'total_households' => $pdo->query("
                 SELECT COUNT(DISTINCT address) FROM (
-                    SELECT address FROM residents r JOIN users u ON u.id = r.user_id WHERE 1=1
+                    SELECT COALESCE(r.address, 'N/A') as address FROM users u LEFT JOIN residents r ON u.id = r.user_id WHERE u.role IN ('resident', 'admin', 'sub_admin')
                     UNION
-                    SELECT address FROM resident_records rr WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
+                    SELECT COALESCE(rr.address, 'N/A') as address FROM resident_records rr WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
                 ) t
             ")->fetchColumn(),
             'age_brackets' => [],

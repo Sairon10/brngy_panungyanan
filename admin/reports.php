@@ -599,10 +599,11 @@ require_once __DIR__ . '/header.php';
         return `
         <div class="d-flex justify-content-between align-items-center mb-3">
             <span class="text-muted small">Showing <strong>${data.length}</strong> record(s)</span>
+            ${type !== 'summary' ? '<input type="text" id="reportSearch" class="form-control form-control-sm" style="max-width: 250px;" placeholder="Search records..." onkeyup="filterReportTable()">' : ''}
         </div>
         <div class="table-card">
         <div class="table-responsive">
-            <table class="table table-hover table-bordered align-middle mb-0" style="font-size:0.9rem;">
+            <table class="table table-hover table-bordered align-middle mb-0" id="reportTable" style="font-size:0.9rem;">
                 <thead class="table-dark"><tr>${headers}</tr></thead>
                 <tbody>${rows}</tbody>
             </table>
@@ -613,6 +614,26 @@ require_once __DIR__ . '/header.php';
     function esc(s) {
         if (s === null || s === undefined) return '—';
         return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function filterReportTable() {
+        const input = document.getElementById("reportSearch");
+        if (!input) return;
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById("reportTable");
+        if (!table) return;
+        const tbody = table.getElementsByTagName("tbody")[0];
+        if (!tbody) return;
+        const tr = tbody.getElementsByTagName("tr");
+        for (let i = 0; i < tr.length; i++) {
+            if (tr[i].classList.contains('table-light')) continue;
+            const txtValue = tr[i].textContent || tr[i].innerText;
+            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
     }
 
     function printSingleHousehold(address) {

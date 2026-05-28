@@ -53,8 +53,8 @@ $incidents_canceled = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents i 
 // --- General Stats (Population Overview) ---
 $pop_date_query = !empty($date_where) ? " WHERE " . substr($date_where, 5) : "";
 
-// Count unique residents (Users with role 'resident')
-$total_users = (int) ($pdo->query("SELECT COUNT(*) as c FROM users WHERE role = 'resident' " . str_replace("created_at", "created_at", $date_where))->fetch()['c'] ?? 0);
+// Count unique residents (Users with role 'resident', 'admin', 'sub_admin')
+$total_users = (int) ($pdo->query("SELECT COUNT(*) as c FROM users WHERE role IN ('resident', 'admin', 'sub_admin') " . str_replace("created_at", "created_at", $date_where))->fetch()['c'] ?? 0);
 
 // Count family members
 $total_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members $pop_date_query")->fetch()['c'] ?? 0);

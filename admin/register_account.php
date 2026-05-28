@@ -87,7 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt->execute([$email, $hash, $full_name, $first_name, $last_name, $middle_name ?: null, $suffix ?: null, $role]);
 
                         $user_id = $pdo->lastInsertId();
-                        $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, citizenship, civil_status, sex, purok, verification_status, is_solo_parent, is_pwd, is_senior) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'verified\', ?, ?, ?)');
+                        $stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, birth_place, citizenship, civil_status, sex, purok, verification_status, is_solo_parent, is_pwd, is_senior) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'verified\', ?, ?, ?)');
                         $stmt->execute([ $user_id, $address, $phone ?: null, $birthdate ?: null, $birth_place ?: null, $citizenship ?: null, $civil_status ?: null, $sex ?: null, $purok ?: null, $is_solo_parent, $is_pwd, $is_senior ]);
 
                         if ($role === 'resident') {
