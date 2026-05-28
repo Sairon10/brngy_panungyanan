@@ -232,7 +232,7 @@ $nav_avatar = $user_nav_data['avatar'] ?? null;
 		}
 
 		.admin-stats-card.warning {
-			background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+			background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 		}
 
 		.admin-stats-card.info {

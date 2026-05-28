@@ -153,6 +153,7 @@ if (!$data) {
     redirect('family_members.php');
 }
 
+$barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F' . str_pad((string)$fm_id, 4, '0', STR_PAD_LEFT);
 ?>
 
 <div class="mb-4">
@@ -282,6 +283,16 @@ if (!$data) {
                             <input type="text" name="suffix" class="form-control"
                                 value="<?php echo htmlspecialchars($data['suffix'] ?? ''); ?>"
                                 placeholder="e.g. Jr., Sr., III">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase mb-1">Barangay ID</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light text-secondary"><i class="fas fa-id-badge"></i></span>
+                                <input type="text" name="barangay_id" class="form-control bg-light fw-bold"
+                                    value="<?php echo htmlspecialchars($barangay_id_display); ?>" readonly>
+                                <span class="input-group-text bg-light text-secondary" title="Auto-generated"><i class="fas fa-lock"></i></span>
+                            </div>
+                            <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>Auto-generated</div>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Relationship to Head <span class="text-danger">*</span></label>

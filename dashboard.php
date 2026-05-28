@@ -197,20 +197,20 @@ try {
 
         <div class="col-lg-7 order-lg-1">
             <div class="row g-4">
-                <!-- Submitted Card -->
+                <!-- Pending Card -->
                 <div class="col-md-6">
-                    <a href="incidents.php" class="text-decoration-none"
+                    <a href="incidents.php?status_filter=submitted" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
-                        <div class="admin-stats-card danger mb-0"
+                        <div class="admin-stats-card warning mb-0"
                             style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
                             <div class="d-flex align-items-center p-4" style="color: white;">
                                 <div class="stats-icon me-4" style="font-size: 2.5rem; opacity: 0.9;"><i
-                                        class="fas fa-file-signature"></i></div>
+                                        class="fas fa-clock"></i></div>
                                 <div>
                                     <div class="stats-number"
                                         style="font-size: 2.25rem; font-weight: bold; line-height: 1; margin-bottom: 0.25rem;">
                                         <?php echo $incidents_submitted; ?></div>
-                                    <div class="stats-label" style="font-size: 1rem; opacity: 0.9;">Submitted Incidents
+                                    <div class="stats-label" style="font-size: 1rem; opacity: 0.9;">Pending Incidents
                                     </div>
                                 </div>
                             </div>
@@ -219,7 +219,7 @@ try {
                 </div>
                 <!-- In Review Card -->
                 <div class="col-md-6">
-                    <a href="incidents.php" class="text-decoration-none"
+                    <a href="incidents.php?status_filter=in_review" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
                         <div class="admin-stats-card info mb-0"
                             style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
@@ -238,7 +238,7 @@ try {
                 </div>
                 <!-- Resolved Card -->
                 <div class="col-md-6">
-                    <a href="incidents.php" class="text-decoration-none"
+                    <a href="incidents.php?status_filter=resolved" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
                         <div class="admin-stats-card success mb-0"
                             style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
@@ -257,10 +257,10 @@ try {
                 </div>
                 <!-- Rejected Card -->
                 <div class="col-md-6">
-                    <a href="incidents.php" class="text-decoration-none"
+                    <a href="incidents.php?status_filter=closed" class="text-decoration-none"
                         style="color: inherit; display: block; border-radius: 12px; overflow: hidden; transition: transform 0.2s;">
-                        <div class="admin-stats-card mb-0"
-                            style="margin: 0; border: none; background: linear-gradient(135deg, #475569 0%, #334155 100%); box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
+                        <div class="admin-stats-card danger mb-0"
+                            style="margin: 0; border: none; box-shadow: 0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);">
                             <div class="d-flex align-items-center p-4" style="color: white;">
                                 <div class="stats-icon me-3" style="font-size: 2rem; opacity: 0.9;"><i
                                         class="fas fa-ban"></i></div>
@@ -345,10 +345,10 @@ try {
         new Chart(ctxIncidents, {
             type: 'pie',
             data: {
-                labels: dataEmptyIncidents ? ['No Incidents'] : ['Submitted', 'In Review', 'Resolved', 'Rejected'],
+                labels: dataEmptyIncidents ? ['No Incidents'] : ['Pending', 'In Review', 'Resolved', 'Rejected'],
                 datasets: [{
                     data: dataEmptyIncidents ? [1] : [<?php echo $incidents_submitted; ?>, <?php echo $incidents_review; ?>, <?php echo $incidents_resolved; ?>, <?php echo $incidents_rejected; ?>],
-                    backgroundColor: dataEmptyIncidents ? ['#e5e7eb'] : ['#ef4444', '#0ea5e9', '#10b981', '#475569'],
+                    backgroundColor: dataEmptyIncidents ? ['#e5e7eb'] : ['#f59e0b', '#0ea5e9', '#10b981', '#ef4444'],
                     borderWidth: 2,
                     borderColor: '#ffffff'
                 }]

@@ -253,6 +253,11 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                                             class="fas fa-pen me-2 text-muted small"></i> Update Details</a>
                                                 </li>
                                                 <li>
+                                                    <a class="dropdown-item py-2" href="fm_id_print.php?id=<?php echo $fm['id']; ?>">
+                                                        <i class="fas fa-id-card me-2 text-muted small"></i> ID Card
+                                                    </a>
+                                                </li>
+                                                <li>
                                                     <hr class="dropdown-divider">
                                                 </li>
                                                 <li>
@@ -382,6 +387,16 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                     <label class="form-label rbi-label">Suffix (Jr, III, etc)</label>
                                     <input type="text" name="fm_suffix" id="fm_suffix" class="form-control rbi-input">
                                 </div>
+                                <div class="col-md-12 my-1"></div>
+                                <div class="col-md-5">
+                                    <label class="form-label rbi-label">Barangay ID</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light text-secondary border-end-0"><i class="fas fa-id-badge"></i></span>
+                                        <input type="text" name="fm_barangay_id" id="fm_barangay_id" class="form-control rbi-input bg-light fw-bold border-start-0 border-end-0 px-0" style="background-color: #f8f9fa !important;" readonly>
+                                        <span class="input-group-text bg-light text-secondary border-start-0" title="Auto-generated"><i class="fas fa-lock"></i></span>
+                                    </div>
+                                    <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>Auto-generated</div>
+                                </div>
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Relationship to Head <span
                                             class="text-danger">*</span></label>
@@ -393,12 +408,12 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <div class="col-md-5">
+                                <div class="col-md-4">
                                     <label class="form-label rbi-label">PhilSys Card Number</label>
                                     <input type="text" name="fm_philsys_card_no" id="fm_philsys_card_no"
                                         class="form-control rbi-input" placeholder="####-####-####-####">
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-12">
                                     <label class="form-label rbi-label">Citizenship</label>
                                     <input type="text" name="fm_citizenship" id="fm_citizenship"
                                         class="form-control rbi-input" value="FILIPINO">
@@ -695,6 +710,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
         document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-plus me-2 text-primary"></i>Member Registration';
         document.getElementById('modalAction').value = 'add_family_member';
         document.getElementById('fm_id').value = '';
+        document.getElementById('fm_barangay_id').value = 'Pending creation';
         document.getElementById('fm_id_front').required = true;
         document.getElementById('fm_id_back').required = true;
     }
@@ -704,6 +720,9 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
         document.getElementById('modalTitle').innerHTML = '<i class="fas fa-user-edit me-2 text-primary"></i>Update Record';
         document.getElementById('modalAction').value = 'edit_family_member';
         document.getElementById('fm_id').value = fm.id;
+
+        let createdYear = fm.created_at ? new Date(fm.created_at).getFullYear() : new Date().getFullYear();
+        document.getElementById('fm_barangay_id').value = createdYear + '-F' + String(fm.id).padStart(4, '0');
 
         // Fill fields
         document.getElementById('fm_first_name').value = fm.first_name || '';

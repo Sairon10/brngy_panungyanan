@@ -669,8 +669,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 														name="terms_agreement" id="terms_agreement" required>
 													<label class="form-check-label" for="terms_agreement">
 														I confirm that all information provided is accurate and I agree
-														to the <a href="#" class="text-primary">Terms of Service</a> and
-														<a href="#" class="text-primary">Privacy Policy</a>
+														to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="text-primary">Terms of Service</a> and
+														<a href="#" data-bs-toggle="modal" data-bs-target="#privacyModal" class="text-primary">Privacy Policy</a>
 													</label>
 												</div>
 											</div>
@@ -703,6 +703,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							</div>
 						</div>
 					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Terms of Service Modal -->
+	<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header bg-light">
+					<h5 class="modal-title fw-bold" id="termsModalLabel">Terms of Service</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body p-4 lh-lg text-dark">
+					<h5 class="fw-bold mb-3">1. Acceptance of Terms</h5>
+					<p class="mb-4">By accessing and using the Barangay Panungyanan Digital Information System, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by these terms, please do not use this service.</p>
+
+					<h5 class="fw-bold mb-3">2. User Account Responsibilities</h5>
+					<p class="mb-4">To access certain features of the platform, you must register for an account. You are responsible for maintaining the confidentiality of your account password and for all activities that occur under your account. You agree to provide accurate, current, and complete information during the registration process.</p>
+
+					<h5 class="fw-bold mb-3">3. Use of Services</h5>
+					<p class="mb-4">The services provided by this platform, including document requests and incident reporting, must be used for lawful purposes only. Any submission of false information, spam, or malicious reports is strictly prohibited and may result in the suspension of your account and legal action.</p>
+
+					<h5 class="fw-bold mb-3">4. Modifications to Service</h5>
+					<p class="mb-4">Barangay Panungyanan reserves the right to modify, suspend, or discontinue, temporarily or permanently, the system or any service to which it connects, with or without notice and without liability to you.</p>
+				</div>
+				<div class="modal-footer bg-light">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Privacy Policy Modal -->
+	<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-scrollable">
+			<div class="modal-content">
+				<div class="modal-header bg-light">
+					<h5 class="modal-title fw-bold" id="privacyModalLabel">Privacy Policy</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body p-4 lh-lg text-dark">
+					<h5 class="fw-bold mb-3">1. Information We Collect</h5>
+					<p class="mb-4">When you register for an account on the Barangay Panungyanan Digital Information System, we collect personal information that you voluntarily provide to us. This includes your name, birthdate, address, contact numbers, and other demographic details necessary for barangay records.</p>
+
+					<h5 class="fw-bold mb-3">2. How We Use Your Information</h5>
+					<p class="mb-4">The information we collect is used solely for official barangay purposes, including but not limited to: verifying your residency, processing document requests (like clearances and certificates), addressing incident reports, and managing community profiling.</p>
+
+					<h5 class="fw-bold mb-3">3. Data Security and Protection</h5>
+					<p class="mb-4">We implement strict security measures to maintain the safety of your personal information. Your data is stored in secured databases accessible only by authorized barangay officials. We do not sell, trade, or otherwise transfer your personally identifiable information to outside parties without your consent, except as required by law.</p>
+
+					<h5 class="fw-bold mb-3">4. Consent</h5>
+					<p class="mb-4">By using our system and registering an account, you consent to our Privacy Policy and agree to the collection and use of your information as outlined above in accordance with the Data Privacy Act of 2012 (Republic Act No. 10173).</p>
+				</div>
+				<div class="modal-footer bg-light">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 				</div>
 			</div>
 		</div>

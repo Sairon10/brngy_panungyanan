@@ -206,10 +206,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     goto skip_request;
                 }
 
-                if (stripos($doc_type, 'Resident ID') !== false) {
-                    $message = 'Error: Resident IDs can only be requested for the account owner. Family members must create their own accounts.';
-                    goto skip_request;
-                }
+                // Allow Resident IDs for family members. Removing previous restriction.
+
             }
 
             // Duplicate reference number check — block if ref no. already used
@@ -1364,17 +1362,8 @@ $documents = $documents_stmt->fetchAll();
         // Disable Resident ID for family members
         Array.from(docTypeSelect.options).forEach(option => {
             if (option.value === 'Resident ID') {
-                option.disabled = !isSelf;
-                if (!isSelf && docTypeSelect.value === 'Resident ID') {
-                    docTypeSelect.value = '';
-                    docTypeSelect.dispatchEvent(new Event('change'));
-                    Swal.fire({
-                        title: 'Not Allowed',
-                        text: 'Resident IDs can only be requested for the account owner. For a family member to get a Resident ID, they must create their own verified account.',
-                        icon: 'warning'
-                    });
-                }
-            }
+                option.disabled = false; // Removed logic disabling Resident ID for family members
+  }
         });
     }
 

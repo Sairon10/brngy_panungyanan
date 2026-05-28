@@ -353,8 +353,8 @@ require_once __DIR__ . '/partials/header.php';
 			</div>
 			<div class="col-md-6 text-center text-md-end">
 				<div class="d-flex justify-content-center justify-content-md-end gap-4">
-					<a href="#" class="text-white-50 text-decoration-none small hover-white">Privacy Policy</a>
-					<a href="#" class="text-white-50 text-decoration-none small hover-white">Terms of Service</a>
+					<a href="privacy.php" class="text-white-50 text-decoration-none small hover-white">Privacy Policy</a>
+					<a href="terms.php" class="text-white-50 text-decoration-none small hover-white">Terms of Service</a>
 				</div>
 			</div>
 		</div>

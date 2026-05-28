@@ -1,106 +1,62 @@
+<?php 
+$page_title = 'ID Card';
+require_once __DIR__ . '/partials/user_dashboard_header.php'; 
+?>
+<?php if (!is_logged_in()) redirect('login.php'); ?>
 <?php
-require_once __DIR__ . '/config.php';
-
-if (!is_logged_in() || !is_admin()) {
-    die('Access denied. Only administrators can generate generic PDFs.');
-}
-
 $pdo = get_db_connection();
-$request_id = (int)($_GET['id'] ?? 0);
+$fm_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($fm_id === 0) redirect('family_members.php');
 
-if ($request_id <= 0) {
-    die('Invalid request ID');
+$stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ? AND user_id = ?');
+$stmt->execute([$fm_id, $_SESSION['user_id']]);
+$resident = $stmt->fetch();
+
+if (!$resident) {
+    redirect('family_members.php');
 }
 
-// Fetch the document request
-$stmt = $pdo->prepare("SELECT * FROM document_requests WHERE id = ? AND doc_type = 'Resident ID'");
-$stmt->execute([$request_id]);
-$req = $stmt->fetch();
+$allowed = ($resident['verification_status'] === 'verified');
 
-if (!$req) {
-    die('Document request not found or not a Resident ID request.');
-}
-
-if ($req['status'] !== 'approved' && $req['status'] !== 'released') {
-    die('Document request not yet approved.');
-}
-
-$resident = [];
-$is_family_member = ($req['requestor_type'] === 'family_member' && !empty($req['family_member_id']));
-$user_id = $req['user_id'];
-
-// Get Head address and phone regardless (fallback)
-$head_stmt = $pdo->prepare('SELECT r.address, r.phone FROM residents r WHERE user_id = ?');
-$head_stmt->execute([$user_id]);
-$head_data = $head_stmt->fetch();
-
-if ($is_family_member) {
-    $fm_stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ?');
-    $fm_stmt->execute([$req['family_member_id']]);
-    $resident = $fm_stmt->fetch();
-    if (!$resident) die('Family member not found.');
-    
-    // Fallbacks
-    $resident['address'] = !empty($resident['address']) ? $resident['address'] : ($head_data['address'] ?? '');
-    $resident['phone'] = !empty($resident['phone']) ? $resident['phone'] : ($head_data['phone'] ?? '');
-    $resident['birth_place'] = ''; // fm doesn't have birthplace usually
-    
-    // Construct name
-    $resident['first_name'] = $resident['first_name'] ?? '';
-    $resident['middle_name'] = $resident['middle_name'] ?? '';
-    $resident['last_name'] = $resident['last_name'] ?? '';
-    
-    $uid_prefix = date('Y', strtotime($resident['created_at'] ?? 'now')) . '-F' . str_pad((string)$req['family_member_id'], 4, '0', STR_PAD_LEFT);
-    $qr_id_param = 'fm_id=' . $req['family_member_id'];
-} else {
-    // Self
-    $self_stmt = $pdo->prepare('
-        SELECT u.first_name, u.last_name, u.middle_name, u.created_at,
-               r.address, r.birthdate, r.avatar, r.phone, r.birth_place
-        FROM users u 
-        LEFT JOIN residents r ON r.user_id = u.id 
-        WHERE u.id = ?
-    ');
-    $self_stmt->execute([$user_id]);
-    $resident = $self_stmt->fetch();
-    if (!$resident) die('Resident data not found.');
-    
-    $uid_prefix = date('Y', strtotime($resident['created_at'] ?? 'now')) . '-' . str_pad((string)$user_id, 4, '0', STR_PAD_LEFT);
-    $qr_id_param = 'id=' . $user_id;
-}
-
-$uid = $uid_prefix;
+// Generate ID number
+$uid = date('Y', strtotime($resident['created_at'] ?? 'now')) . '-F' . str_pad((string)$fm_id, 4, '0', STR_PAD_LEFT);
 
 // Get base URL for QR code
 $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'];
 $base_url = $protocol . '://' . $host . dirname($_SERVER['PHP_SELF']);
-$qr_verify_url = rtrim($base_url, '/') . '/qr_verify.php?' . $qr_id_param;
+$qr_verify_url = rtrim($base_url, '/') . '/qr_verify.php?fm_id=' . $fm_id;
 
 // Generate QR code URL
 $qr_code_url = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($qr_verify_url);
 
-$valid_until = date('F d, Y', strtotime($req['created_at'] . ' +1 year'));
-$req_date = $req['created_at'];
+// Calculate validity date
+$req_date = $resident['created_at'] ?? date('Y-m-d H:i:s');
+$valid_until = date('F d, Y', strtotime($req_date . ' +1 year'));
 
+$is_expired = false;
+$is_expiring_soon = false;
+$expiry_time = strtotime($req_date . ' +1 year');
+$current_time = time();
+if ($current_time > $expiry_time) {
+    $is_expired = true;
+} elseif ($expiry_time - $current_time < 30 * 24 * 60 * 60) { // 30 days
+    $is_expiring_soon = true;
+}
+
+// Get Head address and phone
+$head_stmt = $pdo->prepare('SELECT address, phone FROM residents WHERE user_id = ?');
+$head_stmt->execute([$_SESSION['user_id']]);
+$head_data = $head_stmt->fetch();
+$resident['address'] = !empty($resident['address']) ? $resident['address'] : ($head_data['address'] ?? '');
+$resident['phone'] = !empty($resident['phone']) ? $resident['phone'] : ($head_data['phone'] ?? '');
+
+// Format birthdate
+$birthdate_formatted = $resident['birthdate'] ? date('M d, Y', strtotime($resident['birthdate'])) : 'N/A';
+$age = $resident['birthdate'] ? date_diff(date_create($resident['birthdate']), date_create('today'))->y : 'N/A';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resident ID Card</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-    @media print {
-        @page { size: landscape; margin: 0; }
-        body { margin: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        .no-print { display: none !important; }
-    }
-    body { background: #f0f2f5; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-top: 40px; }
-    .print-btn { padding: 12px 24px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 16px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .print-btn:hover { background: #0056b3; }
+
+<style>
 @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@700&family=Roboto:wght@400;500;700;900&family=Alex+Brush&family=Libre+Barcode+39&display=swap');
 
 .id-card-container {
@@ -646,12 +602,62 @@ $req_date = $req['created_at'];
     @page { size: landscape; margin: 0; }
     body { margin: 0; -webkit-print-color-adjust: exact; }
 }
-
 </style>
-</head>
-<body>
-    <button class="print-btn no-print" onclick="window.print()"><i class="fas fa-print me-2"></i>Print ID Card</button>
-<div class="id-card-container">
+
+<?php if (!$allowed): ?>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="alert alert-warning border-0 bg-amber-50 text-amber-700 rounded-4 shadow-sm">
+                <div class="d-flex align-items-center gap-3">
+                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    <div>
+                        <h5 class="fw-bold mb-2">ID Card Not Available</h5>
+                        <p class="mb-0">This family member must be VERIFIED by the barangay before their ID card can be viewed or printed.</p>
+                        <a href="family_members.php" class="btn btn-warning btn-sm mt-3 rounded-pill">
+                            <i class="fas fa-arrow-left me-2"></i>Go Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php else: ?>
+<div class="container py-5">
+    <div class="row justify-content-center animate__animated animate__fadeInUp">
+        <div class="col-lg-12 d-flex flex-column align-items-center">
+            
+            <!-- Expired / Expiring Soon Alerts & Action Buttons -->
+            <?php if ($is_expired || $is_expiring_soon): ?>
+                <div class="id-action-bar mb-4 text-center w-100" style="max-width: 1000px;">
+                    <?php if ($is_expired): ?>
+                        <div class="alert alert-danger border-0 bg-danger text-white rounded-4 shadow-sm p-4 d-flex align-items-center gap-3 justify-content-center mb-3">
+                            <i class="fas fa-times-circle fa-2x text-white animate__animated animate__bounceIn"></i>
+                            <div class="text-start">
+                                <h6 class="fw-bold mb-1" style="color: #ffffff; margin-bottom: 0;">Your Resident ID Card Has Expired!</h6>
+                                <p class="mb-0 small" style="color: rgba(255,255,255,0.9);">This card expired on <?php echo date('F d, Y', strtotime($req_date . ' +1 year')); ?>. Establishments or officers may no longer accept this as a valid ID.</p>
+                            </div>
+                        </div>
+                        <a href="/requests.php" class="btn btn-danger btn-lg px-5 rounded-pill shadow-sm animate__animated animate__pulse animate__infinite" style="text-decoration: none;">
+                            <i class="fas fa-sync-alt me-2"></i>Renew Resident ID Now
+                        </a>
+                    <?php else: // Expiring soon ?>
+                        <div class="alert alert-warning border-0 bg-warning text-dark rounded-4 shadow-sm p-4 d-flex align-items-center gap-3 justify-content-center mb-3">
+                            <i class="fas fa-exclamation-triangle fa-2x text-dark animate__animated animate__shakeX"></i>
+                            <div class="text-start">
+                                <h6 class="fw-bold mb-1" style="color: #212529; margin-bottom: 0;">Your Resident ID Card is Expiring Soon!</h6>
+                                <p class="mb-0 small" style="color: rgba(33,37,41,0.95);">It will expire on <?php echo date('F d, Y', strtotime($req_date . ' +1 year')); ?>. You can request a renewal ahead of time to keep your records updated.</p>
+                            </div>
+                        </div>
+                        <a href="/requests.php" class="btn btn-warning px-5 btn-lg rounded-pill shadow-sm" style="text-decoration: none; color: #212529;">
+                            <i class="fas fa-sync-alt me-2"></i>Renew Resident ID
+                        </a>
+                    <?php endif; ?>
+                </div>
+            <?php endif; ?>
+            
+            <div class="id-card-container">
                 <div class="id-card-inner" id="idCard">
                     <!-- Front of ID Card -->
                     <div class="id-card-front">
@@ -799,16 +805,24 @@ $req_date = $req['created_at'];
     </div>
 </div>
 
-    
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const idCard = document.getElementById('idCard');
-            if(idCard) {
-                idCard.addEventListener('click', function () {
-                    this.classList.toggle('flipped');
+
+            // Flip on click
+            idCard.addEventListener('click', function () {
+                this.classList.toggle('flipped');
+            });
+
+            // Prevent flip on QR code click
+            const qrContainer = document.querySelector('.qr-code-container');
+            if (qrContainer) {
+                qrContainer.addEventListener('click', function (e) {
+                    e.stopPropagation();
                 });
             }
         });
     </script>
-</body>
-</html>
+<?php endif; ?>
+
+<?php require_once __DIR__ . '/partials/user_dashboard_footer.php'; ?>
