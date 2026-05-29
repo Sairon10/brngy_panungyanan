@@ -951,3 +951,104 @@ function send_payment_status_email($email, $status, $paymentData) {
     
     return send_resend_email($email, $subject, $htmlContent, $textContent);
 }
+
+/**
+ * Generate registration email HTML template
+ * 
+ * @param string $userName User's name
+ * @return string HTML email content
+ */
+function generate_registration_email_html($userName) {
+    $barangayName = getenv('BARANGAY_NAME') ?: $_ENV['BARANGAY_NAME'] ?? 'Barangay Panungyanan';
+    $barangayAddress = getenv('BARANGAY_ADDRESS') ?: $_ENV['BARANGAY_ADDRESS'] ?? '';
+    $barangayPhone = getenv('BARANGAY_PHONE') ?: $_ENV['BARANGAY_PHONE'] ?? '';
+    
+    $html = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Welcome to ' . htmlspecialchars($barangayName) . '</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; background-color: #f3f4f6;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 40px 20px;">
+                    <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <!-- Header -->
+                        <tr>
+                            <td style="background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); padding: 30px; text-align: center;">
+                                <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">' . htmlspecialchars($barangayName) . '</h1>
+                            </td>
+                        </tr>
+                        
+                        <!-- Content -->
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <div style="font-size: 48px; margin-bottom: 15px;">👋</div>
+                                    <h2 style="margin: 0; color: #0f766e; font-size: 28px; font-weight: 600;">Welcome, ' . htmlspecialchars($userName) . '!</h2>
+                                </div>
+                                
+                                <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                                    Thank you for registering an account with <strong>' . htmlspecialchars($barangayName) . '</strong>.
+                                </p>
+                                
+                                <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; border-radius: 4px;">
+                                    <p style="margin: 0 0 10px; color: #92400e; font-size: 16px; font-weight: 600;">⚠️ Account Pending Verification</p>
+                                    <p style="margin: 0; color: #92400e; font-size: 15px; line-height: 1.6;">
+                                        Your account is currently pending verification. To fully verify your account and access all barangay services (like document requests and incident reporting), please login to your account and submit a valid ID in the <strong>Profile Verification</strong> section.
+                                    </p>
+                                </div>
+                                
+                                <p style="margin: 20px 0 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                    We look forward to serving you better through our digital system.
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">
+                                    <strong>' . htmlspecialchars($barangayName) . '</strong>
+                                </p>
+                                ' . ($barangayAddress ? '<p style="margin: 0 0 5px; color: #9ca3af; font-size: 12px;">' . htmlspecialchars($barangayAddress) . '</p>' : '') . '
+                                ' . ($barangayPhone ? '<p style="margin: 0; color: #9ca3af; font-size: 12px;">Phone: ' . htmlspecialchars($barangayPhone) . '</p>' : '') . '
+                                <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">
+                                    This is an automated email. Please do not reply to this message.
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>';
+    
+    return $html;
+}
+
+/**
+ * Send registration success email
+ * 
+ * @param string $email Recipient email
+ * @param string $userName User's name
+ * @return array Result with 'success' and 'message' keys
+ */
+function send_registration_email($email, $userName) {
+    if (empty($email)) {
+        return [
+            'success' => false,
+            'message' => 'Recipient email is required'
+        ];
+    }
+    
+    $subject = 'Welcome to Barangay Panungyanan - Account Pending Verification';
+    $htmlContent = generate_registration_email_html($userName);
+    $textContent = "Welcome, {$userName}!\n\nThank you for registering. Your account is currently pending verification. Please login and submit a valid ID to fully verify your account and access all services.";
+    
+    return send_resend_email($email, $subject, $htmlContent, $textContent);
+}

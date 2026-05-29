@@ -110,6 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $today = new DateTime();
                     if ($today->diff($birth_date)->y < 18) {
                         $errors[] = 'You must be at least 18 years old';
+                    } elseif ($today->diff($birth_date)->y > 100) {
+                        $errors[] = 'Age must not exceed 100 years old';
                     }
                 } catch (Exception $dtE) {
                     $errors[] = 'Invalid birthdate format.';
@@ -349,7 +351,6 @@ try {
                                     class="text-danger">*</span></label>
                             <input type="date" name="birthdate" id="birthdate" class="form-control"
                                 value="<?php echo htmlspecialchars($data['birthdate'] ?? ''); ?>" required>
-                            <div class="form-text small text-muted">Must be at least 18 years old</div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Sex <span
@@ -496,13 +497,14 @@ try {
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Set date input limits for age 18-59
+        // Set date input limits for age 18-100
         const birthdateInput = document.getElementById('birthdate');
         if (birthdateInput) {
             const today = new Date();
             const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+            const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
             birthdateInput.setAttribute('max', maxDate.toISOString().split('T')[0]);
-            // Removed min date limit for seniors
+            birthdateInput.setAttribute('min', minDate.toISOString().split('T')[0]);
 
             // Add validation on change
             birthdateInput.addEventListener('change', function () {
@@ -523,6 +525,9 @@ try {
                     this.classList.add('is-invalid');
                 } else if (exactAge < 18) {
                     this.setCustomValidity('You must be at least 18 years old');
+                    this.classList.add('is-invalid');
+                } else if (exactAge > 100) {
+                    this.setCustomValidity('Age must not exceed 100 years old');
                     this.classList.add('is-invalid');
                 } else {
                     this.setCustomValidity('');

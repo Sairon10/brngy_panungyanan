@@ -15,10 +15,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($action === 'register_subadmin' || $action === 'register_resident') {
             $role = ($action === 'register_subadmin') ? 'admin' : 'resident';
             
-            $first_name = trim($_POST['first_name'] ?? '');
-            $last_name = trim($_POST['last_name'] ?? '');
-            $middle_name = trim($_POST['middle_name'] ?? '');
-            $suffix = trim($_POST['suffix'] ?? '');
+            $first_name = ucwords(strtolower(trim($_POST['first_name'] ?? '')));
+            $last_name = ucwords(strtolower(trim($_POST['last_name'] ?? '')));
+            $middle_name = ucwords(strtolower(trim($_POST['middle_name'] ?? '')));
+            $suffix = ucwords(strtolower(trim($_POST['suffix'] ?? '')));
             $birth_place = trim($_POST['birth_place'] ?? '');
             $birthdate = trim($_POST['birthdate'] ?? '');
             $citizenship = trim($_POST['citizenship'] ?? '');
@@ -78,6 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $age = $today->diff($birth_date_obj)->y;
                         if ($age < 18) {
                             $error = 'Resident must be at least 18 years old to have an account.';
+                        } elseif ($age > 100) {
+                            $error = 'Resident age must not exceed 100 years old.';
                         }
                     }
 
@@ -154,7 +156,7 @@ require_once __DIR__ . '/header.php';
                     <div class="col-md-3"><label class="form-label">Suffix</label><input type="text" name="suffix" class="form-control" placeholder="Jr."></div>
                     
                     <div class="col-md-4"><label class="form-label">Place of Birth</label><input type="text" name="birth_place" class="form-control" placeholder="City, Province" required></div>
-                    <div class="col-md-4"><label class="form-label">Birthdate</label><input type="date" name="birthdate" class="form-control" max="<?php echo date('Y-m-d', strtotime('-18 years')); ?>" required></div>
+                    <div class="col-md-4"><label class="form-label">Birthdate</label><input type="date" name="birthdate" class="form-control" min="<?php echo date('Y-m-d', strtotime('-100 years')); ?>" max="<?php echo date('Y-m-d', strtotime('-18 years')); ?>" required></div>
                     <div class="col-md-4"><label class="form-label">Sex</label>
                         <select name="sex" class="form-select" required>
                             <option value="">Select...</option><option value="Male">Male</option><option value="Female">Female</option>

@@ -132,3 +132,23 @@ POST: Array
     [type] => OWNER
 )
 
+2026-05-29 22:33:34 - /admin/resident_records?filter=all&search=Sairon
+POST: Array
+(
+    [csrf_token] => d7aa76dae9f0818c347542217bc5e59f475fcf4a7ad015bced5545e72a779e83
+    [action] => delete
+    [record_id] => 0
+    [user_id] => 24
+    [type] => OWNER
+)
+
+2026-05-29 22:33:39 - /admin/resident_records?filter=all&search=Sairon
+POST: Array
+(
+    [csrf_token] => d7aa76dae9f0818c347542217bc5e59f475fcf4a7ad015bced5545e72a779e83
+    [action] => delete
+    [record_id] => 8
+    [user_id] => 14
+    [type] => OWNER
+)
+

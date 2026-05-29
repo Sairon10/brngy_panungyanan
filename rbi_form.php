@@ -26,10 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $philsys = trim($_POST['philsys_card_no'] ?? '');
             $is_head = (int) ($_POST['is_family_head'] ?? 0);
 
-            $first_name = trim($_POST['first_name'] ?? '');
-            $middle_name = trim($_POST['middle_name'] ?? '');
-            $last_name = trim($_POST['last_name'] ?? '');
-            $suffix = trim($_POST['suffix'] ?? '');
+            $first_name = ucwords(strtolower(trim($_POST['first_name'] ?? '')));
+            $middle_name = ucwords(strtolower(trim($_POST['middle_name'] ?? '')));
+            $last_name = ucwords(strtolower(trim($_POST['last_name'] ?? '')));
+            $suffix = ucwords(strtolower(trim($_POST['suffix'] ?? '')));
             $full_name = implode(' ', array_filter([$first_name, $middle_name, $last_name, $suffix]));
 
             $birth_place = trim($_POST['birth_place'] ?? '');
@@ -235,7 +235,7 @@ $resident = $stmt->fetch();
                             <!-- Name Section -->
                             <div class="row g-3 mb-4">
                                 <div class="col-md-3">
-                                    <label class="form-label">First name</label>
+                                    <label class="form-label">First name <span class="text-danger">*</span></label>
                                     <input type="text" name="first_name"
                                         value="<?php echo htmlspecialchars($resident['first_name']); ?>"
                                         class="form-control text-uppercase" placeholder="JERIC" required>
@@ -247,7 +247,7 @@ $resident = $stmt->fetch();
                                         class="form-control text-uppercase" placeholder="MIDDLE NAME">
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label">Last name</label>
+                                    <label class="form-label">Last name <span class="text-danger">*</span></label>
                                     <input type="text" name="last_name"
                                         value="<?php echo htmlspecialchars($resident['last_name']); ?>"
                                         class="form-control text-uppercase" placeholder="VICEDO" required>
@@ -262,7 +262,7 @@ $resident = $stmt->fetch();
 
                             <div class="row g-3 mb-4">
                                 <div class="col-md-4">
-                                    <label class="form-label">Contact number</label>
+                                    <label class="form-label">Contact number <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <input type="text" name="phone"
                                             value="<?php echo htmlspecialchars($resident['phone']); ?>"
@@ -272,7 +272,7 @@ $resident = $stmt->fetch();
                                     </div>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Civil Status</label>
+                                    <label class="form-label">Civil Status <span class="text-danger">*</span></label>
                                     <select name="civil_status" class="form-select" required>
                                         <option value="" disabled <?php echo empty($resident['civil_status']) ? 'selected' : ''; ?>>Select Civil Status</option>
                                         <option value="Single" <?php echo ($resident['civil_status'] ?? '') == 'Single' ? 'selected' : ''; ?>>Single</option>
@@ -282,7 +282,7 @@ $resident = $stmt->fetch();
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label d-block mb-2">Sex</label>
+                                    <label class="form-label d-block mb-2">Sex <span class="text-danger">*</span></label>
                                     <div class="d-flex gap-4 pt-1">
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="sex" value="Male"
@@ -300,7 +300,7 @@ $resident = $stmt->fetch();
 
                             <div class="row g-3 mb-4">
                                 <div class="col-md-3">
-                                    <label class="form-label">Birthday</label>
+                                    <label class="form-label">Birthday <span class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <input type="date" name="birthdate"
                                             value="<?php echo $resident['birthdate'] ?? ''; ?>" class="form-control"
@@ -308,7 +308,7 @@ $resident = $stmt->fetch();
                                     </div>
                                 </div>
                                 <div class="col-md-9">
-                                    <label class="form-label">Birth Place</label>
+                                    <label class="form-label">Birth Place <span class="text-danger">*</span></label>
                                     <input type="text" name="birth_place" class="form-control" placeholder="BIRTH PLACE"
                                         required>
                                 </div>
@@ -316,7 +316,7 @@ $resident = $stmt->fetch();
 
                             <div class="row g-3 mb-4">
                                 <div class="col-md-3">
-                                    <label class="form-label">Purok</label>
+                                    <label class="form-label">Purok <span class="text-danger">*</span></label>
                                     <select name="purok" class="form-select" required>
                                         <option value="">Select Purok</option>
                                         <?php for ($i = 1; $i <= 7; $i++): ?>
@@ -325,7 +325,7 @@ $resident = $stmt->fetch();
                                     </select>
                                 </div>
                                 <div class="col-md-9">
-                                    <label class="form-label">Complete Address</label>
+                                    <label class="form-label">Complete Address <span class="text-danger">*</span></label>
                                     <input type="text" name="address"
                                         value="<?php echo htmlspecialchars($resident['address'] ?? ''); ?>"
                                         class="form-control" placeholder="12456" required>
@@ -336,17 +336,17 @@ $resident = $stmt->fetch();
                                 <div class="col-md-4">
                                     <label class="form-label">Religion</label>
                                     <input type="text" name="religion" class="form-control text-uppercase"
-                                        placeholder="RELIGION" required>
+                                        placeholder="RELIGION">
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Citizenship</label>
+                                    <label class="form-label">Citizenship <span class="text-danger">*</span></label>
                                     <input type="text" name="citizenship" value="Filipino"
                                         class="form-control text-uppercase" placeholder="CITIZENSHIP" required>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Profession / Occupation</label>
                                     <input type="text" name="occupation" class="form-control text-uppercase"
-                                        placeholder="PROFESSION / OCCUPATION" required>
+                                        placeholder="PROFESSION / OCCUPATION">
                                 </div>
                             </div>
 
@@ -362,7 +362,7 @@ $resident = $stmt->fetch();
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="educational_attainment"
                                                     value="<?php echo $opt; ?>"
-                                                    id="edu_<?php echo str_replace(' ', '_', $opt); ?>" required>
+                                                    id="edu_<?php echo str_replace(' ', '_', $opt); ?>">
                                                 <label class="form-check-label"
                                                     for="edu_<?php echo str_replace(' ', '_', $opt); ?>"><?php echo $opt; ?></label>
                                             </div>

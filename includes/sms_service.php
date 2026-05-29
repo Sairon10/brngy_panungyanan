@@ -452,3 +452,40 @@ function send_payment_status_sms($phoneNumber, $status, $paymentData) {
     
     return send_sms($phoneNumber, $message);
 }
+
+/**
+ * Generate registration SMS text
+ * 
+ * @param string $userName User's name
+ * @return string SMS message text
+ */
+function generate_registration_sms_text($userName) {
+    $barangayName = getenv('BARANGAY_NAME') ?: $_ENV['BARANGAY_NAME'] ?? 'Barangay Panungyanan';
+    
+    $sms = $barangayName . "\n\n";
+    $sms .= "Welcome, " . $userName . "!\n\n";
+    $sms .= "Thank you for registering. Your account is currently PENDING VERIFICATION.\n\n";
+    $sms .= "To access all barangay services, please login and submit a valid ID in the Profile Verification section.\n";
+    
+    return $sms;
+}
+
+/**
+ * Send registration success SMS
+ * 
+ * @param string $phoneNumber Recipient phone number
+ * @param string $userName User's name
+ * @return array Result with 'success' and 'message' keys
+ */
+function send_registration_sms($phoneNumber, $userName) {
+    if (empty($phoneNumber)) {
+        return [
+            'success' => false,
+            'message' => 'Recipient phone number is required'
+        ];
+    }
+    
+    $smsText = generate_registration_sms_text($userName);
+    
+    return send_sms($phoneNumber, $smsText);
+}

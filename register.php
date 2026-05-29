@@ -1,6 +1,8 @@
-<?php require_once __DIR__ . '/config.php'; ?>
-
-<?php
+<?php 
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/email_service.php';
+require_once __DIR__ . '/includes/sms_service.php';
+?><?php
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
@@ -10,10 +12,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if (!csrf_validate()) {
 		$errors[] = 'Invalid CSRF token. Please refresh the page and try again.';
 	}
-	$first_name = trim($_POST['first_name'] ?? '');
-	$last_name = trim($_POST['last_name'] ?? '');
-	$middle_name = trim($_POST['middle_name'] ?? '');
-	$suffix = trim($_POST['suffix'] ?? '');
+	$first_name = ucwords(strtolower(trim($_POST['first_name'] ?? '')));
+	$last_name = ucwords(strtolower(trim($_POST['last_name'] ?? '')));
+	$middle_name = ucwords(strtolower(trim($_POST['middle_name'] ?? '')));
+	$suffix = ucwords(strtolower(trim($_POST['suffix'] ?? '')));
 	$birthdate = trim($_POST['birthdate'] ?? '');
 	$citizenship = trim($_POST['citizenship'] ?? '');
 	$civil_status = trim($_POST['civil_status'] ?? '');
@@ -28,6 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$is_senior = isset($_POST['is_senior']) ? 1 : 0;
 	$street = trim($_POST['street'] ?? '');
 	$address = implode(', ', array_filter([$street, $barangay, $municipality, $province]));
+	$prev_province = trim($_POST['prev_province'] ?? '');
+	$prev_municipality = trim($_POST['prev_municipality'] ?? '');
+	$prev_barangay = trim($_POST['prev_barangay'] ?? '');
+	$prev_purok = trim($_POST['prev_purok'] ?? '');
+	$prev_street = trim($_POST['prev_street'] ?? '');
+	$previous_address = implode(', ', array_filter([$prev_street, $prev_barangay, $prev_municipality, $prev_province]));
 	$purok = trim($_POST['purok'] ?? '');
 	$password = $_POST['password'] ?? '';
 	$confirm = $_POST['confirm_password'] ?? '';
@@ -55,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$errors[] = 'Valid email is required';
 	if ($phone === '')
 		$errors[] = 'Phone number is required';
-	if ($phone !== '' && !preg_match('/^[0-9]{11}$/', $phone))
-		$errors[] = 'Phone number must be exactly 11 digits (e.g., 09123456789)';
+	if ($phone !== '' && !preg_match('/^09[0-9]{9}$/', $phone))
+		$errors[] = 'Phone number must start with 09 and be exactly 11 digits (e.g., 09123456789)';
 	if ($province === '')
 		$errors[] = 'Province is required';
 	if ($municipality === '')
@@ -65,6 +73,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$errors[] = 'Barangay is required';
 	if ($purok === '')
 		$errors[] = 'Purok is required';
+	if ($street === '')
+		$errors[] = 'Household/Block/Lot/Street is required';
+
+	if ($prev_province === '')
+		$errors[] = 'Previous Province is required';
+	if ($prev_municipality === '')
+		$errors[] = 'Previous Municipality is required';
+	if ($prev_barangay === '')
+		$errors[] = 'Previous Barangay is required';
+	if ($prev_purok === '')
+		$errors[] = 'Previous Purok is required';
+	if ($prev_street === '')
+		$errors[] = 'Previous Household/Block/Lot/Street is required';
 	if (!isset($_POST['terms_agreement']))
 		$errors[] = 'You must agree to the Terms of Service and Privacy Policy';
 	if ($password !== $confirm)
@@ -79,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$errors[] = 'Invalid birthdate format';
 	}
 
-	// Validate age: must be between 18 and 59 years old
+	// Validate age: must be between 18 and 100 years old
 	if ($birthdate !== '' && preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate)) {
 		$birth_date = new DateTime($birthdate);
 		$today = new DateTime();
@@ -87,7 +108,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		if ($age < 18) {
 			$errors[] = 'You must be at least 18 years old to register';
-		}
+		} elseif ($age > 100) {
+            $errors[] = 'Age must not exceed 100 years old';
+        }
 	}
 
 	if (!$errors) {
@@ -129,10 +152,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 				// Create resident profile
 				$user_id = $pdo->lastInsertId();
-				$stmt = $pdo->prepare('INSERT INTO residents (user_id, address, phone, birthdate, citizenship, civil_status, sex, purok, verification_status, is_solo_parent, is_pwd, is_senior) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'pending\', ?, ?, ?)');
+				$stmt = $pdo->prepare('INSERT INTO residents (user_id, address, previous_address, phone, birthdate, citizenship, civil_status, sex, purok, verification_status, is_solo_parent, is_pwd, is_senior) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, \'pending\', ?, ?, ?)');
 				$stmt->execute([
 					$user_id,
 					$address,
+					$previous_address ?: null,
 					$phone ?: null,
 					$birthdate ?: null,
 					$citizenship ?: null,
@@ -143,6 +167,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$is_pwd,
 					$is_senior
 				]);
+
+				// Send Registration Notifications
+				if (!empty($email)) {
+					send_registration_email($email, $first_name);
+				}
+				if (!empty($phone)) {
+					send_registration_sms($phone, $first_name);
+				}
 
 				$_SESSION['info'] = 'Registration successful! Please login to your account.';
 				redirect('login.php');
@@ -409,16 +441,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										<div class="step-line"></div>
 										<div class="step-indicator" data-step="3">
 											<div class="step-number">3</div>
-											<div class="step-label d-none d-md-block">Contact</div>
+											<div class="step-label d-none d-md-block">Address</div>
 										</div>
 										<div class="step-line"></div>
 										<div class="step-indicator" data-step="4">
 											<div class="step-number">4</div>
+											<div class="step-label d-none d-md-block">Contact</div>
+										</div>
+										<div class="step-line"></div>
+										<div class="step-indicator" data-step="5">
+											<div class="step-number">5</div>
 											<div class="step-label d-none d-md-block">Security</div>
 										</div>
 									</div>
 									<div class="text-center">
-										<small class="text-muted">Step <span id="current-step">1</span> of 4</small>
+										<small class="text-muted">Step <span id="current-step">1</span> of 5</small>
 									</div>
 								</div>
 
@@ -477,8 +514,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 													class="form-control form-control-lg"
 													value="<?php echo htmlspecialchars($_POST['birthdate'] ?? ''); ?>"
 													required>
-												<div class="form-text small text-muted">Must be at least 18 years old
-												</div>
 											</div>
 											<div class="col-md-6">
 												<label
@@ -555,28 +590,67 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 										</div>
 									</div>
 
-									<!-- Step 3: Contact Information -->
+									<!-- Step 3: Address Information -->
 									<div class="step-content d-none" data-step="3">
-										<h5 class="mb-4 fw-semibold text-primary">Contact Information</h5>
+										<h5 class="mb-4 fw-semibold text-primary">Address Information</h5>
 										<div class="row g-3">
+											<div class="col-12 mt-3">
+												<h6 class="fw-bold text-secondary mb-3 border-bottom pb-2">Previous Address</h6>
+											</div>
+											<div class="col-md-12">
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Province
+													<span class="text-danger">*</span></label>
+												<select name="prev_province" id="prev_province" class="form-select form-select-lg" required>
+													<option value="">Select Province</option>
+												</select>
+											</div>
+											<div class="col-md-12">
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Municipality
+													<span class="text-danger">*</span></label>
+												<select name="prev_municipality" id="prev_municipality"
+													class="form-select form-select-lg" required disabled>
+													<option value="">Select Municipality</option>
+												</select>
+											</div>
+											<div class="col-md-12">
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Barangay
+													<span class="text-danger">*</span></label>
+												<select name="prev_barangay" id="prev_barangay" class="form-select form-select-lg"
+													required disabled>
+													<option value="">Select Barangay</option>
+												</select>
+											</div>
 											<div class="col-12">
 												<label
-													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Email
-													Address <span class="text-danger">*</span></label>
-												<input type="email" name="email" id="email"
-													class="form-control form-control-lg" placeholder="name@example.com"
-													value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok
+													<span class="text-danger">*</span></label>
+												<input type="text" name="prev_purok" id="prev_purok"
+													class="form-control form-control-lg"
+													placeholder="e.g. Purok 1, Purok 2"
+													value="<?php echo htmlspecialchars($_POST['prev_purok'] ?? ''); ?>"
 													required>
 											</div>
 											<div class="col-12">
 												<label
-													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Phone
-													Number <span class="text-danger">*</span></label>
-												<input type="tel" name="phone" id="phone"
-													class="form-control form-control-lg" placeholder="e.g. 09123456789"
-													value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
-													required maxlength="11" pattern="[0-9]{11}"
-													oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Household/Block/lot/street
+													<span class="text-danger">*</span></label>
+												<input type="text" name="prev_street" id="prev_street"
+													class="form-control form-control-lg"
+													placeholder="e.g. Blk 1 Lot 2 Phase 3"
+													value="<?php echo htmlspecialchars($_POST['prev_street'] ?? ''); ?>"
+													required>
+											</div>
+											<div class="col-12 mt-4">
+												<h6 class="fw-bold text-secondary mb-3 border-bottom pb-2">Present Address</h6>
+												<div class="form-check mb-3">
+													<input class="form-check-input" type="checkbox" id="same_as_previous">
+													<label class="form-check-label" for="same_as_previous">
+														Same as Previous Address
+													</label>
+												</div>
 											</div>
 											<div class="col-md-12">
 												<label
@@ -617,17 +691,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 											</div>
 											<div class="col-12">
 												<label
-													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Household/Block/lot/street</label>
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Household/Block/lot/street
+													<span class="text-danger">*</span></label>
 												<input type="text" name="street" id="street"
 													class="form-control form-control-lg"
 													placeholder="e.g. Blk 1 Lot 2 Phase 3"
-													value="<?php echo htmlspecialchars($_POST['street'] ?? ''); ?>">
+													value="<?php echo htmlspecialchars($_POST['street'] ?? ''); ?>"
+													required>
 											</div>
 										</div>
 									</div>
 
-									<!-- Step 4: Security (Password) -->
+									<!-- Step 4: Contact Information -->
 									<div class="step-content d-none" data-step="4">
+										<h5 class="mb-4 fw-semibold text-primary">Contact Information</h5>
+										<div class="row g-3">
+											<div class="col-12">
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Email
+													Address <span class="text-danger">*</span></label>
+												<input type="email" name="email" id="email"
+													class="form-control form-control-lg" placeholder="name@example.com"
+													value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+													required>
+											</div>
+											<div class="col-12">
+												<label
+													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Phone
+													Number <span class="text-danger">*</span></label>
+												<input type="tel" name="phone" id="phone"
+													class="form-control form-control-lg" placeholder="e.g. 09123456789"
+													value="<?php echo htmlspecialchars($_POST['phone'] ?? ''); ?>"
+													required maxlength="11" pattern="09[0-9]{9}"
+													oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+											</div>
+										</div>
+									</div>
+
+									<!-- Step 5: Security (Password) -->
+									<div class="step-content d-none" data-step="5">
 										<h5 class="mb-4 fw-semibold text-primary">Create Password</h5>
 										<div class="row g-3">
 											<div class="col-md-12">
@@ -771,8 +873,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if (!empty($errors)) {
 			$err_str = strtolower(implode(" ", $errors));
 			if (strpos($err_str, 'password') !== false || strpos($err_str, 'agree') !== false) {
+				$error_step = 5;
+			} elseif (strpos($err_str, 'email') !== false || strpos($err_str, 'phone') !== false) {
 				$error_step = 4;
-			} elseif (strpos($err_str, 'email') !== false || strpos($err_str, 'phone') !== false || strpos($err_str, 'province') !== false || strpos($err_str, 'municipality') !== false || strpos($err_str, 'barangay') !== false || strpos($err_str, 'purok') !== false) {
+			} elseif (strpos($err_str, 'province') !== false || strpos($err_str, 'municipality') !== false || strpos($err_str, 'barangay') !== false || strpos($err_str, 'purok') !== false) {
 				$error_step = 3;
 			} elseif (strpos($err_str, 'birthdate') !== false || strpos($err_str, 'sex') !== false || strpos($err_str, 'citizenship') !== false || strpos($err_str, 'civil') !== false || strpos($err_str, '18 years') !== false) {
 				$error_step = 2;
@@ -783,7 +887,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		?>
 		// Multi-step form functionality
 		let currentStep = <?php echo $error_step; ?>;
-		const totalSteps = 4;
+		const totalSteps = 5;
 
 		function showStep(step) {
 			// Hide all steps
@@ -850,6 +954,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					field.classList.add('is-invalid');
 				}
 
+				// Additional validation for phone
+				if (field.type === 'tel' && field.value && !field.checkValidity()) {
+					isValid = false;
+					field.classList.add('is-invalid');
+				}
+
 				// Additional validation for date (age 18-59)
 				if (field.type === 'date' && field.value) {
 					const date = new Date(field.value);
@@ -872,6 +982,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						isValid = false;
 						field.classList.add('is-invalid');
 						field.setCustomValidity('You must be at least 18 years old to register');
+					} else if (exactAge > 100) {
+						isValid = false;
+						field.classList.add('is-invalid');
+						field.setCustomValidity('Age must not exceed 100 years old');
 					} else {
 						field.setCustomValidity('');
 					}
@@ -1008,111 +1122,148 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 		});
 
-		// Set date input limits for age 18-59
+		// Set date input limits for age 18-100
 		const birthdateInput = document.getElementById('birthdate');
 		const today = new Date();
 		const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+        const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
 		birthdateInput.setAttribute('max', maxDate.toISOString().split('T')[0]);
-		// Removed min date limit for seniors
+        birthdateInput.setAttribute('min', minDate.toISOString().split('T')[0]);
 
 		// ===== PSGC API Cascading Dropdowns =====
 		const PSGC_API = 'https://psgc.gitlab.io/api';
-		const provinceSelect = document.getElementById('province');
-		const municipalitySelect = document.getElementById('municipality');
-		const barangaySelect = document.getElementById('barangay');
+
+		function initPSGC(provinceId, municipalityId, barangayId, initialProv, initialMun, initialBrgy) {
+			const provinceSelect = document.getElementById(provinceId);
+			const municipalitySelect = document.getElementById(municipalityId);
+			const barangaySelect = document.getElementById(barangayId);
+
+			if (!provinceSelect || !municipalitySelect || !barangaySelect) return;
+
+			// Load all provinces on page load
+			fetch(`${PSGC_API}/provinces/`)
+				.then(res => res.json())
+				.then(data => {
+					data.sort((a, b) => a.name.localeCompare(b.name));
+					data.forEach(prov => {
+						const opt = document.createElement('option');
+						opt.value = prov.name;
+						opt.textContent = prov.name;
+						opt.dataset.code = prov.code;
+						if (prov.name === initialProv) opt.selected = true;
+						provinceSelect.appendChild(opt);
+					});
+					if (initialProv) {
+						provinceSelect.dispatchEvent(new Event('change'));
+					}
+				})
+				.catch(() => {
+					// Fallback: allow text input if API fails
+					provinceSelect.outerHTML = `<input type="text" name="${provinceSelect.name}" id="${provinceSelect.id}" class="form-control form-control-lg" placeholder="e.g. Cavite">`;
+					municipalitySelect.outerHTML = `<input type="text" name="${municipalitySelect.name}" id="${municipalitySelect.id}" class="form-control form-control-lg" placeholder="e.g. General Trias">`;
+					barangaySelect.outerHTML = `<input type="text" name="${barangaySelect.name}" id="${barangaySelect.id}" class="form-control form-control-lg" placeholder="e.g. Panungyanan">`;
+				});
+
+			// When province changes, load municipalities
+			provinceSelect.addEventListener('change', function () {
+				const selected = this.options[this.selectedIndex];
+				if (!selected) return;
+				const code = selected.dataset.code;
+
+				// Reset municipality and barangay
+				municipalitySelect.innerHTML = '<option value="">Loading...</option>';
+				municipalitySelect.disabled = true;
+				barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+				barangaySelect.disabled = true;
+
+				if (!code) {
+					municipalitySelect.innerHTML = '<option value="">Select Municipality</option>';
+					return;
+				}
+
+				fetch(`${PSGC_API}/provinces/${code}/cities-municipalities/`)
+					.then(res => res.json())
+					.then(data => {
+						municipalitySelect.innerHTML = '<option value="">Select Municipality</option>';
+						data.sort((a, b) => a.name.localeCompare(b.name));
+						data.forEach(mun => {
+							const opt = document.createElement('option');
+							opt.value = mun.name;
+							opt.textContent = mun.name;
+							opt.dataset.code = mun.code;
+							if (mun.name === initialMun) opt.selected = true;
+							municipalitySelect.appendChild(opt);
+						});
+						municipalitySelect.disabled = false;
+						if (initialMun && initialProv === provinceSelect.value) {
+							municipalitySelect.dispatchEvent(new Event('change'));
+						}
+					});
+			});
+
+			// When municipality changes, load barangays
+			municipalitySelect.addEventListener('change', function () {
+				const selected = this.options[this.selectedIndex];
+				if (!selected) return;
+				const code = selected.dataset.code;
+
+				// Reset barangay
+				barangaySelect.innerHTML = '<option value="">Loading...</option>';
+				barangaySelect.disabled = true;
+
+				if (!code) {
+					barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+					return;
+				}
+
+				fetch(`${PSGC_API}/cities-municipalities/${code}/barangays/`)
+					.then(res => res.json())
+					.then(data => {
+						barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+						data.sort((a, b) => a.name.localeCompare(b.name));
+						data.forEach(brgy => {
+							const opt = document.createElement('option');
+							opt.value = brgy.name;
+							opt.textContent = brgy.name;
+							if (brgy.name === initialBrgy) opt.selected = true;
+							barangaySelect.appendChild(opt);
+						});
+						barangaySelect.disabled = false;
+					});
+			});
+		}
 
 		const initialProvince = <?php echo json_encode($_POST['province'] ?? ''); ?>;
 		const initialMunicipality = <?php echo json_encode($_POST['municipality'] ?? ''); ?>;
 		const initialBarangay = <?php echo json_encode($_POST['barangay'] ?? ''); ?>;
+		initPSGC('province', 'municipality', 'barangay', initialProvince, initialMunicipality, initialBarangay);
 
-		// Load all provinces on page load
-		fetch(`${PSGC_API}/provinces/`)
-			.then(res => res.json())
-			.then(data => {
-				data.sort((a, b) => a.name.localeCompare(b.name));
-				data.forEach(prov => {
-					const opt = document.createElement('option');
-					opt.value = prov.name;
-					opt.textContent = prov.name;
-					opt.dataset.code = prov.code;
-					if (prov.name === initialProvince) opt.selected = true;
-					provinceSelect.appendChild(opt);
-				});
-				if (initialProvince) {
-					provinceSelect.dispatchEvent(new Event('change'));
+		const initialPrevProvince = <?php echo json_encode($_POST['prev_province'] ?? ''); ?>;
+		const initialPrevMunicipality = <?php echo json_encode($_POST['prev_municipality'] ?? ''); ?>;
+		const initialPrevBarangay = <?php echo json_encode($_POST['prev_barangay'] ?? ''); ?>;
+		initPSGC('prev_province', 'prev_municipality', 'prev_barangay', initialPrevProvince, initialPrevMunicipality, initialPrevBarangay);
+
+		document.getElementById('same_as_previous').addEventListener('change', function() {
+			if (this.checked) {
+				const prevProv = document.getElementById('prev_province').value;
+				const prevMun = document.getElementById('prev_municipality').value;
+				const prevBrgy = document.getElementById('prev_barangay').value;
+
+				if (prevProv) {
+					document.getElementById('province').value = prevProv;
+					
+					document.getElementById('municipality').innerHTML = document.getElementById('prev_municipality').innerHTML;
+					document.getElementById('municipality').disabled = false;
+					document.getElementById('municipality').value = prevMun;
+
+					document.getElementById('barangay').innerHTML = document.getElementById('prev_barangay').innerHTML;
+					document.getElementById('barangay').disabled = false;
+					document.getElementById('barangay').value = prevBrgy;
 				}
-			})
-			.catch(() => {
-				// Fallback: allow text input if API fails
-				provinceSelect.outerHTML = '<input type="text" name="province" id="province" class="form-control form-control-lg" placeholder="e.g. Cavite" required>';
-				municipalitySelect.outerHTML = '<input type="text" name="municipality" id="municipality" class="form-control form-control-lg" placeholder="e.g. General Trias" required>';
-				barangaySelect.outerHTML = '<input type="text" name="barangay" id="barangay" class="form-control form-control-lg" placeholder="e.g. Panungyanan" required>';
-			});
 
-		// When province changes, load municipalities
-		provinceSelect.addEventListener('change', function () {
-			const selected = this.options[this.selectedIndex];
-			const code = selected.dataset.code;
-
-			// Reset municipality and barangay
-			municipalitySelect.innerHTML = '<option value="">Loading...</option>';
-			municipalitySelect.disabled = true;
-			barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-			barangaySelect.disabled = true;
-
-			if (!code) {
-				municipalitySelect.innerHTML = '<option value="">Select Municipality</option>';
-				return;
+				document.getElementById('purok').value = document.getElementById('prev_purok').value;
+				document.getElementById('street').value = document.getElementById('prev_street').value;
 			}
-
-			fetch(`${PSGC_API}/provinces/${code}/cities-municipalities/`)
-				.then(res => res.json())
-				.then(data => {
-					municipalitySelect.innerHTML = '<option value="">Select Municipality</option>';
-					data.sort((a, b) => a.name.localeCompare(b.name));
-					data.forEach(mun => {
-						const opt = document.createElement('option');
-						opt.value = mun.name;
-						opt.textContent = mun.name;
-						opt.dataset.code = mun.code;
-						if (mun.name === initialMunicipality) opt.selected = true;
-						municipalitySelect.appendChild(opt);
-					});
-					municipalitySelect.disabled = false;
-					if (initialMunicipality && initialProvince === provinceSelect.value) {
-						municipalitySelect.dispatchEvent(new Event('change'));
-					}
-				});
-		});
-
-		// When municipality changes, load barangays
-		municipalitySelect.addEventListener('change', function () {
-			const selected = this.options[this.selectedIndex];
-			const code = selected.dataset.code;
-
-			// Reset barangay
-			barangaySelect.innerHTML = '<option value="">Loading...</option>';
-			barangaySelect.disabled = true;
-
-			if (!code) {
-				barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-				return;
-			}
-
-			fetch(`${PSGC_API}/cities-municipalities/${code}/barangays/`)
-				.then(res => res.json())
-				.then(data => {
-					barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-					data.sort((a, b) => a.name.localeCompare(b.name));
-					data.forEach(brgy => {
-						const opt = document.createElement('option');
-						opt.value = brgy.name;
-						opt.textContent = brgy.name;
-						if (brgy.name === initialBarangay) opt.selected = true;
-						barangaySelect.appendChild(opt);
-					});
-					barangaySelect.disabled = false;
-				});
 		});
 
 		// Initialize right step
