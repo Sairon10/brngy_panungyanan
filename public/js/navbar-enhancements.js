@@ -1,59 +1,97 @@
 // Enhanced Navbar Interactivity
 document.addEventListener('DOMContentLoaded', function() {
-    // Smooth scroll for anchor links
+    // 1. Smooth scroll for anchor links
     const navLinks = document.querySelectorAll('.navbar-nav .nav-link[href*="#"]');
+    const isLandingPage = document.querySelector('.hero-section') !== null;
+
     navLinks.forEach(link => {
         link.addEventListener('click', function(e) {
+            // Instantly highlight clicked link
+            document.querySelectorAll('.navbar-nav .nav-link').forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+
             const href = this.getAttribute('href');
-            if (href.includes('#')) {
+            if (href.includes('#') && isLandingPage) {
                 const parts = href.split('#');
                 const targetId = parts[1];
-                const targetPage = parts[0] || 'index.php';
-                const currentPage = window.location.pathname.split('/').pop() || 'index.php';
+                const targetElement = document.getElementById(targetId);
                 
-                if (targetPage === currentPage || (targetPage === 'index.php' && currentPage === '')) {
-                    const targetElement = document.getElementById(targetId);
-                    if (targetElement) {
-                        e.preventDefault();
-                        targetElement.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
-                        
-                        // Close offcanvas
-                        const offcanvasMenu = document.getElementById('navbarNav');
-                        if (offcanvasMenu && typeof bootstrap !== 'undefined') {
-                            const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasMenu);
-                            bsOffcanvas.hide();
-                        }
+                if (targetElement) {
+                    e.preventDefault();
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                    
+                    // Close mobile menu if open
+                    const offcanvasMenu = document.getElementById('navbarNav');
+                    if (offcanvasMenu && typeof bootstrap !== 'undefined') {
+                        const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasMenu);
+                        if (bsOffcanvas) bsOffcanvas.hide();
                     }
                 }
             }
         });
     });
 
-    // Active link highlighting
-    const currentPath = window.location.pathname.split('/').pop() || 'index.php';
-    document.querySelectorAll('.navbar-nav .nav-link').forEach(link => {
-        const href = link.getAttribute('href');
-        if (href && (href === currentPath || (currentPath === 'index.php' && href === '#'))) {
-            link.classList.add('active');
-        }
-    });
+    // 2. Dynamic ScrollSpy
+    const spySections = document.querySelectorAll('section[id], section.hero-section');
+    const allNavLinks = document.querySelectorAll('.navbar-nav .nav-link');
+    
+    if (isLandingPage) {
+        function updateScrollSpy() {
+            let currentId = 'hero-section';
 
-    // Close offcanvas on any nav-link click that isn't an anchor (for normal navigation)
+            spySections.forEach(section => {
+                if (!section) return;
+                const rect = section.getBoundingClientRect();
+                // Check if top of section is within the top third of the viewport
+                if (rect.top <= (window.innerHeight / 3)) {
+                    currentId = section.getAttribute('id') || 'hero-section';
+                }
+            });
+
+            allNavLinks.forEach(link => {
+                link.classList.remove('active');
+                const href = link.getAttribute('href');
+                if (!href) return;
+                
+                if (currentId === 'hero-section' && (href === 'index.php' || href === '')) {
+                    link.classList.add('active');
+                } else if (currentId !== 'hero-section' && href.includes('#' + currentId)) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateScrollSpy);
+        setTimeout(updateScrollSpy, 100); // Run once on load
+    } else {
+        // Static highlighting for other pages based on URL
+        const currentPath = window.location.pathname.split('/').pop().split('?')[0] || 'index.php';
+        allNavLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && (href === currentPath || (currentPath === 'index.php' && href === '#'))) {
+                link.classList.add('active');
+            }
+        });
+    }
+
+    // 3. Close offcanvas on normal navigation
     const offcanvasMenu = document.getElementById('navbarNav');
     if (offcanvasMenu && typeof bootstrap !== 'undefined') {
         const mobileNavLinks = offcanvasMenu.querySelectorAll('.nav-link:not([href*="#"])');
         mobileNavLinks.forEach(link => {
             link.addEventListener('click', function() {
-                const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(offcanvasMenu);
-                setTimeout(() => bsOffcanvas.hide(), 100);
+                const bsOffcanvas = bootstrap.Offcanvas.getInstance(offcanvasMenu);
+                if (bsOffcanvas) {
+                    setTimeout(() => bsOffcanvas.hide(), 100);
+                }
             });
         });
     }
 
-    // Navbar scroll effect (removed hide on scroll as per user request to keep it fixed)
+    // 4. Navbar scroll effect
     const navbar = document.querySelector('.navbar');
     if (navbar) {
         window.addEventListener('scroll', function() {
