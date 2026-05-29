@@ -437,7 +437,7 @@ $resident = $stmt->fetch();
                 confirmButtonColor: '#0f766e',
                 confirmButtonText: 'Go to Dashboard'
             }).then(() => {
-                window.location.href = 'index.php';
+                window.location.href = 'dashboard.php';
             });
         </script>
     <?php endif; ?>

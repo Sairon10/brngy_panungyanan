@@ -146,7 +146,7 @@ $family_members = $fm_stmt->fetchAll();
 $relationship_options = ['Spouse', 'Child', 'Parent', 'Sibling', 'Grandparent', 'Grandchild'];
 $civil_status_options = ['Single', 'Married', 'Widowed', 'Separated', 'Annulled'];
 $edu_options = ['No Formal Education', 'Elementary Level', 'Elementary Graduate', 'High School Level', 'High School Graduate', 'Vocational', 'College Level', 'College Graduate', 'Post Graduate'];
-$id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", 'Passport', 'SSS / GSIS ID', 'Postal ID', 'Student ID', 'Other Government ID'];
+$id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", 'Passport', 'SSS / GSIS ID', 'Postal ID', 'Student ID', 'PSA', 'Other Government ID'];
 ?>
 
 <div class="row justify-content-center animate__animated animate__fadeInUp">
@@ -431,7 +431,10 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                     <label class="form-label rbi-label">Birthdate <span
                                             class="text-danger">*</span></label>
                                     <input type="date" name="fm_birthdate" id="fm_birthdate"
-                                        class="form-control rbi-input" max="<?php echo date('Y-m-d'); ?>" required>
+                                        class="form-control rbi-input" 
+                                        min="<?php echo date('Y-m-d', strtotime('-100 years')); ?>" 
+                                        max="<?php echo date('Y-m-d', strtotime('-4 years')); ?>" 
+                                        required>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Sex <span class="text-danger">*</span></label>

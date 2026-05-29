@@ -421,7 +421,7 @@ $display_rows = array_slice($rows, $offset, $limit);
 		}
 
 		Swal.fire({
-			title: 'Bulk Delete',
+			title: 'Delete Accounts',
 			text: `Are you sure you want to delete ${selected.length} selected account(s)? This action cannot be undone.`,
 			icon: 'warning',
 			showCancelButton: true,

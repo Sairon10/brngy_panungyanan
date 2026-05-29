@@ -18,12 +18,88 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!csrf_validate()) {
         $errors[] = 'Invalid CSRF token. Please refresh the page and try again.';
     } else {
-        $target_id = (int) ($_POST['target_id'] ?? 0);
-        $target_type = $_POST['target_type'] ?? 'resident';
         $action = $_POST['action'];
 
-        if ($target_id <= 0) {
-            $errors[] = 'Invalid ID';
+        if ($action === 'bulk_verify' || $action === 'bulk_reject') {
+            $selected_items = $_POST['selected_items'] ?? [];
+            $notes = trim($_POST['rejection_notes'] ?? '');
+            
+            if (empty($selected_items)) {
+                $errors[] = 'No records selected';
+            } else if ($action === 'bulk_reject' && empty($notes)) {
+                $errors[] = 'Rejection notes are required';
+            } else {
+                $success_count = 0;
+                foreach ($selected_items as $item) {
+                    $parts = explode(':', $item);
+                    if (count($parts) !== 2) continue;
+                    $target_type = $parts[0];
+                    $target_id = (int)$parts[1];
+                    if ($target_type === 'resident') {
+                        $resident_stmt = $pdo->prepare('SELECT r.*, u.full_name, u.email, r.phone, r.user_id FROM residents r JOIN users u ON r.user_id = u.id WHERE r.id = ?');
+                        $resident_stmt->execute([$target_id]);
+                        $data = $resident_stmt->fetch();
+                        $table = 'residents';
+                    } else {
+                        $fm_stmt = $pdo->prepare('SELECT fm.*, u.email, u.full_name as head_name, fm.user_id, r.phone FROM family_members fm JOIN users u ON fm.user_id = u.id LEFT JOIN residents r ON r.user_id = u.id WHERE fm.id = ?');
+                        $fm_stmt->execute([$target_id]);
+                        $data = $fm_stmt->fetch();
+                        $table = 'family_members';
+                    }
+
+                    if (!$data) continue;
+
+                    if ($action === 'bulk_verify') {
+                        $stmt = $pdo->prepare("UPDATE {$table} SET verification_status = 'verified', verified_at = NOW(), verified_by = ? WHERE id = ?");
+                        $stmt->execute([$_SESSION['user_id'], $target_id]);
+                        $success_count++;
+
+                        $notif_msg = ($target_type === 'resident') ? "Your ID verification has been approved!" : "The ID verification for family member " . $data['full_name'] . " has been approved!";
+                        $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "ID Verification Approved", ?)')
+                            ->execute([$data['user_id'], $notif_msg]);
+
+                        if (!empty($data['email']) && function_exists('send_id_verification_email')) {
+                            send_id_verification_email($data['email'], 'verified', ['full_name' => $data['full_name']]);
+                        }
+                        if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
+                            send_id_verification_sms($data['phone'], 'verified', [
+                                'full_name' => $data['full_name'],
+                                'verification_notes' => ''
+                            ]);
+                        }
+                    } else {
+                        $stmt = $pdo->prepare("UPDATE {$table} SET verification_status = 'rejected', verification_notes = ?, verified_at = NOW(), verified_by = ? WHERE id = ?");
+                        $stmt->execute([$notes, $_SESSION['user_id'], $target_id]);
+                        $success_count++;
+
+                        $notif_msg = ($target_type === 'resident') ? "Your ID verification was rejected. Reason: " . $notes : "The ID verification for family member " . $data['full_name'] . " was rejected. Reason: " . $notes;
+                        $pdo->prepare('INSERT INTO notifications (user_id, type, title, message) VALUES (?, "verification_update", "ID Verification Rejected", ?)')
+                            ->execute([$data['user_id'], $notif_msg]);
+
+                        if (!empty($data['email']) && function_exists('send_id_verification_email')) {
+                            send_id_verification_email($data['email'], 'rejected', [
+                                'full_name' => $data['full_name'],
+                                'verification_notes' => $notes
+                            ]);
+                        }
+                        if (!empty($data['phone']) && function_exists('send_id_verification_sms')) {
+                            send_id_verification_sms($data['phone'], 'rejected', [
+                                'full_name' => $data['full_name'],
+                                'verification_notes' => $notes
+                            ]);
+                        }
+                    }
+                }
+                if ($success_count > 0) {
+                    $success = "Successfully processed $success_count record(s).";
+                }
+            }
+        } else {
+            $target_id = (int) ($_POST['target_id'] ?? 0);
+            $target_type = $_POST['target_type'] ?? 'resident';
+
+            if ($target_id <= 0) {
+                $errors[] = 'Invalid ID';
         } else {
             try {
                 if ($target_type === 'resident') {
@@ -91,7 +167,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if (!empty($data['email']) && function_exists('send_id_verification_email')) {
                                 send_id_verification_email($data['email'], 'rejected', [
                                     'full_name' => $data['full_name'],
-                                    'rejection_notes' => $notes
+                                    'verification_notes' => $notes
                                 ]);
                             }
 
@@ -114,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 $errors[] = 'Server error: ' . $e->getMessage();
             }
+        }
         }
     }
 }
@@ -256,7 +333,31 @@ $residents_data = $residents->fetchAll();
                     <th class="text-uppercase small fw-bold text-muted text-center" style="font-size: 0.7rem;">Status
                     </th>
                     <th class="text-uppercase small fw-bold text-muted text-center pe-4" style="font-size: 0.7rem;">
-                        Action</th>
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            ACTION
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-light border-0 text-secondary p-0" type="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false" title="Bulk Actions"
+                                    style="width: 24px; height: 24px;">
+                                    <i class="fas fa-ellipsis-v" style="font-size: 0.85rem;"></i>
+                                </button>
+                                <ul class="dropdown-menu shadow border-0 py-2 small">
+                                    <li>
+                                        <button type="button" class="dropdown-item py-2"
+                                            onclick="bulkVerify()">
+                                            Confirm
+                                        </button>
+                                    </li>
+                                    <li>
+                                        <button type="button" class="dropdown-item py-2"
+                                            onclick="bulkReject()">
+                                            Reject
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </th>
                 </tr>
             </thead>
             <tbody>
@@ -273,7 +374,7 @@ $residents_data = $residents->fetchAll();
                         <td class="ps-4">
                             <div class="form-check">
                                 <input class="form-check-input row-checkbox" type="checkbox"
-                                    value="<?php echo $res['id']; ?>">
+                                    value="<?php echo $res['id']; ?>" data-type="<?php echo $res['target_type']; ?>">
                             </div>
                         </td>
                         <td>
@@ -330,7 +431,7 @@ $residents_data = $residents->fetchAll();
                                     <i class="fas fa-eye"></i>
                                 </button>
 
-                                <?php if ($status === 'pending'): ?>
+                                <?php if ($status === 'pending' || $status === 'rejected'): ?>
                                     <form method="post" class="d-inline">
                                         <?php echo csrf_field(); ?>
                                         <input type="hidden" name="action" value="verify">
@@ -341,7 +442,9 @@ $residents_data = $residents->fetchAll();
                                             <i class="fas fa-check"></i>
                                         </button>
                                     </form>
-
+                                <?php endif; ?>
+                                
+                                <?php if ($status === 'pending' || $status === 'verified'): ?>
                                     <button type="button" class="btn btn-action btn-outline-danger"
                                         onclick="rejectID(<?php echo $res['id']; ?>, '<?php echo $res['target_type']; ?>')"
                                         title="Reject">
@@ -477,6 +580,40 @@ $residents_data = $residents->fetchAll();
     </div>
 </div>
 
+<!-- Bulk Reject Modal -->
+<div class="modal fade" id="bulkRejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow-lg">
+            <div class="modal-header border-0 pb-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold text-danger"><i class="fas fa-times-circle me-2"></i>Reject Verifications
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" id="bulkRejectForm">
+                <?php echo csrf_field(); ?>
+                <input type="hidden" name="action" value="bulk_reject">
+                <div id="bulkRejectHiddenInputs"></div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-uppercase text-muted">Reason for Rejection <span
+                                class="text-danger">*</span></label>
+                        <textarea name="rejection_notes" id="bulkRejectionNotes"
+                            class="form-control rounded-3 bg-light border-0 p-3" rows="4"
+                            placeholder="Why is this being rejected?" required></textarea>
+                        <div class="form-text small mt-2">The resident will see this message.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4"
+                        data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold"
+                        onclick="confirmBulkRejection()">Confirm Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
     function confirmVerification(form) {
         Swal.fire({
@@ -538,16 +675,93 @@ $residents_data = $residents->fetchAll();
         document.getElementById('modalImagesContainer').appendChild(col);
     }
 
+    document.addEventListener('DOMContentLoaded', function () {
+        // Select All logic
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) {
+            selectAll.addEventListener('change', function () {
+                document.querySelectorAll('.row-checkbox').forEach(cb => {
+                    cb.checked = selectAll.checked;
+                });
+            });
+        }
+    });
+
+    function getSelectedIds() {
+        return Array.from(document.querySelectorAll('.row-checkbox:checked')).map(cb => cb.dataset.type + ':' + cb.value);
+    }
+
+    function bulkVerify() {
+        const selected = getSelectedIds();
+        if (selected.length === 0) {
+            Swal.fire('No selection', 'Please select at least one record.', 'warning');
+            return;
+        }
+
+        Swal.fire({
+            title: 'Confirm Verifications',
+            text: `Are you sure you want to verify ${selected.length} selected record(s)?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#16a34a',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, verify them!'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.innerHTML = `
+                    <input type="hidden" name="csrf_token" value="<?php echo $_SESSION['csrf_token']; ?>">
+                    <input type="hidden" name="action" value="bulk_verify">
+                `;
+                selected.forEach(val => {
+                    form.innerHTML += `<input type="hidden" name="selected_items[]" value="${val}">`;
+                });
+                document.body.appendChild(form);
+                form.submit();
+            }
+        });
+    }
+
+    function bulkReject() {
+        const selected = getSelectedIds();
+        if (selected.length === 0) {
+            Swal.fire('No selection', 'Please select at least one record.', 'warning');
+            return;
+        }
+
+        // Add hidden inputs for selected items
+        const hiddenInputsContainer = document.getElementById('bulkRejectHiddenInputs');
+        hiddenInputsContainer.innerHTML = '';
+        selected.forEach(val => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_items[]';
+            input.value = val;
+            hiddenInputsContainer.appendChild(input);
+        });
+
+        // Clear textarea
+        document.getElementById('bulkRejectionNotes').value = '';
+
+        // Show modal
+        new bootstrap.Modal(document.getElementById('bulkRejectModal')).show();
+    }
+
+    function confirmBulkRejection() {
+        const notes = document.getElementById('bulkRejectionNotes').value.trim();
+        if (!notes) {
+            Swal.fire('Error', 'Please enter a reason for rejection.', 'error');
+            return;
+        }
+        document.getElementById('bulkRejectForm').submit();
+    }
+
     function rejectID(id, type) {
         document.getElementById('rejectTargetID').value = id;
         document.getElementById('rejectTargetType').value = type;
         new bootstrap.Modal(document.getElementById('rejectIDModal')).show();
     }
-
-    // Select All
-    document.getElementById('selectAll')?.addEventListener('change', function () {
-        document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked);
-    });
 
     // Search
     document.getElementById('tableSearch')?.addEventListener('keyup', function () {

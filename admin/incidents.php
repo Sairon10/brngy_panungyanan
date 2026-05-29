@@ -746,7 +746,7 @@ $wi_residents_inc = $pdo->query("
                                 <input type="file" name="wi_incident_image" id="wiIncidentImage" class="form-control form-control-sm bg-light border-0" accept="image/*">
                             </div>
                             <div class="d-grid pt-2">
-                                <button class="btn btn-danger btn-lg rounded-pill shadow-sm py-3" type="submit">
+                                <button class="btn btn-teal btn-lg rounded-pill shadow-sm py-3" type="submit">
                                     <i class="fas fa-paper-plane me-2"></i>Submit Report
                                 </button>
                             </div>

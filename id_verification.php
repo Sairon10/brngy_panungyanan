@@ -158,29 +158,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     <div class="row justify-content-center">
         <div class="col-lg-11">
             <div class="row mb-5 align-items-end">
-                <div class="col-md-8">
+                <div class="col-md-12">
                     <h2 class="fw-bold text-dark mb-2">ID Verification</h2>
-                    <p class="text-muted mb-0 lead">Upload a valid ID document to verify your residency and unlock all
-                        features.</p>
-                </div>
-                <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                    <span class="badge rounded-pill px-3 py-2
-                        <?php
-                        $status = $resident['verification_status'] ?? 'pending';
-                        switch ($status) {
-                            case 'verified':
-                                echo 'bg-success-subtle text-success border border-success-subtle';
-                                break;
-                            case 'rejected':
-                                echo 'bg-danger-subtle text-danger border border-danger-subtle';
-                                break;
-                            default:
-                                echo 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
-                        }
-                        ?>">
-                        <i class="fas fa-circle small me-2"></i>
-                        Status: <?php echo ucfirst($status); ?>
-                    </span>
+                    <p class="text-muted mb-0 lead">Upload a valid ID document to verify your residency and unlock all features.</p>
                 </div>
             </div>
 
@@ -221,13 +201,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                 Document</h5>
                         </div>
                         <div class="card-body p-4">
+                            
+                            <div class="mb-4">
+                                <span class="badge rounded-pill px-3 py-2
+                                    <?php
+                                    $status = $resident['verification_status'] ?? 'pending';
+                                    switch ($status) {
+                                        case 'verified':
+                                            echo 'bg-success-subtle text-success border border-success-subtle';
+                                            break;
+                                        case 'rejected':
+                                            echo 'bg-danger-subtle text-danger border border-danger-subtle';
+                                            break;
+                                        default:
+                                            echo 'bg-warning-subtle text-warning-emphasis border border-warning-subtle';
+                                    }
+                                    ?>">
+                                    <i class="fas fa-circle small me-2"></i>
+                                    Status: <?php echo ucfirst($status); ?>
+                                </span>
+                            </div>
 
                             <?php if (($resident['verification_status'] ?? '') === 'rejected' && ($resident['verification_notes'] ?? '')): ?>
-                                <div class="alert alert-warning border-0 bg-warning-subtle rounded-3 mb-4">
+                                <div class="alert alert-danger border-0 bg-danger-subtle rounded-3 mb-4">
                                     <div class="d-flex">
-                                        <i class="fas fa-exclamation-triangle mt-1 me-3 text-warning-emphasis"></i>
+                                        <i class="fas fa-exclamation-triangle mt-1 me-3 text-danger-emphasis"></i>
                                         <div>
-                                            <strong class="text-warning-emphasis">Verification Notes:</strong>
+                                            <strong class="text-danger-emphasis">Reason for Rejection:</strong>
                                             <p class="mb-0 text-dark mt-1">
                                                 <?php echo nl2br(htmlspecialchars($resident['verification_notes'])); ?>
                                             </p>

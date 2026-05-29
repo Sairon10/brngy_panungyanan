@@ -116,9 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                             <p class="text-secondary small mb-0">Detailed information about the reported incident</p>
                                         </div>
                                     </div>
-                                    <a href="incidents.php" class="btn btn-outline-secondary border-0 btn-sm rounded-3">
-                                        <i class="fas fa-arrow-left me-1"></i> Back to List
-                                    </a>
+
                                 </div>
                                 <hr class="my-4 opacity-50">
                             </div>
@@ -132,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                             <span class="text-dark opacity-75 d-block">Status:</span>
                                             <?php
                                             $status = $incident['status'] ?? 'submitted';
-                                            $statusLabel = $status === 'submitted' ? 'Pending' : ($status === 'closed' ? 'Rejected' : ucfirst($status));
+                                            $statusLabel = $status === 'submitted' ? 'Pending' : ($status === 'closed' ? 'Rejected' : ucfirst(str_replace('_', ' ', $status)));
                                             $statusClass = match($status) {
                                                 'submitted' => 'status-pending',
                                                 'in_review' => 'status-review',

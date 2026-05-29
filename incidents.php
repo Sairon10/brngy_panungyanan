@@ -291,7 +291,7 @@ unset($row);
                     </div>
 
                     <div class="ms-auto flex-shrink-0 d-flex align-items-center gap-2">
-                        <button class="btn btn-rose text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
+                        <button class="btn btn-teal text-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
                             data-bs-target="#newIncidentModal">
                             <i class="fas fa-plus me-2"></i>Report Incident
                         </button>
@@ -372,7 +372,7 @@ unset($row);
                                                 'canceled' => 'status-canceled',
                                                 default => 'bg-light text-dark'
                                             };
-                                            $statusText = $status === 'submitted' ? 'Pending' : ($status === 'closed' ? 'Rejected' : ucfirst($status));
+                                            $statusText = $status === 'submitted' ? 'Pending' : ($status === 'closed' ? 'Rejected' : ucfirst(str_replace('_', ' ', $status)));
                                             ?>
                                             <div class="d-flex justify-content-center">
                                                 <span class="badge rounded-pill badge-status <?php echo $statusClass; ?>">
@@ -795,7 +795,7 @@ unset($row);
                             </div>
 
                             <div class="d-grid pt-2">
-                                <button class="btn btn-danger btn-lg rounded-pill shadow-sm py-3" type="submit" <?php echo !$is_account_active ? 'disabled' : ''; ?>>
+                                <button class="btn btn-teal btn-lg rounded-pill shadow-sm py-3" type="submit" <?php echo !$is_account_active ? 'disabled' : ''; ?>>
                                     <i class="fas fa-paper-plane me-2"></i>Submit Report
                                 </button>
                             </div>

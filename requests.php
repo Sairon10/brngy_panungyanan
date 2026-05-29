@@ -157,6 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $family_member_id = ($requestor_type === 'family_member') ? (int) ($_POST['family_member_id'] ?? 0) : null;
 
             // Handle optional e-wallet reference number and amount paid
+            $payment_method = trim($_POST['payment_method'] ?? 'Cash');
             $payment_reference_no = trim($_POST['payment_reference_no'] ?? '');
             $payment_amount_paid  = !empty($_POST['payment_amount_paid']) ? (float)$_POST['payment_amount_paid'] : null;
 
@@ -190,6 +191,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         goto skip_request;
                     }
                 }
+            }
+            
+            // Validate E-Wallet receipt requirement
+            $doc_price = isset($doc_type_info['price']) ? (float)$doc_type_info['price'] : 0;
+            if ($payment_method === 'E-Wallet' && $doc_price > 0 && empty($payment_receipt_path)) {
+                $message = 'Error: Please upload your E-Wallet payment receipt.';
+                goto skip_request;
             }
 
             // Critical security check: Is the family member active, belongs to the user, and VERIFIED?
@@ -260,8 +268,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $clearance_number = 'BC-' . $year . '-' . $user_id_padded . '-' . str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
                 }
 
-                $stmt = $pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, validity_days, status, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$_SESSION['user_id'], $clearance_number, $purpose, $validity_days, 'pending', $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
+                $stmt = $pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, validity_days, status, payment_method, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$_SESSION['user_id'], $clearance_number, $purpose, $validity_days, 'pending', $payment_method, $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
 
                 $clearance_id = $pdo->lastInsertId();
                 if ($family_member_id) {
@@ -283,12 +291,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($is_indigency_doc && !empty($indigency_purpose)) {
                     // Save with selected indigency purpose
-                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, indigency_purposes, family_member_id, requestor_type, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?,?,?,?,?,?,?,?,?)')
-                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $indigency_purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self', $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
+                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, indigency_purposes, family_member_id, requestor_type, payment_method, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?,?,?,?,?,?,?,?,?,?)')
+                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $indigency_purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self', $payment_method, $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
                 } else {
                     // Save with text purpose
-                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, family_member_id, requestor_type, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?,?,?,?,?,?,?,?)')
-                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self', $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
+                    $pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, family_member_id, requestor_type, payment_method, payment_receipt, payment_reference_no, payment_amount_paid) VALUES (?,?,?,?,?,?,?,?,?)')
+                        ->execute([$_SESSION['user_id'], $doc_type, $purpose, $family_member_id ?: null, $family_member_id ? 'family_member' : 'self', $payment_method, $payment_receipt_path, $payment_reference_no ?: null, $payment_amount_paid]);
                 }
 
                 $request_id = $pdo->lastInsertId();
@@ -467,6 +475,15 @@ $documents = $documents_stmt->fetchAll();
                             <textarea name="purpose" class="form-control bg-light border-0" rows="4"
                                 placeholder="State your purpose..." id="purpose_textarea"></textarea>
                         </div>
+
+                        <!-- Payment Method Dropdown -->
+                        <div class="mb-4" id="payment_method_container" style="display: none;">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Payment Method</label>
+                            <select name="payment_method" id="payment_method" class="form-select form-select-lg bg-light border-0">
+                                <option value="Cash">Cash</option>
+                                <option value="E-Wallet">E-Wallet</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div id="form_step_2" style="display: none;">
@@ -489,9 +506,10 @@ $documents = $documents_stmt->fetchAll();
                                 cursor: pointer !important;
                             }
                         </style>
+
                         <div id="payment_section" style="display: none;" class="mb-4">
                             <hr class="my-4 opacity-10">
-                            <div class="fw-bold text-dark opacity-75 mb-1 fs-5">E-Wallet Payment (Optional)</div>
+                            <div class="fw-bold text-dark opacity-75 mb-1 fs-5">E-Wallet Payment</div>
                             <p class="text-secondary small mb-3">Scan QR code and upload receipt to complete payment</p>
                             
                             <div class="row g-3 mb-3">
@@ -1371,25 +1389,27 @@ $documents = $documents_stmt->fetchAll();
     let currentStep = 1;
 
     function updateNavigationButtons() {
-        const docTypeSelect = document.getElementById('doc_type');
-        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
         const btnPrev = document.getElementById('btn_prev_step');
         const btnNext = document.getElementById('btn_next_step');
         const btnSubmit = document.getElementById('btn_submit_request');
 
+        const docTypeSelect = document.getElementById('doc_type');
+        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+        
         const price = selectedOption && selectedOption.value !== "" ? parseFloat(selectedOption.getAttribute('data-price') || "0") : 0;
+        const paymentMethod = document.getElementById('payment_method')?.value;
 
         if (currentStep === 1) {
             btnPrev.style.display = 'none';
             btnSubmit.innerHTML = '<i class="fas fa-paper-plane me-2"></i> Submit Request';
-            if (price > 0) {
-                // Paid document in Step 1: show Next button (w-100), hide Submit button
+            if (price > 0 && paymentMethod === 'E-Wallet') {
+                // Paid document via E-Wallet in Step 1: show Next button (w-100), hide Submit button
                 btnNext.style.display = 'block';
                 btnNext.classList.remove('w-50');
                 btnNext.classList.add('w-100');
                 btnSubmit.style.display = 'none';
             } else {
-                // Free document in Step 1: show Submit button (w-100), hide Next button
+                // Free document or Cash payment in Step 1: show Submit button (w-100), hide Next button
                 btnNext.style.display = 'none';
                 btnSubmit.style.display = 'block';
                 btnSubmit.classList.remove('w-50');
@@ -1464,7 +1484,28 @@ $documents = $documents_stmt->fetchAll();
 
     // Form submission validation (uses same logic as Step 1)
     function validatePurpose() {
-        return validateStep1();
+        if (!validateStep1()) return false;
+        
+        // E-Wallet receipt validation
+        const paymentMethod = document.getElementById('payment_method')?.value;
+        const docTypeSelect = document.getElementById('doc_type');
+        const selectedOption = docTypeSelect.options[docTypeSelect.selectedIndex];
+        const price = selectedOption && selectedOption.value !== "" ? parseFloat(selectedOption.getAttribute('data-price') || "0") : 0;
+        
+        if (price > 0 && paymentMethod === 'E-Wallet') {
+            const receiptInput = document.getElementById('payment_receipt');
+            if (!receiptInput.files || receiptInput.files.length === 0) {
+                Swal.fire({
+                    title: 'Receipt Required',
+                    text: 'Please upload your E-Wallet payment receipt before submitting.',
+                    icon: 'warning',
+                    confirmButtonColor: '#0d9488'
+                });
+                return false;
+            }
+        }
+        
+        return true;
     }
 
     // Step Navigation Click Handlers
@@ -1496,6 +1537,8 @@ $documents = $documents_stmt->fetchAll();
 
         document.getElementById('document_price_container').style.display = 'none';
         document.getElementById('document_price_display').textContent = 'Free';
+        document.getElementById('payment_method_container').style.display = 'none';
+        document.getElementById('payment_method').value = 'Cash';
         document.getElementById('payment_section').style.display = 'none';
         document.getElementById('upload_status').textContent = 'Upload Receipt';
         
@@ -1553,6 +1596,8 @@ $documents = $documents_stmt->fetchAll();
         const priceDisplay = document.getElementById('document_price_display');
 
         // E-Wallet/GCash Section
+        const paymentMethodContainer = document.getElementById('payment_method_container');
+        const paymentMethod = document.getElementById('payment_method');
         const paymentSection = document.getElementById('payment_section');
         const amountDueDisplay = document.getElementById('amount_due_display');
 
@@ -1560,14 +1605,22 @@ $documents = $documents_stmt->fetchAll();
             priceContainer.style.display = 'block';
             if (price > 0) {
                 priceDisplay.textContent = '₱ ' + price.toFixed(2);
-                paymentSection.style.display = 'block';
+                paymentMethodContainer.style.display = 'block';
+                
+                if (paymentMethod.value === 'E-Wallet') {
+                    paymentSection.style.display = 'block';
+                } else {
+                    paymentSection.style.display = 'none';
+                }
                 amountDueDisplay.textContent = '₱ ' + price.toFixed(2);
             } else {
                 priceDisplay.textContent = 'Free';
+                paymentMethodContainer.style.display = 'none';
                 paymentSection.style.display = 'none';
             }
         } else {
             priceContainer.style.display = 'none';
+            paymentMethodContainer.style.display = 'none';
             paymentSection.style.display = 'none';
         }
 
@@ -1593,6 +1646,17 @@ $documents = $documents_stmt->fetchAll();
         }
 
         // Update stepped wizard navigation buttons immediately when price changes
+        updateNavigationButtons();
+    });
+
+    // Handle payment method change
+    document.getElementById('payment_method')?.addEventListener('change', function() {
+        const paymentSection = document.getElementById('payment_section');
+        if (this.value === 'E-Wallet') {
+            paymentSection.style.display = 'block';
+        } else {
+            paymentSection.style.display = 'none';
+        }
         updateNavigationButtons();
     });
 

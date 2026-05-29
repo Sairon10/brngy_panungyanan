@@ -680,14 +680,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 												</select>
 											</div>
 											<div class="col-12">
-												<label
-													class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok
-													<span class="text-danger">*</span></label>
-												<input type="text" name="purok" id="purok"
-													class="form-control form-control-lg"
-													placeholder="e.g. Purok 1, Purok 2"
-													value="<?php echo htmlspecialchars($_POST['purok'] ?? ''); ?>"
-													required>
+												<label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok <span class="text-danger">*</span></label>
+												<select name="purok" id="purok" class="form-select form-select-lg" required>
+													<option value="">Select Purok</option>
+													<?php
+													$selected_purok = $_POST['purok'] ?? '';
+													for ($i = 1; $i <= 7; $i++) {
+														$val = "Purok $i";
+														$sel = ($selected_purok === $val) ? 'selected' : '';
+														echo "<option value=\"$val\" $sel>$val</option>";
+													}
+													?>
+												</select>
 											</div>
 											<div class="col-12">
 												<label

@@ -796,8 +796,8 @@ $display_records = array_slice($unified_records, $offset, $limit);
         }
 
         Swal.fire({
-            title: 'Bulk Delete',
-            text: `Are you sure you want to delete ${selected.length} selected record(s)? This action cannot be undone.`,
+            title: 'Delete Records',
+            text: `Are you sure you want to delete ${selected.length} selected record(s)?\nThis action cannot be undone.`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#dc3545',

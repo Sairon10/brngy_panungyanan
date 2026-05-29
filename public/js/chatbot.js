@@ -407,22 +407,18 @@
 		messageDiv.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
 		
 		const icon = supportChatMode && isBot ? 'fas fa-user-headset' : (isBot ? 'fas fa-robot' : 'fas fa-user');
-		const displayName = senderName ? `<small class="d-block mb-1 fw-bold">${senderName}</small>` : '';
-		
 		if (isBot) {
 			messageDiv.innerHTML = `
 				<div class="message-avatar">
 					<i class="${icon}"></i>
 				</div>
 				<div class="message-content">
-					${displayName}
 					<p class="mb-0">${text}</p>
 				</div>
 			`;
 		} else {
 			messageDiv.innerHTML = `
 				<div class="message-content">
-					${displayName}
 					<p class="mb-0">${text}</p>
 				</div>
 				<div class="message-avatar">
@@ -433,11 +429,6 @@
 		
 		messages.appendChild(messageDiv);
 		messages.scrollTop = messages.scrollHeight;
-		
-		// Hide suggestions only when entering support chat mode
-		if (!isBot && supportChatMode) {
-			suggestions.style.display = 'none';
-		}
 	}
 
 	// Show guest info form
@@ -545,7 +536,7 @@
 				if (status) {
 					status.textContent = data.assigned_admin_id 
 						 ? 'Connected to Agent • Active'
-						: 'Waiting for Administrator...';
+						: 'Waiting for Barangay Staff...';
 					status.className = data.assigned_admin_id 
 						? 'text-success' 
 						: 'text-warning';
@@ -555,8 +546,8 @@
 				messages.innerHTML = '';
 				addMessage(
 					data.assigned_admin_id
-						? 'You\'ve been connected to a support agent. How can we help you today?'
-						: 'Your support request has been received. An admin will be with you shortly.',
+						? 'You\'ve been connected to a Barangay Staff. How can we help you today?'
+						: 'Your support request has been received. A Barangay Staff will be with you shortly.',
 					true
 				);
 				
@@ -919,8 +910,62 @@
 	// Suggestion buttons
 	document.querySelectorAll('.suggestion-btn').forEach(btn => {
 		btn.addEventListener('click', () => {
-			input.value = btn.dataset.query;
-			handleSend();
+			const query = btn.dataset.query;
+			
+			if (query === 'contact support') {
+				input.value = query;
+				handleSend();
+				return;
+			}
+			
+			// If in support mode, switch back to AI mode
+			if (supportChatMode) {
+				supportChatMode = false;
+				currentChatId = null;
+				stopPolling();
+				
+				// Revert header UI to Barangay Assistant
+				const header = panel.querySelector('.chatbot-header h6');
+				const status = panel.querySelector('.chatbot-header small');
+				if (header) header.textContent = 'Barangay Assistant';
+				if (status) {
+					status.textContent = 'Online • Ready to help';
+					status.className = 'text-muted';
+				}
+				
+				// Re-enable input if it was disabled (e.g. chat closed)
+				input.disabled = false;
+				input.placeholder = 'Type your question here...';
+				sendBtn.disabled = false;
+			}
+			
+			// For other quick options, force AI response locally
+			addMessage(query, false);
+			
+			// Show typing indicator
+			const typingDiv = document.createElement('div');
+			typingDiv.className = 'message bot-message typing-indicator';
+			typingDiv.innerHTML = `
+				<div class="message-avatar">
+					<i class="fas fa-robot"></i>
+				</div>
+				<div class="message-content">
+					<div class="typing-dots">
+						<span></span><span></span><span></span>
+					</div>
+				</div>
+			`;
+			messages.appendChild(typingDiv);
+			messages.scrollTop = messages.scrollHeight;
+			
+			// Generate and show response after short delay
+			setTimeout(() => {
+				typingDiv.remove();
+				const response = generateResponse(query);
+				if (response !== null) {
+					addMessage(response, true);
+				}
+			}, 800);
 		});
 	});
 

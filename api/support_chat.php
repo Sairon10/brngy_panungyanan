@@ -114,12 +114,11 @@ try {
             
             // Add welcome message (use guest name or system for sender)
             $welcomeMsg = $assignedAdminId 
-                ? "Hello" . ($guestName ? " {$guestName}" : "") . "! You've been connected to a support agent. How can we help you today?"
-                : "Hello" . ($guestName ? " {$guestName}" : "") . "! Your support request has been received. An admin will be with you shortly.";
+                ? "Hello" . ($guestName ? " {$guestName}" : "") . "! You've been connected to a Barangay Staff. How can we help you today?"
+                : "Hello" . ($guestName ? " {$guestName}" : "") . "! Your support request has been received. A Barangay Staff will be with you shortly.";
             
-            // For guest users, we need to create a system message
-            // Use NULL for guest users (system/admin messages)
-            $senderId = $userId ?? null;
+            // The welcome message comes from the assigned admin or system
+            $senderId = $assignedAdminId;
             
             $msgStmt = $pdo->prepare("
                 INSERT INTO support_messages (chat_id, sender_id, sender_type, message)
@@ -272,7 +271,11 @@ try {
             // Get messages
             $stmt = $pdo->prepare("
                 SELECT sm.*, 
-                       COALESCE(u.full_name, ?) as full_name,
+                       CASE 
+                           WHEN sm.sender_type = 'admin' AND u.full_name IS NOT NULL THEN u.full_name
+                           WHEN sm.sender_type = 'admin' THEN 'Support System'
+                           ELSE COALESCE(u.full_name, ?)
+                       END as full_name,
                        u.role
                 FROM support_messages sm
                 LEFT JOIN users u ON sm.sender_id = u.id AND sm.sender_id IS NOT NULL
