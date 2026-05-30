@@ -16,9 +16,55 @@ $message_type = '';
 
 // ── Handle POST (Confirm / Reject / Refund payment) ───────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
-	$pay_id     = (int) ($_POST['pay_id']   ?? 0);
-	$pay_type   = trim($_POST['pay_type']   ?? ''); // 'clearance' or 'document'
-	$pay_action = trim($_POST['pay_action'] ?? ''); // 'confirmed', 'rejected', or 'refunded'
+	if (!empty($_POST['bulk_action']) && isset($_POST['selected']) && is_array($_POST['selected'])) {
+		$bulk_action = $_POST['bulk_action'];
+		$selected = $_POST['selected'];
+		
+		$ok_count = 0;
+		foreach ($selected as $token) {
+			@list($pay_id, $pay_type) = explode('|', $token);
+			$pay_id = (int)$pay_id;
+			if ($pay_id > 0 && in_array($pay_type, ['clearance', 'document']) && in_array($bulk_action, ['confirmed', 'rejected'])) {
+				$table = $pay_type === 'clearance' ? 'barangay_clearances' : 'document_requests';
+				$pdo->prepare("UPDATE $table SET payment_status = ? WHERE id = ?")->execute([$bulk_action, $pay_id]);
+				$ok_count++;
+				
+				// Optional: Send notifications
+				$docTypeCol = $pay_type === 'clearance' ? "'Barangay Clearance' AS doc_type" : "p.doc_type";
+				$dtJoin = $pay_type === 'clearance' ? "ON dt.name = 'Barangay Clearance'" : "ON dt.name = p.doc_type";
+				$stmt = $pdo->prepare("
+					SELECT u.email, u.full_name, u.first_name, r.phone,
+						   p.payment_reference_no, p.payment_amount_paid,
+						   $docTypeCol, dt.price as amount_due
+					FROM $table p
+					JOIN users u ON u.id = p.user_id
+					LEFT JOIN residents r ON r.user_id = u.id
+					LEFT JOIN document_types dt $dtJoin
+					WHERE p.id = ? LIMIT 1
+				");
+				$stmt->execute([$pay_id]);
+				$paymentInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+				if ($paymentInfo) {
+					$paymentData = [
+						'resident_name' => $paymentInfo['first_name'] ?: ($paymentInfo['full_name'] ?: 'Resident'),
+						'reference_no'  => $paymentInfo['payment_reference_no'],
+						'amount_paid'   => $paymentInfo['payment_amount_paid'],
+						'amount_due'    => $paymentInfo['amount_due'],
+						'doc_type'      => $paymentInfo['doc_type'],
+						'notes'         => '',
+						'admin_refund_amount' => null
+					];
+					if (!empty($paymentInfo['email'])) send_payment_status_email($paymentInfo['email'], $bulk_action, $paymentData);
+					if (!empty($paymentInfo['phone'])) send_payment_status_sms($paymentInfo['phone'], $bulk_action, $paymentData);
+				}
+			}
+		}
+		$message = "Successfully updated {$ok_count} payment(s).";
+		$message_type = 'success';
+	} else {
+		$pay_id     = (int) ($_POST['pay_id']   ?? 0);
+		$pay_type   = trim($_POST['pay_type']   ?? ''); // 'clearance' or 'document'
+		$pay_action = trim($_POST['pay_action'] ?? ''); // 'confirmed', 'rejected', or 'refunded'
 
 	if ($pay_id > 0 && in_array($pay_type, ['clearance', 'document']) && in_array($pay_action, ['confirmed', 'rejected', 'refunded'])) {
 		if ($pay_action === 'refunded') {
@@ -169,6 +215,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && csrf_validate()) {
             // --- End Notification ---
 		}
 	}
+  }
 }
 
 // ── Fetch all payments (rows with a receipt uploaded) ─────────────────────────
@@ -177,6 +224,7 @@ $payments = [];
 // 1. Barangay Clearances with a receipt
 $stmt = $pdo->query("
 	SELECT bc.id, 'clearance' AS pay_type, u.full_name, u.email,
+	       COALESCE(fm.full_name, u.full_name) AS display_name,
 	       bc.purpose AS doc_detail, 'Barangay Clearance' AS doc_type,
 	       bc.payment_reference_no AS reference_no,
 	       bc.payment_receipt, bc.payment_status, bc.created_at,
@@ -185,6 +233,7 @@ $stmt = $pdo->query("
            bc.admin_refund_number, bc.admin_refund_notes, bc.admin_refund_amount
 	FROM barangay_clearances bc
 	JOIN users u ON u.id = bc.user_id
+	LEFT JOIN family_members fm ON bc.family_member_id = fm.id
 	LEFT JOIN document_types dt ON dt.name = 'Barangay Clearance'
 	WHERE bc.payment_receipt IS NOT NULL AND bc.payment_receipt != ''
 	ORDER BY bc.created_at DESC
@@ -198,6 +247,7 @@ if ($stmt) {
 // 2. Document Requests with a receipt
 $stmt = $pdo->query("
 	SELECT dr.id, 'document' AS pay_type, u.full_name, u.email,
+	       COALESCE(fm.full_name, u.full_name) AS display_name,
 	       dr.purpose AS doc_detail, dr.doc_type,
 	       dr.payment_reference_no AS reference_no,
 	       dr.payment_receipt, dr.payment_status, dr.created_at,
@@ -206,6 +256,7 @@ $stmt = $pdo->query("
            dr.admin_refund_number, dr.admin_refund_notes, dr.admin_refund_amount
 	FROM document_requests dr
 	JOIN users u ON u.id = dr.user_id
+	LEFT JOIN family_members fm ON dr.family_member_id = fm.id
 	LEFT JOIN document_types dt ON dt.name = dr.doc_type
 	WHERE dr.payment_receipt IS NOT NULL AND dr.payment_receipt != ''
 	ORDER BY dr.created_at DESC
@@ -221,6 +272,22 @@ usort($payments, fn($a, $b) => strtotime($b['created_at']) - strtotime($a['creat
 
 // Count pending
 $pending_count = count(array_filter($payments, fn($p) => ($p['payment_status'] ?? 'pending') === 'pending'));
+
+// Apply search filter
+$search = trim($_GET['search'] ?? '');
+if ($search !== '') {
+	$payments = array_filter($payments, function($p) use ($search) {
+		$s = strtolower($search);
+		$name1 = $p['full_name'] ?? '';
+		$name2 = $p['display_name'] ?? '';
+		$ref = $p['reference_no'] ?? '';
+		$type = $p['doc_type'] ?? '';
+		return stripos($name1, $s) !== false ||
+		       stripos($name2, $s) !== false ||
+		       stripos($ref, $s) !== false ||
+		       stripos($type, $s) !== false;
+	});
+}
 
 // Apply filter
 $filter_val = trim($_GET['filter'] ?? '');
@@ -351,15 +418,31 @@ require_once __DIR__ . '/header.php';
 		</script>
 	<?php endif; ?>
 
-	<!-- Filter tabs -->
-	<div class="px-4 py-3 border-bottom d-flex align-items-center gap-1 flex-wrap">
-		<a href="payments.php" class="filter-tab <?= $filter_val === '' ? 'active' : '' ?>">All</a>
-		<a href="payments.php?filter=pending"   class="filter-tab <?= $filter_val === 'pending'   ? 'active' : '' ?>">Pending</a>
-		<a href="payments.php?filter=confirmed" class="filter-tab <?= $filter_val === 'confirmed' ? 'active' : '' ?>">Confirmed</a>
-		<a href="payments.php?filter=rejected"  class="filter-tab <?= $filter_val === 'rejected'  ? 'active' : '' ?>">Rejected</a>
-		<a href="payments.php?filter=refund_pending"  class="filter-tab <?= $filter_val === 'refund_pending'  ? 'active' : '' ?>">Refund Pending</a>
-		<a href="payments.php?filter=refunded"  class="filter-tab <?= $filter_val === 'refunded'  ? 'active' : '' ?>">Refunded</a>
+	<!-- Filter tabs and Search -->
+	<div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-3">
+		<div class="d-flex align-items-center gap-1 flex-wrap">
+			<a href="payments.php" class="filter-tab <?= $filter_val === '' ? 'active' : '' ?>">All</a>
+			<a href="payments.php?filter=pending"   class="filter-tab <?= $filter_val === 'pending'   ? 'active' : '' ?>">Pending</a>
+			<a href="payments.php?filter=confirmed" class="filter-tab <?= $filter_val === 'confirmed' ? 'active' : '' ?>">Confirmed</a>
+			<a href="payments.php?filter=rejected"  class="filter-tab <?= $filter_val === 'rejected'  ? 'active' : '' ?>">Rejected</a>
+			<a href="payments.php?filter=refund_pending"  class="filter-tab <?= $filter_val === 'refund_pending'  ? 'active' : '' ?>">Refund Pending</a>
+			<a href="payments.php?filter=refunded"  class="filter-tab <?= $filter_val === 'refunded'  ? 'active' : '' ?>">Refunded</a>
+		</div>
+		<form action="" method="GET" class="input-group" style="max-width: 260px; min-width: 180px;">
+			<?php if (isset($_GET['filter'])): ?>
+				<input type="hidden" name="filter" value="<?= htmlspecialchars($_GET['filter']) ?>">
+			<?php endif; ?>
+			<span class="input-group-text"><i class="fas fa-search"></i></span>
+			<input type="text" name="search" class="form-control" placeholder="Search payments..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+		</form>
 	</div>
+
+	<!-- Bulk Action Form -->
+	<form method="post" id="bulkActionForm" class="d-none" action="">
+		<?= csrf_field() ?>
+		<input type="hidden" name="bulk_action" id="bulkActionField" value="">
+		<div id="bulkSelectedFields"></div>
+	</form>
 
 	<!-- Table -->
 	<div class="p-3">
@@ -368,19 +451,36 @@ require_once __DIR__ . '/header.php';
 			<table class="table table-hover align-middle" id="paymentsTable">
 				<thead class="bg-light text-uppercase" style="font-size:.78rem;">
 					<tr>
+						<th class="py-3 ps-3" style="width:40px;">
+							<input type="checkbox" class="form-check-input" id="selectAllPayments" onclick="toggleSelectAllPayments(this)">
+						</th>
 						<th class="py-3 ps-3" style="width:44px;">#</th>
 						<th class="py-3">Name</th>
+						<th class="py-3">Type</th>
 						<th class="py-3">Amount</th>
 						<th class="py-3">Reference No.</th>
 						<th class="py-3">Status</th>
 						<th class="py-3">Date</th>
-						<th class="py-3 pe-3 text-center">Action</th>
+						<th class="py-3 pe-3 text-center">
+							<div class="d-flex align-items-center justify-content-center gap-2">
+								Action
+								<div class="dropdown">
+									<button class="btn btn-sm btn-light border-0 text-secondary p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Bulk Actions" style="width: 24px; height: 24px;">
+										<i class="fas fa-ellipsis-v" style="font-size: 0.85rem;"></i>
+									</button>
+									<ul class="dropdown-menu shadow border-0 py-2 small text-none">
+										<li><button type="button" class="dropdown-item rounded-0 py-2" onclick="paymentsBulkSubmit('confirmed');">Confirm</button></li>
+										<li><button type="button" class="dropdown-item rounded-0 py-2" onclick="paymentsBulkSubmit('rejected');">Reject</button></li>
+									</ul>
+								</div>
+							</div>
+						</th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php if (empty($display_rows)): ?>
 						<tr>
-							<td colspan="7" class="text-center py-5">
+							<td colspan="9" class="text-center py-5">
 								<div class="py-4">
 									<i class="fas fa-receipt fa-3x text-muted opacity-25 mb-3 d-block"></i>
 									<p class="text-muted mb-0">No payment receipts found.</p>
@@ -399,7 +499,7 @@ require_once __DIR__ . '/header.php';
 							$j = [
 								'id'              => (int)$pay['id'],
 								'pay_type'        => $pay['pay_type'],
-								'full_name'       => $pay['full_name'],
+								'full_name'       => $pay['display_name'] ?? $pay['full_name'],
 								'email'           => $pay['email'] ?? '',
 								'doc_type'        => $pay['doc_type'],
 								'doc_detail'      => $pay['doc_detail'] ?? '',
@@ -420,11 +520,19 @@ require_once __DIR__ . '/header.php';
 							$json_attr = htmlspecialchars(json_encode($j), ENT_QUOTES);
 							?>
 							<tr>
+								<td class="ps-3">
+									<input type="checkbox" class="form-check-input row-checkbox-payment" value="<?= $pay['id'] . '|' . $pay['pay_type'] ?>">
+								</td>
 								<td class="ps-3 text-muted fw-semibold"><?= $row_n++ ?></td>
 
 								<!-- Name -->
 								<td>
-									<div class="fw-bold text-dark"><?= htmlspecialchars($pay['full_name']) ?></div>
+									<div class="fw-bold text-dark"><?= htmlspecialchars($pay['display_name'] ?? $pay['full_name']) ?></div>
+								</td>
+
+								<!-- Type -->
+								<td>
+									<div class="text-dark"><?= htmlspecialchars($pay['doc_type']) ?></div>
 								</td>
 
 								<!-- Amount -->
@@ -468,9 +576,28 @@ require_once __DIR__ . '/header.php';
 										<button type="button"
 											class="btn-view-detail"
 											title="View Details"
-											onclick="openDetailModal(<?= $json_attr ?>)">
+											data-pay="<?= $json_attr ?>"
+											onclick="openDetailModalFromBtn(this)">
 											<i class="fas fa-eye" style="font-size:.85rem;"></i>
 										</button>
+										<?php if ($pay_status === 'pending'): ?>
+											<button type="button"
+												class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
+												style="width:34px;height:34px;background:#d1fae5;color:#065f46;border:none;"
+												title="Confirm Payment"
+												onclick="confirmPayment(<?= (int)$pay['id'] ?>, '<?= $pay['pay_type'] ?>')">
+												<i class="fas fa-check" style="font-size:.85rem;"></i>
+											</button>
+										<?php endif; ?>
+										<?php if ($pay_status === 'pending' || $pay_status === 'confirmed'): ?>
+											<button type="button"
+												class="btn btn-sm rounded-circle d-flex align-items-center justify-content-center"
+												style="width:34px;height:34px;background:#fee2e2;color:#991b1b;border:none;"
+												title="Reject Payment"
+												onclick="openRejectReason(<?= (int)$pay['id'] ?>, '<?= $pay['pay_type'] ?>')">
+												<i class="fas fa-times" style="font-size:.85rem;"></i>
+											</button>
+										<?php endif; ?>
 									</div>
 								</td>
 							</tr>
@@ -814,6 +941,16 @@ function getRefundModal() {
 	return _refundModal;
 }
 
+function openDetailModalFromBtn(btn) {
+	try {
+		const data = JSON.parse(btn.getAttribute('data-pay'));
+		openDetailModal(data);
+	} catch (e) {
+		console.error("Failed to parse payment data", e);
+		Swal.fire('Error', 'Unable to load payment details.', 'error');
+	}
+}
+
 function openDetailModal(data) {
 	// Header & Main Info
 	document.getElementById('detailModalSub').textContent   = data.doc_type + ' — ' + data.full_name;
@@ -1124,6 +1261,61 @@ document.addEventListener('DOMContentLoaded', () => {
 		});
 	}
 });
+
+function toggleSelectAllPayments(source) {
+	const checkboxes = document.querySelectorAll('.row-checkbox-payment');
+	for (let i = 0; i < checkboxes.length; i++) {
+		checkboxes[i].checked = source.checked;
+	}
+}
+
+function getSelectedPayments() {
+	const checkboxes = document.querySelectorAll('.row-checkbox-payment:checked');
+	const selected = [];
+	for (let i = 0; i < checkboxes.length; i++) {
+		selected.push(checkboxes[i].value);
+	}
+	return selected;
+}
+
+function paymentsBulkSubmit(actionStr) {
+	const selected = getSelectedPayments();
+	if (selected.length === 0) {
+		Swal.fire({
+			icon: 'warning',
+			title: 'No Payments Selected',
+			text: 'Please select at least one payment to process.',
+			confirmButtonColor: '#0d9488'
+		});
+		return;
+	}
+
+	let actionLabel = actionStr === 'confirmed' ? 'confirm' : 'reject';
+
+	Swal.fire({
+		title: 'Are you sure?',
+		text: "You are about to " + actionLabel + " " + selected.length + " payment(s).",
+		icon: 'warning',
+		showCancelButton: true,
+		confirmButtonColor: (actionStr === 'rejected' ? '#ef4444' : '#0d9488'),
+		cancelButtonColor: '#6c757d',
+		confirmButtonText: 'Yes, proceed!'
+	}).then((result) => {
+		if (result.isConfirmed) {
+			document.getElementById('bulkActionField').value = actionStr;
+			const container = document.getElementById('bulkSelectedFields');
+			container.innerHTML = '';
+			selected.forEach(val => {
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = 'selected[]';
+				input.value = val;
+				container.appendChild(input);
+			});
+			document.getElementById('bulkActionForm').submit();
+		}
+	});
+}
 </script>
 
 <?php require_once __DIR__ . '/footer.php'; ?>

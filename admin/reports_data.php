@@ -293,6 +293,32 @@ switch ($type) {
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
+    case 'payments':
+        $stmt = $pdo->prepare("
+            SELECT 'Barangay Clearance' as doc_type, bc.payment_reference_no as reference_no, 
+                   COALESCE(bc.payment_amount_paid, (SELECT price FROM document_types WHERE name = 'Barangay Clearance')) as amount, 
+                   bc.payment_status as status, bc.created_at, u.full_name as display_name
+            FROM barangay_clearances bc
+            JOIN users u ON bc.user_id = u.id
+            WHERE bc.payment_receipt IS NOT NULL AND bc.payment_receipt != '' AND bc.created_at BETWEEN ? AND ?
+            
+            UNION ALL
+            
+            SELECT dr.doc_type, dr.payment_reference_no as reference_no, 
+                   COALESCE(dr.payment_amount_paid, (SELECT price FROM document_types WHERE name = dr.doc_type)) as amount, 
+                   dr.payment_status as status, dr.created_at, 
+                   COALESCE(fm.full_name, u.full_name) as display_name
+            FROM document_requests dr
+            JOIN users u ON dr.user_id = u.id
+            LEFT JOIN family_members fm ON dr.family_member_id = fm.id
+            WHERE dr.payment_receipt IS NOT NULL AND dr.payment_receipt != '' AND dr.created_at BETWEEN ? AND ?
+            
+            ORDER BY created_at DESC
+        ");
+        $stmt->execute([$start, $end, $start, $end]);
+        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        break;
+
     default:
         echo json_encode([]);
 }

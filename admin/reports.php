@@ -72,6 +72,21 @@ $stmt->execute([$db_start, $db_end]);
 $incidents_summary_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $total_incidents = array_sum($incidents_summary_raw);
 
+// 3.5 Payments (Summary Stats)
+$stmt = $pdo->prepare("
+    SELECT SUM(amount) FROM (
+        SELECT COALESCE(payment_amount_paid, (SELECT price FROM document_types WHERE name = 'Barangay Clearance')) as amount 
+        FROM barangay_clearances 
+        WHERE payment_status = 'confirmed' AND created_at BETWEEN ? AND ?
+        UNION ALL
+        SELECT COALESCE(payment_amount_paid, (SELECT price FROM document_types dt WHERE dt.name = dr.doc_type)) as amount 
+        FROM document_requests dr
+        WHERE payment_status = 'confirmed' AND created_at BETWEEN ? AND ?
+    ) as t
+");
+$stmt->execute([$db_start, $db_end, $db_start, $db_end]);
+$total_payments = (float)$stmt->fetchColumn();
+
 // 4. Pagination & Detailed Lists Configuration
 $items_per_page = 10;
 
@@ -195,7 +210,7 @@ require_once __DIR__ . '/header.php';
 
     <!-- Restore Summary Cards -->
     <div class="row g-4 mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="admin-stats-card info m-0 shadow-sm report-card-clickable" onclick="loadReport('total_residents','Total of Resident')" title="Click to view list">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -207,7 +222,7 @@ require_once __DIR__ . '/header.php';
                 <div class="text-end mt-1"><small class="text-white opacity-75"><i class="fas fa-mouse-pointer me-1"></i>Click to view</small></div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="admin-stats-card success m-0 shadow-sm report-card-clickable" onclick="loadReport('doc_requests','Document Requests')" title="Click to view list">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -219,7 +234,7 @@ require_once __DIR__ . '/header.php';
                 <div class="text-end mt-1"><small class="text-white opacity-75"><i class="fas fa-mouse-pointer me-1"></i>Click to view</small></div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="admin-stats-card warning m-0 shadow-sm report-card-clickable" onclick="loadReport('incidents','Incident Reports')" title="Click to view list">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
@@ -227,6 +242,18 @@ require_once __DIR__ . '/header.php';
                         <div class="stats-number"><?php echo number_format($total_incidents); ?></div>
                     </div>
                     <i class="fas fa-exclamation-triangle stats-icon"></i>
+                </div>
+                <div class="text-end mt-1"><small class="text-white opacity-75"><i class="fas fa-mouse-pointer me-1"></i>Click to view</small></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="admin-stats-card m-0 shadow-sm report-card-clickable" style="background: linear-gradient(135deg, #14b8a6, #0f766e); color: white;" onclick="loadReport('payments', 'Total Payments')" title="Click to view payments report">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="stats-label">Total Payments</div>
+                        <div class="stats-number">₱<?php echo number_format($total_payments, 2); ?></div>
+                    </div>
+                    <i class="fas fa-coins stats-icon text-white opacity-50"></i>
                 </div>
                 <div class="text-end mt-1"><small class="text-white opacity-75"><i class="fas fa-mouse-pointer me-1"></i>Click to view</small></div>
             </div>
@@ -433,6 +460,11 @@ require_once __DIR__ . '/header.php';
             data.forEach((r, i) => {
                 csvContent += `${i + 1},${csvEsc(r.created_at)},${csvEsc(r.full_name)},${csvEsc(r.description)},${csvEsc(r.status)}\n`;
             });
+        } else if (type === 'payments') {
+            csvContent += "Number,Date,Name,Document Type,Reference No.,Status,Amount\n";
+            data.forEach((r, i) => {
+                csvContent += `${i + 1},${csvEsc(r.created_at)},${csvEsc(r.display_name)},${csvEsc(r.doc_type)},${csvEsc(r.reference_no)},${csvEsc(r.status)},${csvEsc(r.amount)}\n`;
+            });
         }
 
         // Create Blob and trigger download
@@ -594,6 +626,32 @@ require_once __DIR__ . '/header.php';
                 <td><span class="badge ${badge}">${statusLabel}</span></td>
             </tr>`;
             });
+        } else if (type === 'payments') {
+            headers = '<th>#</th><th>Date</th><th>Name</th><th>Document Type</th><th>Ref No.</th><th>Status</th><th>Amount</th>';
+            let totalAmount = 0;
+            data.forEach((r, i) => {
+                const badgeMap = { pending: 'bg-warning text-dark', confirmed: 'bg-success', rejected: 'bg-danger', refunded: 'bg-info', refund_pending: 'bg-secondary' };
+                const badge = badgeMap[r.status] || 'bg-secondary';
+                const amt = parseFloat(r.amount) || 0;
+                if (r.status === 'confirmed' || r.status === 'pending' || r.status === 'refund_pending') {
+                    totalAmount += amt;
+                }
+                const formattedAmount = amt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                rows += `<tr>
+                <td>${i + 1}</td>
+                <td class="small">${esc(r.created_at ? new Date(r.created_at).toLocaleDateString('en-PH', { year: 'numeric', month: 'short', day: 'numeric' }) : '—')}</td>
+                <td class="fw-bold">${esc(r.display_name)}</td>
+                <td>${esc(r.doc_type)}</td>
+                <td><span class="badge bg-light text-dark border" style="font-family: monospace;">${esc(r.reference_no)}</span></td>
+                <td><span class="badge ${badge}">${esc(r.status ? r.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '')}</span></td>
+                <td class="fw-bold text-teal">₱${formattedAmount}</td>
+            </tr>`;
+            });
+            const formattedTotal = totalAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            rows += `<tr class="table-light fw-bold" style="background-color: #f8f9fa;">
+                <td colspan="6" class="text-end pe-3" style="text-align: right; font-weight: bold;">TOTAL:</td>
+                <td class="text-teal" style="font-weight: bold;">₱${formattedTotal}</td>
+            </tr>`;
         }
 
         return `
@@ -736,6 +794,7 @@ require_once __DIR__ . '/header.php';
         }
         small { font-size: 10px; color: #555; }
         strong { font-weight: bold; }
+        #reportSearch { display: none !important; }
         .footer {
             margin-top: 30px;
             border-top: 1px solid #ccc;
