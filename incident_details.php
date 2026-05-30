@@ -146,11 +146,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                             $reason = ($status === 'canceled' ? $incident['notes'] : ($status === 'closed' ? $incident['admin_response'] : ''));
                                             if ($reason): 
                                             ?>
-                                                <div class="mt-2 p-2 px-3 rounded-3 bg-light border-start border-4 <?php echo $status === 'canceled' ? 'border-secondary' : 'border-rose-500'; ?> small animate__animated animate__fadeIn">
-                                                    <div class="fw-bold text-dark small mb-1">
+                                                <div class="mt-2 p-2 px-3 rounded-3 bg-light border-start border-4 <?php echo $status === 'canceled' ? 'border-secondary' : 'border-danger'; ?> small animate__animated animate__fadeIn">
+                                                    <div class="fw-bold <?php echo $status === 'canceled' ? 'text-dark' : 'text-danger'; ?> small mb-1">
                                                         <i class="fas fa-info-circle me-1"></i> <?php echo $status === 'canceled' ? 'Reason for Cancellation:' : 'Reason for Rejection:'; ?>
                                                     </div>
-                                                    <div class="text-secondary"><?php echo nl2br(htmlspecialchars($reason)); ?></div>
+                                                    <div class="<?php echo $status === 'canceled' ? 'text-secondary' : 'text-danger'; ?>"><?php echo nl2br(htmlspecialchars($reason)); ?></div>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
