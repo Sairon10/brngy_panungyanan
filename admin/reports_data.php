@@ -95,20 +95,20 @@ switch ($type) {
 
     case 'total_residents':
         $stmt = $pdo->query("
-            SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.phone, '' as owner_name
+            SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.phone, '' as owner_name, r.classification, r.is_senior, r.is_pwd, r.is_solo_parent
             FROM users u LEFT JOIN residents r ON u.id = r.user_id
             WHERE u.role IN ('resident', 'admin', 'sub_admin')
             
             UNION ALL
             
-            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, COALESCE(ro.address, 'N/A') as address, ro.phone as phone, u2.full_name as owner_name
+            SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, COALESCE(ro.address, 'N/A') as address, ro.phone as phone, u2.full_name as owner_name, fm.classification, fm.is_senior, fm.is_pwd, fm.is_solo_parent
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
             
             UNION ALL
             
-            SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.phone, '' as owner_name
+            SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.phone, '' as owner_name, rr.classification, rr.is_senior, rr.is_pwd, rr.is_solo_parent
             FROM resident_records rr
             WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
             

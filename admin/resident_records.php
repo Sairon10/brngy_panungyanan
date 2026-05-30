@@ -27,6 +27,19 @@ require_once __DIR__ . '/header.php';
         background: #f1f5f9;
         transform: translateY(-2px);
     }
+    .filter-scroll::-webkit-scrollbar {
+        height: 6px;
+    }
+    .filter-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .filter-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+    }
+    .filter-scroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 </style>
 
 <?php
@@ -476,7 +489,8 @@ if ($user_owners) {
                 'verification_status' => $fm['verification_status'] ?? 'pending',
                 'is_senior' => $fm['is_senior'],
                 'is_pwd' => $fm['is_pwd'],
-                'is_solo_parent' => $fm['is_solo_parent']
+                'is_solo_parent' => $fm['is_solo_parent'],
+                'classification' => $fm['classification'] ?? '[]'
             ];
         }
     }
@@ -506,9 +520,16 @@ if ($search !== '') {
 $filter = isset($_GET['filter']) ? trim($_GET['filter']) : 'all';
 if ($filter !== 'all') {
     $unified_records = array_filter($unified_records, function ($r) use ($filter) {
-        if ($filter === 'senior') return !empty($r['is_senior']);
-        if ($filter === 'pwd') return !empty($r['is_pwd']);
-        if ($filter === 'solo_parent') return !empty($r['is_solo_parent']);
+        $classes = json_decode($r['classification'] ?? '[]', true) ?: [];
+        if ($filter === 'senior') return !empty($r['is_senior']) || in_array('Senior Citizen', $classes);
+        if ($filter === 'pwd') return !empty($r['is_pwd']) || in_array('PWD', $classes);
+        if ($filter === 'solo_parent') return !empty($r['is_solo_parent']) || in_array('Solo Parent', $classes);
+        if ($filter === 'labor') return in_array('Labor/Employed', $classes);
+        if ($filter === 'unemployed') return in_array('Unemployed', $classes);
+        if ($filter === 'ofw') return in_array('OFW', $classes);
+        if ($filter === 'osy') return in_array('Out of School Youth (OSY)', $classes);
+        if ($filter === 'osc') return in_array('Out of School Children (OSC)', $classes);
+        if ($filter === 'indigenous') return in_array('Indigenous People', $classes);
         return true;
     });
 }
@@ -564,28 +585,24 @@ $display_records = array_slice($unified_records, $offset, $limit);
     </div>
 
     <!-- Quick Category Filters -->
-    <div class="px-4 py-2.5 border-bottom d-flex align-items-center flex-wrap gap-2" style="background-color: #fafbfc;">
-        <span class="text-muted small fw-semibold me-2"><i class="fas fa-filter me-1" style="color: #14b8a6;"></i>Quick Filter:</span>
-        <a href="?filter=all&search=<?php echo urlencode($search); ?>" 
-           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'all' ? 'text-white border-0 shadow-sm' : 'bg-white text-secondary border border-light-subtle'; ?>" 
-           style="<?php echo $filter === 'all' ? 'background-color: #14b8a6 !important; box-shadow: 0 2px 6px rgba(20, 184, 166, 0.15);' : ''; ?> font-size: 0.8rem; transition: all 0.2s;">
-            All
-        </a>
-        <a href="?filter=senior&search=<?php echo urlencode($search); ?>" 
-           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'senior' ? 'bg-warning text-dark border-warning shadow-sm fw-bold' : 'bg-white text-secondary border border-light-subtle'; ?>" 
-           style="font-size: 0.8rem; transition: all 0.2s;">
-            👴 Senior Citizen
-        </a>
-        <a href="?filter=pwd&search=<?php echo urlencode($search); ?>" 
-           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'pwd' ? 'bg-info text-dark border-info shadow-sm fw-bold' : 'bg-white text-secondary border border-light-subtle'; ?>" 
-           style="font-size: 0.8rem; transition: all 0.2s;">
-            ♿ PWD
-        </a>
-        <a href="?filter=solo_parent&search=<?php echo urlencode($search); ?>" 
-           class="btn btn-sm rounded-pill px-3 <?php echo $filter === 'solo_parent' ? 'bg-secondary text-white border-secondary shadow-sm fw-bold' : 'bg-white text-secondary border border-light-subtle'; ?>" 
-           style="font-size: 0.8rem; transition: all 0.2s;">
-            👪 Solo Parent
-        </a>
+    <div class="px-4 py-3 border-bottom d-flex align-items-center" style="background-color: #fafbfc;">
+        <span class="text-muted small fw-semibold me-3 flex-shrink-0">
+            <i class="fas fa-filter me-1" style="color: #14b8a6;"></i>Classification Filter:
+        </span>
+        <select class="form-select form-select-sm rounded-pill shadow-sm border-light-subtle" 
+                style="max-width: 250px; cursor: pointer; font-size: 0.85rem;" 
+                onchange="window.location.href='?search=<?php echo urlencode($search); ?>&filter=' + this.value">
+            <option value="all" <?php echo $filter === 'all' ? 'selected' : ''; ?>>All Residents</option>
+            <option value="labor" <?php echo $filter === 'labor' ? 'selected' : ''; ?>>👷 Labor/Employed</option>
+            <option value="unemployed" <?php echo $filter === 'unemployed' ? 'selected' : ''; ?>>👤 Unemployed</option>
+            <option value="pwd" <?php echo $filter === 'pwd' ? 'selected' : ''; ?>>♿ PWD</option>
+            <option value="ofw" <?php echo $filter === 'ofw' ? 'selected' : ''; ?>>✈️ OFW</option>
+            <option value="solo_parent" <?php echo $filter === 'solo_parent' ? 'selected' : ''; ?>>👪 Solo Parent</option>
+            <option value="osy" <?php echo $filter === 'osy' ? 'selected' : ''; ?>>🎓 OSY (Out of School Youth)</option>
+            <option value="osc" <?php echo $filter === 'osc' ? 'selected' : ''; ?>>🎒 OSC (Out of School Children)</option>
+            <option value="indigenous" <?php echo $filter === 'indigenous' ? 'selected' : ''; ?>>🏕️ Indigenous People</option>
+            <option value="senior" <?php echo $filter === 'senior' ? 'selected' : ''; ?>>👴 Senior Citizen</option>
+        </select>
     </div>
 
     <div class="table-card">

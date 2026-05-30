@@ -121,20 +121,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $edu = $_POST['fm_educational_attainment'] ?? '';
         $edu_status = $_POST['fm_educational_status'] ?? 'N/A';
 
-        // Boolean classifications
-        $is_pwd = isset($_POST['fm_is_pwd']) ? 1 : 0;
-        $is_senior = isset($_POST['fm_is_senior']) ? 1 : 0;
-        $is_minor = isset($_POST['fm_is_minor']) ? 1 : 0;
-        $is_solo_parent = isset($_POST['fm_is_solo_parent']) ? 1 : 0;
-
-        $classifications = [];
-        if ($is_pwd)
-            $classifications[] = 'PWD';
-        if ($is_senior)
-            $classifications[] = 'Senior';
-        if ($is_solo_parent)
-            $classifications[] = 'Solo Parent';
+        $classifications = isset($_POST['classifications']) ? $_POST['classifications'] : [];
         $classification_json = json_encode($classifications);
+
+        $is_pwd = in_array('PWD', $classifications) ? 1 : 0;
+        $is_senior = in_array('Senior Citizen', $classifications) ? 1 : 0;
+        $is_solo_parent = in_array('Solo Parent', $classifications) ? 1 : 0;
+        $is_minor = 0;
 
         if ($fm_id > 0 && !empty($fname) && !empty($lname)) {
             try {
@@ -203,17 +196,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $edu = $_POST['fm_educational_attainment'] ?? '';
         $edu_status = $_POST['fm_educational_status'] ?? 'N/A';
 
-        // Boolean classifications
-        $is_pwd = isset($_POST['fm_is_pwd']) ? 1 : 0;
-        $is_senior = isset($_POST['fm_is_senior']) ? 1 : 0;
-        $is_minor = isset($_POST['fm_is_minor']) ? 1 : 0;
-        $is_solo_parent = isset($_POST['fm_is_solo_parent']) ? 1 : 0;
-
-        $classifications = [];
-        if ($is_pwd) $classifications[] = 'PWD';
-        if ($is_senior) $classifications[] = 'Senior';
-        if ($is_solo_parent) $classifications[] = 'Solo Parent';
+        $classifications = isset($_POST['classifications']) ? $_POST['classifications'] : [];
         $classification_json = json_encode($classifications);
+
+        $is_pwd = in_array('PWD', $classifications) ? 1 : 0;
+        $is_senior = in_array('Senior Citizen', $classifications) ? 1 : 0;
+        $is_solo_parent = in_array('Solo Parent', $classifications) ? 1 : 0;
+        $is_minor = 0;
 
         if ($target_user_id > 0 && !empty($fname) && !empty($lname)) {
             try {
@@ -1297,67 +1286,22 @@ if ($linked_resident) {
                             (Multiple Selection)</h6>
                         <div class="col-12">
                             <div class="row g-2">
+                                <?php
+                                $all_classes = [
+                                    'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
+                                    'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                ];
+                                foreach ($all_classes as $idx => $cls): ?>
                                 <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_0" value="Labor/Employed"><label
-                                            class="form-check-label small fw-semibold"
-                                            for="ecls_0">Labor/Employed</label></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_1" value="Unemployed"><label
-                                            class="form-check-label small fw-semibold" for="ecls_1">Unemployed</label>
+                                    <div class="classification-box rounded-3 border p-3 h-100 d-flex align-items-center">
+                                        <div class="form-check m-0">
+                                            <input class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox" name="classifications[]"
+                                                id="ecls_<?php echo $idx; ?>" value="<?php echo htmlspecialchars($cls); ?>">
+                                            <label class="form-check-label fw-bold small" for="ecls_<?php echo $idx; ?>"><?php echo $cls; ?></label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_2" value="PWD"><label
-                                            class="form-check-label small fw-semibold" for="ecls_2">PWD</label></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_3" value="OFW"><label
-                                            class="form-check-label small fw-semibold" for="ecls_3">OFW</label></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_4" value="Solo Parent"><label
-                                            class="form-check-label small fw-semibold" for="ecls_4">Solo Parent</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_5"
-                                            value="Out of School Youth (OSY)"><label
-                                            class="form-check-label small fw-semibold" for="ecls_5">OSY</label></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_6"
-                                            value="Out of School Children (OSC)"><label
-                                            class="form-check-label small fw-semibold" for="ecls_6">OSC</label></div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_7" value="Indigenous People"><label
-                                            class="form-check-label small fw-semibold" for="ecls_7">Indigenous</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-check p-2 border rounded-2 h-100 d-flex align-items-center"><input
-                                            class="form-check-input ms-0 me-2 edit-cls-check" type="checkbox"
-                                            name="classifications[]" id="ecls_8" value="Senior Citizen"><label
-                                            class="form-check-label small fw-semibold" for="ecls_8">Senior
-                                            Citizen</label></div>
-                                </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
 
@@ -1544,37 +1488,22 @@ if ($linked_resident) {
                                 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
                                 <i class="fas fa-tags me-2"></i>Special Classifications</h6>
                             <div class="row g-2">
-                                <div class="col-md-3">
-                                    <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_pwd"
-                                            id="fm_edit_is_pwd">
-                                        <label class="form-check-label fw-bold small" for="fm_edit_is_pwd">PWD</label>
+                                <?php
+                                $all_classes = [
+                                    'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
+                                    'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                ];
+                                foreach ($all_classes as $idx => $cls): ?>
+                                <div class="col-md-4">
+                                    <div class="classification-box rounded-3 border p-3 h-100 d-flex align-items-center">
+                                        <div class="form-check m-0">
+                                            <input class="form-check-input ms-0 me-2 fm-edit-cls-check" type="checkbox" name="classifications[]"
+                                                id="fm_cls_<?php echo $idx; ?>" value="<?php echo htmlspecialchars($cls); ?>">
+                                            <label class="form-check-label fw-bold small" for="fm_cls_<?php echo $idx; ?>"><?php echo $cls; ?></label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-md-3">
-                                    <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_senior"
-                                            id="fm_edit_is_senior">
-                                        <label class="form-check-label fw-bold small"
-                                            for="fm_edit_is_senior">Senior</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="fm_is_minor"
-                                            id="fm_edit_is_minor">
-                                        <label class="form-check-label fw-bold small"
-                                            for="fm_edit_is_minor">Minor</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check border p-2 rounded">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox"
-                                            name="fm_is_solo_parent" id="fm_edit_is_solo_parent">
-                                        <label class="form-check-label fw-bold small" for="fm_edit_is_solo_parent">Solo
-                                            Parent</label>
-                                    </div>
-                                </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
                     </div>
@@ -1606,6 +1535,22 @@ if ($linked_resident) {
         padding: 0.6rem 0.75rem;
         border-radius: 8px;
         transition: all 0.2s;
+    }
+    
+    .classification-box {
+        transition: all 0.2s;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .classification-box:hover {
+        border-color: #0d9488;
+        background: #f0fdfa;
+    }
+
+    .classification-box:has(.form-check-input:checked) {
+        border-color: #0d9488;
+        background: #f0fdfa;
     }
 </style>
 
@@ -1796,10 +1741,23 @@ if ($linked_resident) {
 
         document.getElementById('fm_edit_educational_attainment').value = fm.educational_attainment || '';
         document.getElementById('fm_edit_educational_status').value = fm.educational_status || 'N/A';
-        document.getElementById('fm_edit_is_pwd').checked = fm.is_pwd == 1;
-        document.getElementById('fm_edit_is_senior').checked = fm.is_senior == 1;
-        document.getElementById('fm_edit_is_minor').checked = fm.is_minor == 1;
-        document.getElementById('fm_edit_is_solo_parent').checked = fm.is_solo_parent == 1;
+        // Reset family member classification checkboxes
+        document.querySelectorAll('.fm-edit-cls-check').forEach(cb => cb.checked = false);
+        if (fm.classification) {
+            try {
+                const classes = JSON.parse(fm.classification);
+                if (Array.isArray(classes)) {
+                    document.querySelectorAll('.fm-edit-cls-check').forEach(cb => {
+                        if (classes.includes(cb.value)) cb.checked = true;
+                    });
+                }
+            } catch (e) { }
+        }
+        
+        // Legacy fallback
+        if (fm.is_solo_parent == 1) { const el = document.querySelector('.fm-edit-cls-check[value="Solo Parent"]'); if (el) el.checked = true; }
+        if (fm.is_pwd == 1) { const el = document.querySelector('.fm-edit-cls-check[value="PWD"]'); if (el) el.checked = true; }
+        if (fm.is_senior == 1) { const el = document.querySelector('.fm-edit-cls-check[value="Senior Citizen"]'); if (el) el.checked = true; }
 
         new bootstrap.Modal(document.getElementById('familyMemberEditModal')).show();
     }

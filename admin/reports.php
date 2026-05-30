@@ -493,7 +493,11 @@ require_once __DIR__ . '/header.php';
             headers = '<th>#</th><th>Full Name</th><th>Type</th><th>Birthdate</th><th>Sex</th><th>Civil Status</th><th>Address</th><th>Phone</th>';
             data.forEach((r, i) => {
                 const isFM = r.source === 'Family Member' && r.owner_name;
-                rows += `<tr>
+                const classes = esc(r.classification || '[]');
+                const sen = r.is_senior ? '1' : '0';
+                const pwd = r.is_pwd ? '1' : '0';
+                const solo = r.is_solo_parent ? '1' : '0';
+                rows += `<tr data-classifications='${classes}' data-sen='${sen}' data-pwd='${pwd}' data-solo='${solo}'>
                 <td>${i + 1}</td>
                 <td class="fw-bold">${esc(r.full_name)}</td>
                 <td>${isFM
@@ -654,10 +658,31 @@ require_once __DIR__ . '/header.php';
             </tr>`;
         }
 
+        const dropdownHtml = (type === 'total_residents') ? `
+            <div class="d-flex align-items-center ms-auto me-3">
+                <i class="fas fa-filter me-2" style="color: #14b8a6;"></i>
+                <select id="reportClassFilter" class="form-select form-select-sm rounded-pill shadow-sm border-light-subtle" style="width: 200px; cursor: pointer; font-size: 0.85rem;" onchange="filterReportTable()">
+                    <option value="all">All Residents</option>
+                    <option value="labor">👷 Labor/Employed</option>
+                    <option value="unemployed">👤 Unemployed</option>
+                    <option value="pwd">♿ PWD</option>
+                    <option value="ofw">✈️ OFW</option>
+                    <option value="solo_parent">👪 Solo Parent</option>
+                    <option value="osy">🎓 OSY</option>
+                    <option value="osc">🎒 OSC</option>
+                    <option value="indigenous">🏕️ Indigenous People</option>
+                    <option value="senior">👴 Senior Citizen</option>
+                </select>
+            </div>
+        ` : '';
+
         return `
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-muted small">Showing <strong>${data.length}</strong> record(s)</span>
-            ${type !== 'summary' ? '<input type="text" id="reportSearch" class="form-control form-control-sm" style="max-width: 250px;" placeholder="Search records..." onkeyup="filterReportTable()">' : ''}
+            <span class="text-muted small">Showing <strong id="reportCount">${data.length}</strong> record(s)</span>
+            <div class="d-flex">
+                ${dropdownHtml}
+                ${type !== 'summary' ? '<input type="text" id="reportSearch" class="form-control form-control-sm" style="max-width: 250px;" placeholder="Search records..." onkeyup="filterReportTable()">' : ''}
+            </div>
         </div>
         <div class="table-card">
         <div class="table-responsive">
@@ -676,22 +701,56 @@ require_once __DIR__ . '/header.php';
 
     function filterReportTable() {
         const input = document.getElementById("reportSearch");
-        if (!input) return;
-        const filter = input.value.toLowerCase();
+        const classFilter = document.getElementById("reportClassFilter");
+        const filterText = input ? input.value.toLowerCase() : "";
+        const filterVal = classFilter ? classFilter.value : "all";
+        
         const table = document.getElementById("reportTable");
         if (!table) return;
         const tbody = table.getElementsByTagName("tbody")[0];
         if (!tbody) return;
         const tr = tbody.getElementsByTagName("tr");
+        let visibleCount = 0;
+        
         for (let i = 0; i < tr.length; i++) {
             if (tr[i].classList.contains('table-light')) continue;
-            const txtValue = tr[i].textContent || tr[i].innerText;
-            if (txtValue.toLowerCase().indexOf(filter) > -1) {
+            
+            let showByText = true;
+            if (filterText !== "") {
+                const txtValue = tr[i].textContent || tr[i].innerText;
+                if (txtValue.toLowerCase().indexOf(filterText) === -1) {
+                    showByText = false;
+                }
+            }
+            
+            let showByClass = true;
+            if (filterVal !== "all") {
+                const classes = tr[i].getAttribute('data-classifications') || '[]';
+                const isSen = tr[i].getAttribute('data-sen') === '1';
+                const isPwd = tr[i].getAttribute('data-pwd') === '1';
+                const isSolo = tr[i].getAttribute('data-solo') === '1';
+                
+                if (filterVal === 'senior') showByClass = isSen || classes.includes('Senior Citizen');
+                else if (filterVal === 'pwd') showByClass = isPwd || classes.includes('PWD');
+                else if (filterVal === 'solo_parent') showByClass = isSolo || classes.includes('Solo Parent');
+                else if (filterVal === 'labor') showByClass = classes.includes('Labor/Employed') || classes.includes('Labor\\\\/Employed');
+                else if (filterVal === 'unemployed') showByClass = classes.includes('Unemployed');
+                else if (filterVal === 'ofw') showByClass = classes.includes('OFW');
+                else if (filterVal === 'osy') showByClass = classes.includes('Out of School Youth (OSY)');
+                else if (filterVal === 'osc') showByClass = classes.includes('Out of School Children (OSC)');
+                else if (filterVal === 'indigenous') showByClass = classes.includes('Indigenous People');
+            }
+            
+            if (showByText && showByClass) {
                 tr[i].style.display = "";
+                visibleCount++;
             } else {
                 tr[i].style.display = "none";
             }
         }
+        
+        const countEl = document.getElementById("reportCount");
+        if (countEl) countEl.innerText = visibleCount;
     }
 
     function printSingleHousehold(address) {
@@ -845,8 +904,8 @@ require_once __DIR__ . '/header.php';
     <meta charset="UTF-8">
     <title>${label} - Print</title>
     <style>
-        @page { size: landscape; margin: 0.5in; }
-        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 10pt; line-height: 1.2; padding: 0; margin: 0; }
+        @page { size: landscape; margin: 0; }
+        body { font-family: "Arial Narrow", Arial, sans-serif; font-size: 10pt; line-height: 1.2; padding: 0.5in; margin: 0; }
         .form-header { font-size: 9pt; font-weight: bold; margin-bottom: 5px; }
         .main-title { text-align: center; font-size: 12pt; font-weight: bold; text-decoration: underline; margin-bottom: 15px; }
         .info-grid { display: grid; grid-template-columns: 180px 1fr; margin-bottom: 15px; row-gap: 2px; }
@@ -856,7 +915,8 @@ require_once __DIR__ . '/header.php';
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #000; padding: 4px 6px; text-align: center; vertical-align: middle; }
         th { background: #f8f9fa; font-size: 8pt; font-weight: bold; }
-        td { font-size: 8.5pt; height: 25px; }
+        td { font-size: 8.5pt; height: 25px; text-transform: capitalize; }
+        td.lowercase { text-transform: lowercase; }
         
         .name-cols { width: 80px; }
         .indicators-col { width: 120px; font-size: 7.5pt; text-align: left; }
@@ -1017,8 +1077,8 @@ function printRbiFormB(data, label) {
     }
     let html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>RBI Form B - Print</title>
     <style>
-        @page { size: portrait; margin: 0.5in; }
-        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; padding: 0; margin: 0; }
+        @page { size: portrait; margin: 0; }
+        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; padding: 0.5in; margin: 0; }
         .form-header { font-size: 9pt; font-weight: bold; }
         .main-title { text-align: center; font-size: 13pt; font-weight: bold; margin: 15px 0; }
         .head-info { display: flex; justify-content: space-between; font-size: 9pt; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
@@ -1026,11 +1086,13 @@ function printRbiFormB(data, label) {
         .head-line { display: flex; border-bottom: 1px solid #000; margin-bottom: 4px; }
         .head-label { width: 100px; font-weight: bold; }
         
-        .box-section { border: 2px solid #000; padding: 10px; margin-bottom: 20px; min-height: 850px; position: relative; }
+        .box-section { border: 2px solid #000; padding: 10px; margin-bottom: 20px; min-height: 800px; position: relative; }
         .section-title { text-align: center; font-weight: bold; border-bottom: 1px solid #000; margin: -10px -10px 10px -10px; padding: 5px; }
+        .notice { font-size: 7pt; color: #444; margin-top: 15px; line-height: 1.2; text-align: justify; }
         
         .field-group { margin-bottom: 15px; }
-        .field-box { border: 1px solid #000; min-height: 22px; padding: 2px 8px; margin-top: 2px; background: #fff; font-weight: bold; }
+        .field-box { border: 1px solid #000; min-height: 22px; padding: 2px 8px; margin-top: 2px; background: #fff; font-weight: bold; text-transform: capitalize; }
+        .field-box.lowercase { text-transform: lowercase; }
         .field-sub { font-size: 7.5pt; color: #333; margin-top: 1px; }
         
         .row { display: flex; gap: 10px; margin-bottom: 10px; }
@@ -1039,12 +1101,12 @@ function printRbiFormB(data, label) {
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 8px; font-weight: bold; }
         .checkbox { border: 1px solid #000; width: 15px; height: 15px; display: inline-block; vertical-align: middle; margin-right: 5px; text-align: center; line-height: 14px; }
         
-        .footer-sig { display: flex; justify-content: space-between; margin-top: 30px; }
+        .footer-sig { display: flex; justify-content: space-between; margin-top: 15px; }
         .sig-block { width: 45%; text-align: center; }
-        .sig-line { border-bottom: 1px solid #000; margin-top: 35px; min-height: 20px; }
+        .sig-line { border-bottom: 1px solid #000; margin-top: 20px; min-height: 20px; }
         .sig-label { font-size: 8pt; margin-top: 4px; }
         
-        .thumb-section { display: flex; gap: 20px; margin-top: 20px; }
+        .thumb-section { display: flex; gap: 20px; margin-top: 10px; }
         .thumb-box { width: 80px; height: 100px; border: 1px solid #000; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px; font-size: 8pt; text-align: center; }
         
         @media print { .page-break { page-break-after: always; } }
@@ -1168,12 +1230,12 @@ function printRbiFormB(data, label) {
                         <div class="field-sub">(Contact Number)</div>
                     </div>
                     <div class="col">
-                        <div class="field-box">${esc(r.email || '')}</div>
+                        <div class="field-box lowercase">${esc(r.email || '')}</div>
                         <div class="field-sub">(E-mail Address)</div>
                     </div>
                 </div>
 
-                <div style="font-weight: bold; margin-top: 25px; border-top: 1px solid #000; padding-top: 10px;">HIGHEST EDUCATIONAL ATTAINMENT</div>
+                <div style="font-weight: bold; margin-top: 15px; border-top: 1px solid #000; padding-top: 10px;">HIGHEST EDUCATIONAL ATTAINMENT</div>
                 <div class="checkbox-group">
                     ${['Elementary', 'High School', 'College', 'Post Grad', 'Vocational'].map(opt => {
                         const isMatch = baseEdu.includes(opt.toUpperCase());
@@ -1187,7 +1249,7 @@ function printRbiFormB(data, label) {
                     <div class="col"><div class="checkbox">${isGrad ? '✓' : ''}</div> Graduate</div>
                 </div>
 
-                <div style="font-size: 8.5pt; margin-top: 40px; font-style: italic; color: #444; border-top: 1px solid #eee; padding-top: 10px;">
+                <div style="font-size: 8.5pt; margin-top: 15px; font-style: italic; color: #444; border-top: 1px solid #eee; padding-top: 10px; line-height: 1.2; text-align: justify;">
                     I hereby certify that the above information is true and correct to the best of my knowledge. I understand that for the Barangay to carry out its mandate pursuant to Section 394 (d)(6) of the Local Goverment Code of 1991, they must necessarily process my personal information for easy identification of inhabitants, as a tool in planning, and as an updated reference in the number of inhabitants of the Barangay. Therefore, I grant my consent and recognize the authority of the Barangay to process my personal information, subject to the provision of the Philippine Data Privacy Act of 2012.
                 </div>
 
@@ -1202,7 +1264,7 @@ function printRbiFormB(data, label) {
                     </div>
                 </div>
 
-                <div style="display: flex; justify-content: space-between; align-items: flex-end; position: absolute; bottom: 20px; left: 10px; right: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-end; position: absolute; bottom: 10px; left: 10px; right: 10px;">
                     <div style="width: 55%;">
                         <div style="font-size: 8pt; margin-bottom: 5px;">Attested By:</div>
                         <div style="border-bottom: 1px solid #000; width: 250px; min-height: 20px;"></div>
@@ -1221,7 +1283,7 @@ function printRbiFormB(data, label) {
                     </div>
                 </div>
             </div>
-            <div style="text-align: right; font-size: 7pt; font-style: italic; color: #888;">Computer Generated</div>
+            <!-- Removed Computer Generated text per request -->
         </div>`;
     });
 
@@ -1250,8 +1312,8 @@ function printRbiFormC(data, label) {
 
     win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>RBI Form C - Print</title>
     <style>
-        @page { size: portrait; margin: 0.25in; }
-        body { font-family: Arial, sans-serif; font-size: 8.5pt; line-height: 1.0; padding: 0; margin: 0; color: #000; }
+        @page { size: portrait; margin: 0; }
+        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.3; padding: 0.25in; margin: 0; color: #000; }
         .header { text-align: center; margin-bottom: 8px; position: relative; }
         .form-id { text-align: left; font-size: 7pt; font-weight: bold; position: absolute; top: -15px; left: 0; }
         .main-title { font-size: 11pt; font-weight: bold; text-decoration: underline; margin-top: 0; }

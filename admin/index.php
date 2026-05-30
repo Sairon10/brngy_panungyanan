@@ -75,6 +75,24 @@ $pwd_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE is_
 $senior_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE is_senior = 1 $date_where")->fetch()['c'] ?? 0);
 $senior_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE is_senior = 1 $date_where")->fetch()['c'] ?? 0);
 
+$labor_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE classification LIKE '%Labor%Employed%' $date_where")->fetch()['c'] ?? 0);
+$labor_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE classification LIKE '%Labor%Employed%' $date_where")->fetch()['c'] ?? 0);
+
+$unemployed_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE classification LIKE '%Unemployed%' $date_where")->fetch()['c'] ?? 0);
+$unemployed_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE classification LIKE '%Unemployed%' $date_where")->fetch()['c'] ?? 0);
+
+$ofw_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE classification LIKE '%OFW%' $date_where")->fetch()['c'] ?? 0);
+$ofw_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE classification LIKE '%OFW%' $date_where")->fetch()['c'] ?? 0);
+
+$osy_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE classification LIKE '%Out of School Youth%' $date_where")->fetch()['c'] ?? 0);
+$osy_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE classification LIKE '%Out of School Youth%' $date_where")->fetch()['c'] ?? 0);
+
+$osc_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE classification LIKE '%Out of School Children%' $date_where")->fetch()['c'] ?? 0);
+$osc_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE classification LIKE '%Out of School Children%' $date_where")->fetch()['c'] ?? 0);
+
+$indigenous_rr = (int) ($pdo->query("SELECT COUNT(*) AS c FROM resident_records WHERE classification LIKE '%Indigenous People%' $date_where")->fetch()['c'] ?? 0);
+$indigenous_fm = (int) ($pdo->query("SELECT COUNT(*) AS c FROM family_members WHERE classification LIKE '%Indigenous People%' $date_where")->fetch()['c'] ?? 0);
+
 // For residents table (which lacks created_at), we join with users table
 $res_date_where = !empty($date_where) ? str_replace('created_at', 'u.created_at', $date_where) : "";
 
@@ -83,16 +101,28 @@ $stats = [
 	'solo_parents' => $solo_parents_rr + $solo_parents_fm,
 	'pwd' => $pwd_rr + $pwd_fm,
 	'senior_citizens' => $senior_rr + $senior_fm,
+	'labor' => $labor_rr + $labor_fm,
+	'unemployed' => $unemployed_rr + $unemployed_fm,
+	'ofw' => $ofw_rr + $ofw_fm,
+	'osy' => $osy_rr + $osy_fm,
+	'osc' => $osc_rr + $osc_fm,
+	'indigenous' => $indigenous_rr + $indigenous_fm,
 	'pending_verifications' => (int) ($pdo->query("SELECT COUNT(*) AS c FROM residents r JOIN users u ON r.user_id = u.id WHERE r.verification_status='pending' $res_date_where")->fetch()['c'] ?? 0),
 ];
 
 // Overview pie chart data
-$overview_pie_labels = ['Total Residents', 'Solo Parent', 'PWD', 'Senior Citizen', 'Pending Verifications'];
+$overview_pie_labels = ['Total Residents', 'Solo Parent', 'PWD', 'Senior Citizen', 'Labor', 'Unemployed', 'OFW', 'OSY', 'OSC', 'Indigenous', 'Pending Verifications'];
 $overview_pie_data = [
 	$stats['total_residents'],
 	$stats['solo_parents'],
 	$stats['pwd'],
 	$stats['senior_citizens'],
+	$stats['labor'],
+	$stats['unemployed'],
+	$stats['ofw'],
+	$stats['osy'],
+	$stats['osc'],
+	$stats['indigenous'],
 	$stats['pending_verifications'],
 ];
 ?>
@@ -157,92 +187,37 @@ $overview_pie_data = [
 					</div>
 					<!-- Right Side: Statistics Cards -->
 					<div class="col-xl-7 col-lg-6">
-						<div class="row g-3">
-							<!-- Total Residents -->
-							<div class="col-sm-4">
-								<a href="resident_records.php" class="admin-stats-link text-decoration-none">
-									<div class="admin-stats-card success mb-0"
-										style="background: linear-gradient(135deg, #10b981, #059669);">
-										<div class="d-flex align-items-center p-3 text-white">
-											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-users"></i>
-											</div>
-											<div>
-												<div class="stats-number fs-4 fw-bold">
-													<?php echo $stats['total_residents']; ?></div>
-												<div class="stats-label small opacity-75">Total Residents</div>
-											</div>
-										</div>
-									</div>
-								</a>
-							</div>
-							<!-- Solo Parent -->
-							<div class="col-sm-4">
-								<a href="resident_records.php?filter=solo_parent" class="admin-stats-link text-decoration-none">
-									<div class="admin-stats-card warning mb-0"
-										style="background: linear-gradient(135deg, #a855f7, #7c3aed);">
-										<div class="d-flex align-items-center p-3 text-white">
-											<div class="stats-icon me-3 fs-3 opacity-75"><i
-													class="fas fa-user-friends"></i></div>
-											<div>
-												<div class="stats-number fs-4 fw-bold">
-													<?php echo $stats['solo_parents']; ?></div>
-												<div class="stats-label small opacity-75">Solo Parent</div>
-											</div>
-										</div>
-									</div>
-								</a>
-							</div>
-							<!-- PWD -->
-							<div class="col-sm-4">
-								<a href="resident_records.php?filter=pwd" class="admin-stats-link text-decoration-none">
-									<div class="admin-stats-card info mb-0"
-										style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
-										<div class="d-flex align-items-center p-3 text-white">
-											<div class="stats-icon me-3 fs-3 opacity-75"><i
-													class="fas fa-wheelchair"></i></div>
-											<div>
-												<div class="stats-number fs-4 fw-bold"><?php echo $stats['pwd']; ?>
+						<div class="row g-2">
+							<?php
+							$cards = [
+								['url' => 'resident_records.php', 'color1' => '#10b981', 'color2' => '#059669', 'icon' => 'fa-users', 'val' => $stats['total_residents'], 'label' => 'Total Residents'],
+								['url' => 'resident_records.php?filter=solo_parent', 'color1' => '#a855f7', 'color2' => '#7c3aed', 'icon' => 'fa-user-friends', 'val' => $stats['solo_parents'], 'label' => 'Solo Parent'],
+								['url' => 'resident_records.php?filter=pwd', 'color1' => '#06b6d4', 'color2' => '#0891b2', 'icon' => 'fa-wheelchair', 'val' => $stats['pwd'], 'label' => 'PWD'],
+								['url' => 'resident_records.php?filter=senior', 'color1' => '#f59e0b', 'color2' => '#d97706', 'icon' => 'fa-user-clock', 'val' => $stats['senior_citizens'], 'label' => 'Senior Citizen'],
+								['url' => 'id_verifications.php', 'color1' => '#f43f5e', 'color2' => '#be123c', 'icon' => 'fa-id-badge', 'val' => $stats['pending_verifications'], 'label' => 'Pending Verifs'],
+								['url' => 'resident_records.php?filter=labor', 'color1' => '#3b82f6', 'color2' => '#2563eb', 'icon' => 'fa-hard-hat', 'val' => $stats['labor'], 'label' => 'Employed'],
+								['url' => 'resident_records.php?filter=unemployed', 'color1' => '#64748b', 'color2' => '#475569', 'icon' => 'fa-user-slash', 'val' => $stats['unemployed'], 'label' => 'Unemployed'],
+								['url' => 'resident_records.php?filter=ofw', 'color1' => '#22c55e', 'color2' => '#16a34a', 'icon' => 'fa-plane', 'val' => $stats['ofw'], 'label' => 'OFW'],
+								['url' => 'resident_records.php?filter=osy', 'color1' => '#ec4899', 'color2' => '#be185d', 'icon' => 'fa-graduation-cap', 'val' => $stats['osy'], 'label' => 'OSY'],
+								['url' => 'resident_records.php?filter=osc', 'color1' => '#f97316', 'color2' => '#ea580c', 'icon' => 'fa-school', 'val' => $stats['osc'], 'label' => 'OSC'],
+								['url' => 'resident_records.php?filter=indigenous', 'color1' => '#0f172a', 'color2' => '#1e293b', 'icon' => 'fa-campground', 'val' => $stats['indigenous'], 'label' => 'Indigenous'],
+							];
+							?>
+							<?php foreach ($cards as $c): ?>
+								<div class="col-sm-4 col-6">
+									<a href="<?php echo htmlspecialchars($c['url']); ?>" class="admin-stats-link text-decoration-none">
+										<div class="admin-stats-card mb-0 shadow-sm" style="background: linear-gradient(135deg, <?php echo $c['color1']; ?>, <?php echo $c['color2']; ?>); transition: transform 0.2s;">
+											<div class="d-flex align-items-center p-2 text-white">
+												<div class="stats-icon me-2 fs-5 opacity-75"><i class="fas <?php echo $c['icon']; ?>"></i></div>
+												<div>
+													<div class="stats-number fs-5 fw-bold" style="line-height:1.2;"><?php echo $c['val']; ?></div>
+													<div class="stats-label opacity-75 text-truncate" style="font-size:0.7rem; max-width:80px;" title="<?php echo htmlspecialchars($c['label']); ?>"><?php echo htmlspecialchars($c['label']); ?></div>
 												</div>
-												<div class="stats-label small opacity-75">PWD</div>
 											</div>
 										</div>
-									</div>
-								</a>
-							</div>
-							<!-- Senior Citizen -->
-							<div class="col-sm-6">
-								<a href="resident_records.php?filter=senior" class="admin-stats-link text-decoration-none">
-									<div class="admin-stats-card mb-0"
-										style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-										<div class="d-flex align-items-center p-3 text-white">
-											<div class="stats-icon me-3 fs-3 opacity-75"><i
-													class="fas fa-user-clock"></i></div>
-											<div>
-												<div class="stats-number fs-4 fw-bold">
-													<?php echo $stats['senior_citizens']; ?></div>
-												<div class="stats-label small opacity-75">Senior Citizen</div>
-											</div>
-										</div>
-									</div>
-								</a>
-							</div>
-							<!-- Pending Verifications -->
-							<div class="col-sm-6">
-								<a href="id_verifications.php" class="admin-stats-link text-decoration-none">
-									<div class="admin-stats-card mb-0"
-										style="background: linear-gradient(135deg, #f43f5e, #be123c);">
-										<div class="d-flex align-items-center p-3 text-white">
-											<div class="stats-icon me-3 fs-3 opacity-75"><i class="fas fa-id-badge"></i>
-											</div>
-											<div>
-												<div class="stats-number fs-4 fw-bold">
-													<?php echo $stats['pending_verifications']; ?></div>
-												<div class="stats-label small opacity-75">Pending Verifications</div>
-											</div>
-										</div>
-									</div>
-								</a>
-							</div>
+									</a>
+								</div>
+							<?php endforeach; ?>
 						</div>
 					</div>
 				</div>
@@ -449,7 +424,7 @@ $overview_pie_data = [
 				labels: <?php echo json_encode($overview_pie_labels); ?>,
 				datasets: [{
 					data: <?php echo json_encode($overview_pie_data); ?>,
-					backgroundColor: ['#10b981', '#a855f7', '#06b6d4', '#f59e0b', '#f43f5e']
+					backgroundColor: ['#10b981', '#a855f7', '#06b6d4', '#f59e0b', '#3b82f6', '#64748b', '#22c55e', '#ec4899', '#f97316', '#0f172a', '#f43f5e']
 				}]
 			},
 			options: {
