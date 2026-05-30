@@ -145,6 +145,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			if ($errors) {
 				// Do not proceed with registration
 			} else {
+				$pdo->beginTransaction();
+				$inTransaction = true;
+				
 				// Registration is valid, create user account
 				$hash = password_hash($password, PASSWORD_BCRYPT);
 				$stmt = $pdo->prepare('INSERT INTO users (email, password_hash, full_name, first_name, last_name, middle_name, suffix, role) VALUES (?,?,?,?,?,?,?,\'resident\')');
@@ -168,7 +171,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$is_senior
 				]);
 
-				// Send Registration Notifications
+				$pdo->commit();
+
+				// Send Registration Notifications (Do this after commit to ensure DB is saved)
 				if (!empty($email)) {
 					send_registration_email($email, $first_name);
 				}
@@ -180,6 +185,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				redirect('login.php');
 			}
 		} catch (Exception $e) {
+			if (isset($inTransaction) && $inTransaction) {
+				$pdo->rollBack();
+			}
 			$errors[] = 'Server error. Please try again. ' . $e->getMessage();
 		}
 	}
