@@ -18,36 +18,39 @@ $db_start = $start_date . ' 00:00:00';
 $db_end = $end_date . ' 23:59:59';
 
 // 1. Residents Demographics (Unified Count)
-$stmt = $pdo->query("
+$stmt = $pdo->prepare("
     SELECT 
-        (SELECT COUNT(*) FROM users WHERE role = 'resident') +
-        (SELECT COUNT(*) FROM family_members) +
+        (SELECT COUNT(*) FROM users WHERE role IN ('resident', 'admin', 'sub_admin') AND created_at BETWEEN ? AND ?) +
+        (SELECT COUNT(*) FROM family_members WHERE created_at BETWEEN ? AND ?) +
         (SELECT COUNT(*) FROM resident_records rr 
-         WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role = 'resident' AND (u.email = rr.email OR u.full_name = rr.full_name)))
+         WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name)))
 ");
+$stmt->execute([$db_start, $db_end, $db_start, $db_end, $db_start, $db_end]);
 $total_residents = $stmt->fetchColumn();
 
-$stmt = $pdo->query("
+$stmt = $pdo->prepare("
     SELECT sex, SUM(cnt) as count FROM (
-        SELECT sex, COUNT(*) as cnt FROM residents WHERE verification_status = 'verified' GROUP BY sex
+        SELECT r.sex, COUNT(*) as cnt FROM residents r JOIN users u ON r.user_id = u.id WHERE r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ? GROUP BY r.sex
         UNION ALL
-        SELECT sex, COUNT(*) as cnt FROM family_members GROUP BY sex
+        SELECT sex, COUNT(*) as cnt FROM family_members WHERE created_at BETWEEN ? AND ? GROUP BY sex
     ) t GROUP BY sex
 ");
+$stmt->execute([$db_start, $db_end, $db_start, $db_end]);
 $gender_stats = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $male_res = $gender_stats['Male'] ?? 0;
 $female_res = $gender_stats['Female'] ?? 0;
 
 // Age and special demographics - Combined from residents and family members
-$stmt = $pdo->query("
+$stmt = $pdo->prepare("
     SELECT 
-        (SELECT COUNT(*) FROM residents WHERE is_senior = 1 AND verification_status = 'verified') + 
-        (SELECT COUNT(*) FROM family_members WHERE is_senior = 1) as seniors,
-        (SELECT COUNT(*) FROM residents WHERE is_pwd = 1 AND verification_status = 'verified') + 
-        (SELECT COUNT(*) FROM family_members WHERE is_pwd = 1) as pwds,
-        (SELECT COUNT(*) FROM residents WHERE is_solo_parent = 1 AND verification_status = 'verified') +
-        (SELECT COUNT(*) FROM family_members WHERE is_solo_parent = 1) as solo_parents
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_senior = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?) + 
+        (SELECT COUNT(*) FROM family_members WHERE is_senior = 1 AND created_at BETWEEN ? AND ?) as seniors,
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_pwd = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?) + 
+        (SELECT COUNT(*) FROM family_members WHERE is_pwd = 1 AND created_at BETWEEN ? AND ?) as pwds,
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?) +
+        (SELECT COUNT(*) FROM family_members WHERE is_solo_parent = 1 AND created_at BETWEEN ? AND ?) as solo_parents
 ");
+$stmt->execute([$db_start, $db_end, $db_start, $db_end, $db_start, $db_end, $db_start, $db_end, $db_start, $db_end, $db_start, $db_end]);
 $special_sectors = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 2. Document Requests (Summary Stats - Keep for the top cards)

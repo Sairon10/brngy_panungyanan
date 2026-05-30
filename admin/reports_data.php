@@ -14,90 +14,95 @@ header('Content-Type: application/json');
 
 switch ($type) {
     case 'male':
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.sex = 'Male' AND r.verification_status = 'verified'
+            WHERE r.sex = 'Male' AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.sex = 'Male'
+            WHERE fm.sex = 'Male' AND fm.created_at BETWEEN ? AND ?
             ORDER BY full_name
         ");
+        $stmt->execute([$start, $end, $start, $end]);
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
     case 'female':
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.sex = 'Female' AND r.verification_status = 'verified'
+            WHERE r.sex = 'Female' AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.sex = 'Female'
+            WHERE fm.sex = 'Female' AND fm.created_at BETWEEN ? AND ?
             ORDER BY full_name
         ");
+        $stmt->execute([$start, $end, $start, $end]);
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
     case 'seniors':
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.is_senior = 1 AND r.verification_status = 'verified'
+            WHERE r.is_senior = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.is_senior = 1
+            WHERE fm.is_senior = 1 AND fm.created_at BETWEEN ? AND ?
             ORDER BY full_name
         ");
+        $stmt->execute([$start, $end, $start, $end]);
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
     case 'pwds':
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.is_pwd = 1 AND r.verification_status = 'verified'
+            WHERE r.is_pwd = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.is_pwd = 1
+            WHERE fm.is_pwd = 1 AND fm.created_at BETWEEN ? AND ?
             ORDER BY full_name
         ");
+        $stmt->execute([$start, $end, $start, $end]);
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
     case 'solo_parents':
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified'
+            WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.is_solo_parent = 1
+            WHERE fm.is_solo_parent = 1 AND fm.created_at BETWEEN ? AND ?
             ORDER BY full_name
         ");
+        $stmt->execute([$start, $end, $start, $end]);
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
     case 'total_residents':
-        $stmt = $pdo->query("
+        $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.phone, '' as owner_name, r.classification, r.is_senior, r.is_pwd, r.is_solo_parent
             FROM users u LEFT JOIN residents r ON u.id = r.user_id
-            WHERE u.role IN ('resident', 'admin', 'sub_admin')
+            WHERE u.role IN ('resident', 'admin', 'sub_admin') AND u.created_at BETWEEN ? AND ?
             
             UNION ALL
             
@@ -105,15 +110,17 @@ switch ($type) {
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
+            WHERE fm.created_at BETWEEN ? AND ?
             
             UNION ALL
             
             SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.phone, '' as owner_name, rr.classification, rr.is_senior, rr.is_pwd, rr.is_solo_parent
             FROM resident_records rr
-            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
+            WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name))
             
             ORDER BY full_name
         ");
+        $stmt->execute([$start, $end, $start, $end, $start, $end]);
         echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
         break;
 
