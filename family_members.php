@@ -19,9 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
         $family_action = $_POST['family_action'];
 
         if ($family_action === 'add_family_member' || $family_action === 'edit_family_member') {
-            $fname = trim($_POST['fm_first_name'] ?? '');
-            $mname = trim($_POST['fm_middle_name'] ?? '');
-            $lname = trim($_POST['fm_last_name'] ?? '');
+            $fname = ucwords(strtolower(trim($_POST['fm_first_name'] ?? '')));
+            $mname = ucwords(strtolower(trim($_POST['fm_middle_name'] ?? '')));
+            $lname = ucwords(strtolower(trim($_POST['fm_last_name'] ?? '')));
             $fmsuffix = trim($_POST['fm_suffix'] ?? '');
             $fm_name = implode(' ', array_filter([$fname, $mname, $lname, $fmsuffix]));
             $fm_relationship = trim($_POST['fm_relationship'] ?? '');
@@ -37,23 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
             $fm_edu_status = trim($_POST['fm_educational_status'] ?? '');
             $fm_id_type = trim($_POST['fm_id_type'] ?? '');
 
-            // Boolean flags
-            $fm_is_pwd = isset($_POST['fm_is_pwd']) ? 1 : 0;
-            $fm_is_senior = isset($_POST['fm_is_senior']) ? 1 : 0;
-            $fm_is_solo_parent = isset($_POST['fm_is_solo_parent']) ? 1 : 0;
-            $fm_is_others = isset($_POST['fm_is_others']) ? 1 : 0;
-
-            // Classifications as JSON (for RBI compatibility)
-            $classifications = [];
-            if ($fm_is_pwd)
-                $classifications[] = 'PWD';
-            if ($fm_is_senior)
-                $classifications[] = 'Senior';
-            if ($fm_is_solo_parent)
-                $classifications[] = 'Solo Parent';
-            if ($fm_is_others)
-                $classifications[] = 'Others';
+            $classifications = isset($_POST['classifications']) ? $_POST['classifications'] : [];
             $classification_json = json_encode($classifications);
+
+            // Boolean flags for compatibility
+            $fm_is_pwd = in_array('PWD', $classifications) ? 1 : 0;
+            $fm_is_senior = in_array('Senior Citizen', $classifications) ? 1 : 0;
+            $fm_is_solo_parent = in_array('Solo Parent', $classifications) ? 1 : 0;
+            $fm_is_others = in_array('Indigenous People', $classifications) ? 1 : 0;
 
             if ($fm_name === '' || $fm_relationship === '') {
                 $family_msg = 'First name, last name, and relationship are required.';
@@ -510,52 +501,22 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                             <div class="row g-3">
                                 <div class="col-md-12">
                                     <div class="row g-2">
-                                        <div class="col-md-3">
-                                            <div class="classification-box rounded-3 border p-3">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="fm_is_pwd"
-                                                        id="fm_is_pwd" value="1">
-                                                    <label class="form-check-label fw-bold" for="fm_is_pwd">
-                                                        <i class="fas fa-wheelchair text-blue-500 me-2"></i>PWD
-                                                    </label>
+                                        <?php
+                                        $all_classes = [
+                                            'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
+                                            'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                        ];
+                                        foreach ($all_classes as $idx => $cls): ?>
+                                        <div class="col-md-4">
+                                            <div class="classification-box rounded-3 border p-3 h-100 d-flex align-items-center">
+                                                <div class="form-check m-0">
+                                                    <input class="form-check-input ms-0 me-2" type="checkbox" name="classifications[]"
+                                                        id="fm_cls_<?php echo $idx; ?>" value="<?php echo htmlspecialchars($cls); ?>">
+                                                    <label class="form-check-label fw-bold small" for="fm_cls_<?php echo $idx; ?>"><?php echo $cls; ?></label>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="classification-box rounded-3 border p-3">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="fm_is_senior"
-                                                        id="fm_is_senior" value="1">
-                                                    <label class="form-check-label fw-bold" for="fm_is_senior">
-                                                        <i class="fas fa-user-clock text-orange-500 me-2"></i>Senior
-                                                        Citizen
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="classification-box rounded-3 border p-3">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox"
-                                                        name="fm_is_solo_parent" id="fm_is_solo_parent" value="1">
-                                                    <label class="form-check-label fw-bold" for="fm_is_solo_parent">
-                                                        <i class="fas fa-user-friends text-purple-500 me-2"></i>Solo
-                                                        Parent
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <div class="classification-box rounded-3 border p-3">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="fm_is_others"
-                                                        id="fm_is_others" value="1">
-                                                    <label class="form-check-label fw-bold" for="fm_is_others">
-                                                        <i class="fas fa-ellipsis-h text-red-500 me-2"></i>Others
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <?php endforeach; ?>
                                     </div>
                                 </div>
                                 <div class="col-md-12 mt-3">
@@ -745,11 +706,24 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
         document.getElementById('fm_educational_status').value = fm.educational_status || '';
         document.getElementById('fm_id_type').value = fm.id_type || '';
 
-        // Checkboxes
-        document.getElementById('fm_is_pwd').checked = fm.is_pwd == 1;
-        document.getElementById('fm_is_senior').checked = fm.is_senior == 1;
-        document.getElementById('fm_is_solo_parent').checked = fm.is_solo_parent == 1;
-        document.getElementById('fm_is_others').checked = fm.is_others == 1;
+        // Classifications
+        document.querySelectorAll('input[name="classifications[]"]').forEach(cb => cb.checked = false);
+        if (fm.classification) {
+            try {
+                let parsed = JSON.parse(fm.classification);
+                if (typeof parsed === 'string') parsed = JSON.parse(parsed); // Handle double encoding
+                if (Array.isArray(parsed)) {
+                    document.querySelectorAll('input[name="classifications[]"]').forEach(cb => {
+                        if (parsed.includes(cb.value)) cb.checked = true;
+                    });
+                }
+            } catch(e) {
+                let parts = fm.classification.split(',').map(s => s.trim());
+                document.querySelectorAll('input[name="classifications[]"]').forEach(cb => {
+                    if (parts.includes(cb.value)) cb.checked = true;
+                });
+            }
+        }
 
         // IDs are optional on edit unless re-uploading
         document.getElementById('fm_id_front').required = false;

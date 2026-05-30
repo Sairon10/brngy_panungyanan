@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $religion = trim($_POST['religion'] ?? '');
             $occupation = trim($_POST['occupation'] ?? '');
             $philsys_card_no = trim($_POST['philsys_card_no'] ?? '');
+            $birth_place = trim($_POST['birth_place'] ?? '');
             
             $edu_base = trim($_POST['educational_attainment'] ?? '');
             $edu_status = trim($_POST['edu_status'] ?? '');
@@ -94,8 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($errors)) {
-                $sql = 'UPDATE family_members SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, relationship=?, birthdate=?, sex=?, citizenship=?, civil_status=?, religion=?, occupation=?, educational_attainment=?, classification=?, is_pwd=?, is_senior=?, is_solo_parent=?, is_others=?, philsys_card_no=?';
-                $params = [$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $relationship, $birthdate, $sex, $citizenship, $civil_status, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json, $is_pwd, $is_senior, $is_solo_parent, $is_others, $philsys_card_no];
+                $sql = 'UPDATE family_members SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, relationship=?, birthdate=?, sex=?, citizenship=?, civil_status=?, religion=?, occupation=?, educational_attainment=?, classification=?, is_pwd=?, is_senior=?, is_solo_parent=?, is_others=?, philsys_card_no=?, birth_place=?';
+                $params = [$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $relationship, $birthdate, $sex, $citizenship, $civil_status, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json, $is_pwd, $is_senior, $is_solo_parent, $is_others, $philsys_card_no, $birth_place ?: null];
 
                 if ($avatarPath !== null) {
                     $sql .= ', avatar=?';
@@ -152,6 +153,12 @@ $data = $stmt->fetch();
 if (!$data) {
     redirect('family_members.php');
 }
+
+$head_stmt = $pdo->prepare('SELECT purok, address FROM residents WHERE user_id = ?');
+$head_stmt->execute([$_SESSION['user_id']]);
+$head_data = $head_stmt->fetch();
+$head_purok = $head_data['purok'] ?? '';
+$head_address = $head_data['address'] ?? '';
 
 $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F' . str_pad((string)$fm_id, 4, '0', STR_PAD_LEFT);
 ?>
@@ -306,12 +313,18 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                                 value="<?php echo htmlspecialchars($data['philsys_card_no'] ?? ''); ?>"
                                 placeholder="e.g. 09123456789" required>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birthdate <span
                                     class="text-danger">*</span></label>
                             <input type="date" name="birthdate" id="birthdate" class="form-control"
                                 value="<?php echo htmlspecialchars($data['birthdate'] ?? ''); ?>" required>
                             <div class="form-text small text-muted">Must be at least 18 years old</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birth Place</label>
+                            <input type="text" name="birth_place" class="form-control"
+                                value="<?php echo htmlspecialchars(ucwords(strtolower($data['birth_place'] ?? ''))); ?>"
+                                placeholder="e.g. Manila">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Sex <span
@@ -327,10 +340,10 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Citizenship <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="citizenship" class="form-control"
-                                value="<?php echo htmlspecialchars($data['citizenship'] ?? ''); ?>"
+                                value="<?php echo htmlspecialchars(ucwords(strtolower($data['citizenship'] ?? ''))); ?>"
                                 placeholder="e.g. Filipino" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Civil Status <span
                                     class="text-danger">*</span></label>
                             <select name="civil_status" class="form-select" required>
@@ -342,26 +355,26 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok</label>
-                            <input type="text" name="purok" class="form-control"
-                                value="<?php echo htmlspecialchars($data['purok'] ?? ''); ?>"
-                                placeholder="e.g. Purok 1, Purok 2">
+                            <input type="text" name="purok" class="form-control bg-light"
+                                value="<?php echo htmlspecialchars($head_purok); ?>"
+                                placeholder="e.g. Purok 1, Purok 2" readonly title="Auto-filled from Household Head">
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Complete Address</label>
-                            <input type="text" name="address" class="form-control"
-                                value="<?php echo htmlspecialchars($data['address'] ?? ''); ?>"
-                                placeholder="e.g. 123 Main St., Panungyanan, General Trias, Cavite">
+                            <input type="text" name="address" class="form-control bg-light"
+                                value="<?php echo htmlspecialchars($head_address); ?>"
+                                placeholder="e.g. 123 Main St., Panungyanan, General Trias, Cavite" readonly title="Auto-filled from Household Head">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Religion</label>
                             <input type="text" name="religion" class="form-control"
-                                value="<?php echo htmlspecialchars($data['religion'] ?? ''); ?>"
+                                value="<?php echo htmlspecialchars(ucwords(strtolower($data['religion'] ?? ''))); ?>"
                                 placeholder="e.g. Roman Catholic">
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Profession / Occupation</label>
                             <input type="text" name="occupation" class="form-control"
-                                value="<?php echo htmlspecialchars($data['occupation'] ?? ''); ?>"
+                                value="<?php echo htmlspecialchars(ucwords(strtolower($data['occupation'] ?? ''))); ?>"
                                 placeholder="e.g. Teacher, Farmer">
                         </div>
                         <div class="col-12">
@@ -371,14 +384,14 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                                     <div class="d-flex flex-column gap-2">
                                         <?php
                                         $current_edu = $data['educational_attainment'] ?? '';
-                                        $base_edu = trim(explode(' (', $current_edu)[0]);
                                         $edu_opts = ['Elementary', 'High School', 'College', 'Post Grad', 'Vocational'];
                                         foreach ($edu_opts as $opt):
+                                            $is_checked = stripos($current_edu, $opt) !== false;
                                             ?>
                                             <div class="form-check">
                                                 <input class="form-check-input" type="radio" name="educational_attainment"
                                                     value="<?php echo $opt; ?>" id="edu_<?php echo str_replace(' ','_',$opt); ?>" 
-                                                    <?php echo ($base_edu === $opt) ? 'checked' : ''; ?>>
+                                                    <?php echo $is_checked ? 'checked' : ''; ?>>
                                                 <label class="form-check-label"
                                                     for="edu_<?php echo str_replace(' ','_',$opt); ?>"><?php echo $opt; ?></label>
                                             </div>
@@ -389,8 +402,8 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                                     <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-block mb-3">PLEASE SPECIFY</label>
                                     <div class="d-flex flex-column gap-2">
                                         <?php
-                                        $is_grad = stripos($current_edu, '(graduate)') !== false;
-                                        $is_under = stripos($current_edu, '(under graduate)') !== false;
+                                        $is_under = stripos($current_edu, 'under graduate') !== false || stripos($current_edu, 'undergraduate') !== false;
+                                        $is_grad = stripos($current_edu, 'graduate') !== false && !$is_under;
                                         ?>
                                         <div class="form-check">
                                             <input class="form-check-input" type="radio" name="edu_status"
@@ -412,7 +425,15 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             $saved_classes = [];
                             if (!empty($data['classification'])) {
                                 $decoded = json_decode($data['classification'], true);
-                                if (is_array($decoded)) $saved_classes = $decoded;
+                                if (is_array($decoded)) {
+                                    $saved_classes = $decoded;
+                                } elseif (is_string($decoded)) {
+                                    // Sometimes it might be double encoded like "[\"Unemployed\"]"
+                                    $re_decoded = json_decode($decoded, true);
+                                    if (is_array($re_decoded)) $saved_classes = $re_decoded;
+                                } else {
+                                    $saved_classes = array_map('trim', explode(',', $data['classification']));
+                                }
                             }
                             $all_classes = [
                                 'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',

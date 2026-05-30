@@ -144,12 +144,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'verification_notes' => ''
                             ]);
                             if (!$sms_result['success']) {
-                                $success .= " | SMS FAILED: " . $sms_result['message'];
+                                // Log failure if needed, but don't show to user
                             } else {
-                                $success .= " | SMS SENT SUCCESS";
+                                // Success
                             }
                         } else {
-                            $success .= " | SMS SKIPPED (Empty phone or missing function)";
+                            // Skipped
                         }
                     } elseif ($action === 'reject') {
                         $notes = trim($_POST['rejection_notes'] ?? '');
@@ -177,12 +177,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     'verification_notes' => $notes
                                 ]);
                                 if (!$sms_result['success']) {
-                                    $success .= " (Email sent, but SMS failed: " . $sms_result['message'] . ")";
+                                    // Failed
                                 } else {
-                                    $success .= " (Email and SMS sent)";
+                                    // Success
                                 }
                             } else {
-                                $success .= " (Email sent, no phone number for SMS)";
+                                // Skipped
                             }
                         }
                     }

@@ -101,9 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $errors[] = 'Invalid CSRF token.';
     } else {
         $fm_id = (int) ($_POST['fm_id'] ?? 0);
-        $fname = trim($_POST['fm_first_name'] ?? '');
-        $mname = trim($_POST['fm_middle_name'] ?? '');
-        $lname = trim($_POST['fm_last_name'] ?? '');
+        $fname = ucwords(strtolower(trim($_POST['fm_first_name'] ?? '')));
+        $mname = ucwords(strtolower(trim($_POST['fm_middle_name'] ?? '')));
+        $lname = ucwords(strtolower(trim($_POST['fm_last_name'] ?? '')));
         $suffix = trim($_POST['fm_suffix'] ?? '');
         $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
 
@@ -183,9 +183,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $errors[] = 'Invalid CSRF token.';
     } else {
         $target_user_id = (int) ($_POST['user_id'] ?? 0);
-        $fname = trim($_POST['fm_first_name'] ?? '');
-        $mname = trim($_POST['fm_middle_name'] ?? '');
-        $lname = trim($_POST['fm_last_name'] ?? '');
+        $fname = ucwords(strtolower(trim($_POST['fm_first_name'] ?? '')));
+        $mname = ucwords(strtolower(trim($_POST['fm_middle_name'] ?? '')));
+        $lname = ucwords(strtolower(trim($_POST['fm_last_name'] ?? '')));
         $suffix = trim($_POST['fm_suffix'] ?? '');
         $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
 
@@ -567,31 +567,51 @@ if ($linked_resident) {
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Email Address</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['email']) ? '-' : $display_data['email']); ?>
+                            <?php
+                            $email = !empty($display_data['email']) ? $display_data['email'] : ($is_family_member ? ($linked_resident['email'] ?? null) : null);
+                            if ($email) {
+                                echo htmlspecialchars($email);
+                            } else {
+                                echo '-';
+                            }
+                            ?>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Phone Number</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['phone']) ? '-' : $display_data['phone']); ?>
+                            <?php
+                            $phone = !empty($display_data['phone']) ? $display_data['phone'] : ($is_family_member ? ($linked_resident['phone'] ?? null) : null);
+                            if ($phone) {
+                                echo htmlspecialchars($phone);
+                            } else {
+                                echo '-';
+                            }
+                            ?>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Birth Date</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo empty($display_data['birthdate']) ? '-' : date('F j, Y', strtotime($display_data['birthdate'])); ?>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Birth Place</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['birth_place']) ? '-' : ucwords(strtolower($display_data['birth_place']))); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Sex</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo htmlspecialchars(empty($display_data['sex']) ? '-' : $display_data['sex']); ?>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Citizenship</label>
                         <div class="form-control-plaintext border-bottom pb-2">
-                            <?php echo htmlspecialchars(empty($display_data['citizenship']) ? '-' : $display_data['citizenship']); ?>
+                            <?php echo htmlspecialchars(empty($display_data['citizenship']) ? '-' : ucwords(strtolower($display_data['citizenship']))); ?>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -605,7 +625,7 @@ if ($linked_resident) {
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $religion = !empty($display_data['religion']) ? $display_data['religion'] : ($is_family_member ? null : ($linked_resident['religion'] ?? null));
-                            echo $religion ? htmlspecialchars($religion) : '-';
+                            echo $religion ? htmlspecialchars(ucwords(strtolower($religion))) : '-';
                             ?>
                         </div>
                     </div>
@@ -614,7 +634,7 @@ if ($linked_resident) {
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
                             $occupation = !empty($display_data['occupation']) ? $display_data['occupation'] : ($is_family_member ? null : ($linked_resident['occupation'] ?? null));
-                            echo $occupation ? htmlspecialchars($occupation) : '-';
+                            echo $occupation ? htmlspecialchars(ucwords(strtolower($occupation))) : '-';
                             ?>
                         </div>
                     </div>
@@ -697,7 +717,11 @@ if ($linked_resident) {
                         <label class="form-label fw-semibold text-muted small">Barangay ID</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php
-                            $barangay_id = $record['barangay_id'] ?? ($linked_resident['barangay_id'] ?? null);
+                            if ($is_family_member && !empty($display_data['id']) && !empty($display_data['created_at'])) {
+                                $barangay_id = date('Y', strtotime($display_data['created_at'])) . '-F' . str_pad($display_data['id'], 4, '0', STR_PAD_LEFT);
+                            } else {
+                                $barangay_id = $record['barangay_id'] ?? ($linked_resident['barangay_id'] ?? null);
+                            }
                             echo $barangay_id ? htmlspecialchars($barangay_id) : '-';
                             ?>
                         </div>

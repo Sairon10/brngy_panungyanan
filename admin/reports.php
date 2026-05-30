@@ -888,6 +888,16 @@ require_once __DIR__ . '/header.php';
                     age = Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
                 }
 
+                let classList = '';
+                if (m.classification) {
+                    try {
+                        let parsed = JSON.parse(m.classification);
+                        classList = Array.isArray(parsed) ? parsed.join(', ') : m.classification;
+                    } catch(e) {
+                        classList = m.classification;
+                    }
+                }
+
                 html += `<tr>
                     <td>${esc(last)}</td>
                     <td>${esc(first)}</td>
@@ -900,7 +910,7 @@ require_once __DIR__ . '/header.php';
                     <td>${esc(m.civil_status || 'Single')}</td>
                     <td>FILIPINO</td>
                     <td>${esc(m.occupation || 'N/A')}</td>
-                    <td class="indicators-col">${esc(m.classification || '')}</td>
+                    <td class="indicators-col">${esc(classList)}</td>
                 </tr>`;
             });
 

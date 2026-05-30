@@ -473,7 +473,7 @@ if ($user_owners) {
                 'created_by_name' => $row['full_name'] ?? 'N/A',
                 'user_id' => $u['user_id'],
                 'created_at' => $fm['created_at'] ?? ($row['created_at'] ?? date('Y-m-d H:i:s')),
-                'verification_status' => 'verified',
+                'verification_status' => $fm['verification_status'] ?? 'pending',
                 'is_senior' => $fm['is_senior'],
                 'is_pwd' => $fm['is_pwd'],
                 'is_solo_parent' => $fm['is_solo_parent']
