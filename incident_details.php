@@ -198,10 +198,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                                 <span class="text-dark fw-bold ms-2"><?php echo number_format($incident['latitude'], 7) . ', ' . number_format($incident['longitude'], 7); ?></span>
                                             </p>
                                             <div class="d-flex gap-2 mb-3">
-                                                <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-dark text-white fw-bold btn-sm flex-fill py-2">
+                                                <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-success text-white fw-bold btn-sm flex-fill py-2">
                                                     <i class="fab fa-google me-1"></i> Google Maps
                                                 </a>
-                                                <a href="https://waze.com/ul?ll=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>&navigate=yes" target="_blank" class="btn btn-rose text-white fw-bold btn-sm flex-fill py-2">
+                                                <a href="https://waze.com/ul?ll=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>&navigate=yes" target="_blank" class="btn btn-info text-white fw-bold btn-sm flex-fill py-2">
                                                     <i class="fab fa-waze me-1"></i> Waze
                                                 </a>
                                             </div>
@@ -236,10 +236,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                     <a href="incidents.php" class="btn btn-white border shadow-sm py-2 rounded-3 text-secondary fw-semibold">
                                         <i class="fas fa-list me-1"></i> Back to Incidents List
                                     </a>
-                                    <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-dark text-white py-2 rounded-3 fw-bold">
+                                    <a href="https://www.google.com/maps?q=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>" target="_blank" class="btn btn-success text-white py-2 rounded-3 fw-bold">
                                         <i class="fab fa-google me-1"></i> Open in Google Maps
                                     </a>
-                                    <a href="https://waze.com/ul?ll=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>&navigate=yes" target="_blank" class="btn btn-rose text-white py-2 rounded-3 fw-bold">
+                                    <a href="https://waze.com/ul?ll=<?php echo $incident['latitude'] . ',' . $incident['longitude']; ?>&navigate=yes" target="_blank" class="btn btn-info text-white py-2 rounded-3 fw-bold">
                                         <i class="fab fa-waze me-1"></i> Open in Waze
                                     </a>
                                 </div>

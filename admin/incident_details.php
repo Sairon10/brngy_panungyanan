@@ -339,10 +339,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
 									$googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' . $incident['latitude'] . ',' . $incident['longitude'];
 									$wazeUrl = 'https://waze.com/ul?ll=' . $incident['latitude'] . ',' . $incident['longitude'] . '&navigate=yes';
 									?>
-									<a href="<?php echo $googleMapsUrl; ?>" target="_blank" class="btn btn-sm btn-primary me-2">
+									<a href="<?php echo $googleMapsUrl; ?>" target="_blank" class="btn btn-sm btn-success text-white me-2">
 										<i class="fab fa-google me-1"></i>Google Maps
 									</a>
-									<a href="<?php echo $wazeUrl; ?>" target="_blank" class="btn btn-sm btn-danger">
+									<a href="<?php echo $wazeUrl; ?>" target="_blank" class="btn btn-sm btn-info text-white">
 										<i class="fas fa-map-marked-alt me-1"></i>Waze
 									</a>
 								</div>
@@ -403,10 +403,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
 							$googleMapsUrl = 'https://www.google.com/maps/dir/?api=1&destination=' . $incident['latitude'] . ',' . $incident['longitude'];
 							$wazeUrl = 'https://waze.com/ul?ll=' . $incident['latitude'] . ',' . $incident['longitude'] . '&navigate=yes';
 							?>
-							<a href="<?php echo $googleMapsUrl; ?>" target="_blank" class="btn btn-primary">
+							<a href="<?php echo $googleMapsUrl; ?>" target="_blank" class="btn btn-success text-white mb-2">
 								<i class="fab fa-google me-2"></i>Open in Google Maps
 							</a>
-							<a href="<?php echo $wazeUrl; ?>" target="_blank" class="btn btn-danger">
+							<a href="<?php echo $wazeUrl; ?>" target="_blank" class="btn btn-info text-white">
 								<i class="fas fa-map-marked-alt me-2"></i>Open in Waze
 							</a>
 						</div>
