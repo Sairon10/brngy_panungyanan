@@ -180,7 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				redirect('login.php');
 			}
 		} catch (Exception $e) {
-			$errors[] = 'Server error. Please try again.';
+			$errors[] = 'Server error. Please try again. ' . $e->getMessage();
 		}
 	}
 }
