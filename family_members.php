@@ -612,7 +612,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label rbi-label">Date of transfer <span class="text-danger">*</span></label>
-                                    <input type="date" name="fm_migrant_date_transfer" id="fm_migrant_date_transfer" class="form-control rbi-input">
+                                    <input type="date" name="fm_migrant_date_transfer" id="fm_migrant_date_transfer" class="form-control rbi-input" min="1916-01-01" max="<?php echo date('Y-m-d'); ?>">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label rbi-label">Reason/s for Transferring <span class="text-danger">*</span></label>

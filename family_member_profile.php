@@ -526,7 +526,8 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-dark opacity-50 small ">Date of transfer</label>
                                 <input type="date" name="fm_migrant_date_transfer" class="form-control"
-                                    value="<?php echo htmlspecialchars($data['migrant_date_transfer'] ?? ''); ?>">
+                                     min="1916-01-01" max="<?php echo date('Y-m-d'); ?>"
+                                     value="<?php echo htmlspecialchars($data['migrant_date_transfer'] ?? ''); ?>">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-semibold text-dark opacity-50 small ">Reason for transferring</label>
