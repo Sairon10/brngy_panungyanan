@@ -7,8 +7,8 @@ if (!is_admin()) {
 
 $pdo = get_db_connection();
 $type = $_GET['type'] ?? '';
-$start = ($_GET['start'] ?? date('Y-m-01')) . ' 00:00:00';
-$end = ($_GET['end'] ?? date('Y-m-t')) . ' 23:59:59';
+$start = $_GET['start'] ?? date('Y-m-01');
+$end = $_GET['end'] ?? date('Y-m-t');
 
 header('Content-Type: application/json');
 
@@ -17,13 +17,13 @@ switch ($type) {
         $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.sex = 'Male' AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
+            WHERE r.sex = 'Male' AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.sex = 'Male' AND fm.created_at BETWEEN ? AND ?
+            WHERE fm.sex = 'Male' AND DATE(fm.created_at) >= ? AND DATE(fm.created_at) <= ?
             ORDER BY full_name
         ");
         $stmt->execute([$start, $end, $start, $end]);
@@ -34,13 +34,13 @@ switch ($type) {
         $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.sex = 'Female' AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
+            WHERE r.sex = 'Female' AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, fm.civil_status, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.sex = 'Female' AND fm.created_at BETWEEN ? AND ?
+            WHERE fm.sex = 'Female' AND DATE(fm.created_at) >= ? AND DATE(fm.created_at) <= ?
             ORDER BY full_name
         ");
         $stmt->execute([$start, $end, $start, $end]);
@@ -51,13 +51,13 @@ switch ($type) {
         $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.is_senior = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
+            WHERE r.is_senior = 1 AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.is_senior = 1 AND fm.created_at BETWEEN ? AND ?
+            WHERE fm.is_senior = 1 AND DATE(fm.created_at) >= ? AND DATE(fm.created_at) <= ?
             ORDER BY full_name
         ");
         $stmt->execute([$start, $end, $start, $end]);
@@ -68,13 +68,13 @@ switch ($type) {
         $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.is_pwd = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
+            WHERE r.is_pwd = 1 AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.is_pwd = 1 AND fm.created_at BETWEEN ? AND ?
+            WHERE fm.is_pwd = 1 AND DATE(fm.created_at) >= ? AND DATE(fm.created_at) <= ?
             ORDER BY full_name
         ");
         $stmt->execute([$start, $end, $start, $end]);
@@ -85,13 +85,13 @@ switch ($type) {
         $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.address, r.phone, '' as owner_name
             FROM residents r JOIN users u ON u.id = r.user_id
-            WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?
+            WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
             UNION ALL
             SELECT 'Family Member' as source, fm.full_name, fm.birthdate, fm.sex, ro.address as address, ro.phone as phone, u2.full_name as owner_name
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.is_solo_parent = 1 AND fm.created_at BETWEEN ? AND ?
+            WHERE fm.is_solo_parent = 1 AND DATE(fm.created_at) >= ? AND DATE(fm.created_at) <= ?
             ORDER BY full_name
         ");
         $stmt->execute([$start, $end, $start, $end]);
@@ -102,7 +102,7 @@ switch ($type) {
         $stmt = $pdo->prepare("
             SELECT 'Resident' as source, u.full_name, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.phone, '' as owner_name, r.classification, r.is_senior, r.is_pwd, r.is_solo_parent
             FROM users u LEFT JOIN residents r ON u.id = r.user_id
-            WHERE u.role IN ('resident', 'admin', 'sub_admin') AND u.created_at BETWEEN ? AND ?
+            WHERE u.role IN ('resident', 'admin', 'sub_admin') AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
             
             UNION ALL
             
@@ -110,13 +110,13 @@ switch ($type) {
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents ro ON ro.user_id = fm.user_id
-            WHERE fm.created_at BETWEEN ? AND ?
+            WHERE DATE(fm.created_at) >= ? AND DATE(fm.created_at) <= ?
             
             UNION ALL
             
             SELECT 'Resident' as source, rr.full_name, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.phone, '' as owner_name, rr.classification, rr.is_senior, rr.is_pwd, rr.is_solo_parent
             FROM resident_records rr
-            WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name))
+            WHERE DATE(rr.created_at) >= ? AND DATE(rr.created_at) <= ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name))
             
             ORDER BY full_name
         ");
@@ -132,7 +132,7 @@ switch ($type) {
             FROM document_requests dr
             JOIN users u ON dr.user_id = u.id
             LEFT JOIN family_members fm ON dr.family_member_id = fm.id
-            WHERE dr.created_at BETWEEN ? AND ?
+            WHERE DATE(dr.created_at) >= ? AND DATE(dr.created_at) <= ?
             
             UNION ALL
             
@@ -141,7 +141,7 @@ switch ($type) {
                    u.full_name as requester_name
             FROM barangay_clearances bc
             JOIN users u ON bc.user_id = u.id
-            WHERE bc.created_at BETWEEN ? AND ?
+            WHERE DATE(bc.created_at) >= ? AND DATE(bc.created_at) <= ?
             
             ORDER BY created_at DESC
         ");
@@ -192,18 +192,18 @@ switch ($type) {
         $stmt_res = $pdo->prepare("
             SELECT r.birthdate, r.sex, r.civil_status, r.is_senior, r.is_pwd, r.is_solo_parent, r.occupation, r.classification, r.citizenship, u.full_name 
             FROM users u LEFT JOIN residents r ON u.id = r.user_id 
-            WHERE u.role IN ('resident', 'admin', 'sub_admin') AND u.created_at BETWEEN ? AND ?
+            WHERE u.role IN ('resident', 'admin', 'sub_admin') AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
             
             UNION ALL
             
             SELECT rr.birthdate, rr.sex, rr.civil_status, rr.is_senior, rr.is_pwd, rr.is_solo_parent, NULL as occupation, '' as classification, rr.citizenship, rr.full_name 
             FROM resident_records rr 
-            WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
+            WHERE DATE(rr.created_at) >= ? AND DATE(rr.created_at) <= ? AND NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
         ");
         $stmt_res->execute([$start, $end, $start, $end]);
         $residents = $stmt_res->fetchAll(PDO::FETCH_ASSOC);
         
-        $stmt_fam = $pdo->prepare("SELECT fm.*, r.address, r.purok FROM family_members fm JOIN residents r ON fm.user_id = r.user_id WHERE fm.created_at BETWEEN ? AND ?");
+        $stmt_fam = $pdo->prepare("SELECT fm.*, r.address, r.purok FROM family_members fm JOIN residents r ON fm.user_id = r.user_id WHERE DATE(fm.created_at) >= ? AND DATE(fm.created_at) <= ?");
         $stmt_fam->execute([$start, $end]);
         $family = $stmt_fam->fetchAll(PDO::FETCH_ASSOC);
         
@@ -211,9 +211,9 @@ switch ($type) {
         
         $stmt_households = $pdo->prepare("
             SELECT COUNT(DISTINCT address) FROM (
-                SELECT COALESCE(r.address, 'N/A') as address FROM users u LEFT JOIN residents r ON u.id = r.user_id WHERE u.role IN ('resident', 'admin', 'sub_admin') AND u.created_at BETWEEN ? AND ?
+                SELECT COALESCE(r.address, 'N/A') as address FROM users u LEFT JOIN residents r ON u.id = r.user_id WHERE u.role IN ('resident', 'admin', 'sub_admin') AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?
                 UNION
-                SELECT COALESCE(rr.address, 'N/A') as address FROM resident_records rr WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
+                SELECT COALESCE(rr.address, 'N/A') as address FROM resident_records rr WHERE DATE(rr.created_at) >= ? AND DATE(rr.created_at) <= ? AND NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
             ) t
         ");
         $stmt_households->execute([$start, $end, $start, $end]);
@@ -301,7 +301,7 @@ switch ($type) {
             SELECT i.*, u.full_name
             FROM incidents i
             JOIN users u ON i.user_id = u.id
-            WHERE i.created_at BETWEEN ? AND ?
+            WHERE DATE(i.created_at) >= ? AND DATE(i.created_at) <= ?
             ORDER BY i.created_at DESC
         ");
         $stmt->execute([$start, $end]);
@@ -315,7 +315,7 @@ switch ($type) {
                    bc.payment_status as status, bc.created_at, u.full_name as display_name
             FROM barangay_clearances bc
             JOIN users u ON bc.user_id = u.id
-            WHERE bc.payment_receipt IS NOT NULL AND bc.payment_receipt != '' AND bc.created_at BETWEEN ? AND ?
+            WHERE bc.payment_receipt IS NOT NULL AND bc.payment_receipt != '' AND DATE(bc.created_at) >= ? AND DATE(bc.created_at) <= ?
             
             UNION ALL
             
@@ -326,7 +326,7 @@ switch ($type) {
             FROM document_requests dr
             JOIN users u ON dr.user_id = u.id
             LEFT JOIN family_members fm ON dr.family_member_id = fm.id
-            WHERE dr.payment_receipt IS NOT NULL AND dr.payment_receipt != '' AND dr.created_at BETWEEN ? AND ?
+            WHERE dr.payment_receipt IS NOT NULL AND dr.payment_receipt != '' AND DATE(dr.created_at) >= ? AND DATE(dr.created_at) <= ?
             
             ORDER BY created_at DESC
         ");

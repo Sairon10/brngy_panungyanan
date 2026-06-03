@@ -20,12 +20,12 @@ $db_end = $end_date . ' 23:59:59';
 // 1. Residents Demographics (Unified Count - Filtered by date)
 $stmt = $pdo->prepare("
     SELECT 
-        (SELECT COUNT(*) FROM users WHERE role IN ('resident', 'admin', 'sub_admin') AND created_at BETWEEN ? AND ?) +
-        (SELECT COUNT(*) FROM family_members WHERE created_at BETWEEN ? AND ?) +
+        (SELECT COUNT(*) FROM users WHERE role IN ('resident', 'admin', 'sub_admin') AND DATE(created_at) >= ? AND DATE(created_at) <= ?) +
+        (SELECT COUNT(*) FROM family_members WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?) +
         (SELECT COUNT(*) FROM resident_records rr 
-         WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name)))
+         WHERE DATE(rr.created_at) >= ? AND DATE(rr.created_at) <= ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name)))
 ");
-$stmt->execute([$db_start, $db_end, $db_start, $db_end, $db_start, $db_end]);
+$stmt->execute([$start_date, $end_date, $start_date, $end_date, $start_date, $end_date]);
 $total_residents = $stmt->fetchColumn();
 
 $stmt = $pdo->prepare("
@@ -36,42 +36,46 @@ $stmt = $pdo->prepare("
     ) t GROUP BY sex
 ");
 $stmt->execute([$db_start, $db_end, $db_start, $db_end]);
-$gender_stats = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$male_res = $gender_stats['Male'] ?? 0;
-$female_res = $gender_stats['Female'] ?? 0;
-
 // Age and special demographics - Combined from residents and family members
 $stmt = $pdo->prepare("
     SELECT 
-        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_senior = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?) + 
-        (SELECT COUNT(*) FROM family_members WHERE is_senior = 1 AND created_at BETWEEN ? AND ?) as seniors,
-        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_pwd = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?) + 
-        (SELECT COUNT(*) FROM family_members WHERE is_pwd = 1 AND created_at BETWEEN ? AND ?) as pwds,
-        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified' AND u.created_at BETWEEN ? AND ?) +
-        (SELECT COUNT(*) FROM family_members WHERE is_solo_parent = 1 AND created_at BETWEEN ? AND ?) as solo_parents
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.sex='Male' AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?) +
+        (SELECT COUNT(*) FROM family_members WHERE sex='Male' AND DATE(created_at) >= ? AND DATE(created_at) <= ?) as male,
+        
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.sex='Female' AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?) +
+        (SELECT COUNT(*) FROM family_members WHERE sex='Female' AND DATE(created_at) >= ? AND DATE(created_at) <= ?) as female,
+        
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_senior = 1 AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?) +
+        (SELECT COUNT(*) FROM family_members WHERE is_senior = 1 AND DATE(created_at) >= ? AND DATE(created_at) <= ?) as seniors,
+        
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_pwd = 1 AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?) +
+        (SELECT COUNT(*) FROM family_members WHERE is_pwd = 1 AND DATE(created_at) >= ? AND DATE(created_at) <= ?) as pwds,
+        
+        (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?) +
+        (SELECT COUNT(*) FROM family_members WHERE is_solo_parent = 1 AND DATE(created_at) >= ? AND DATE(created_at) <= ?) as solo_parents
 ");
-$stmt->execute([$db_start, $db_end, $db_start, $db_end, $db_start, $db_end, $db_start, $db_end, $db_start, $db_end, $db_start, $db_end]);
+$stmt->execute([$start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date]);
 $special_sectors = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 2. Document Requests (Summary Stats - Keep for the top cards)
 $stmt = $pdo->prepare("
-    SELECT status, COUNT(*) as count 
-    FROM document_requests 
-    WHERE created_at BETWEEN ? AND ? 
-    GROUP BY status
+    SELECT SUM(count) FROM (
+        SELECT COUNT(*) as count FROM document_requests WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?
+        UNION ALL
+        SELECT COUNT(*) as count FROM barangay_clearances WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?
+    ) as t
 ");
-$stmt->execute([$db_start, $db_end]);
-$doc_summary_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$total_docs = array_sum($doc_summary_raw);
+$stmt->execute([$start_date, $end_date, $start_date, $end_date]);
+$total_docs = (int)$stmt->fetchColumn();
 
 // 3. Incidents (Summary Stats - Keep for the top cards)
 $stmt = $pdo->prepare("
     SELECT status, COUNT(*) as count 
     FROM incidents 
-    WHERE created_at BETWEEN ? AND ? 
+    WHERE DATE(created_at) >= ? AND DATE(created_at) <= ? 
     GROUP BY status
 ");
-$stmt->execute([$db_start, $db_end]);
+$stmt->execute([$start_date, $end_date]);
 $incidents_summary_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $total_incidents = array_sum($incidents_summary_raw);
 
@@ -80,14 +84,14 @@ $stmt = $pdo->prepare("
     SELECT SUM(amount) FROM (
         SELECT COALESCE(payment_amount_paid, (SELECT price FROM document_types WHERE name = 'Barangay Clearance')) as amount 
         FROM barangay_clearances 
-        WHERE payment_status = 'confirmed' AND created_at BETWEEN ? AND ?
+        WHERE payment_status = 'confirmed' AND DATE(created_at) >= ? AND DATE(created_at) <= ?
         UNION ALL
         SELECT COALESCE(payment_amount_paid, (SELECT price FROM document_types dt WHERE dt.name = dr.doc_type)) as amount 
         FROM document_requests dr
-        WHERE payment_status = 'confirmed' AND created_at BETWEEN ? AND ?
+        WHERE payment_status = 'confirmed' AND DATE(created_at) >= ? AND DATE(created_at) <= ?
     ) as t
 ");
-$stmt->execute([$db_start, $db_end, $db_start, $db_end]);
+$stmt->execute([$start_date, $end_date, $start_date, $end_date]);
 $total_payments = (float)$stmt->fetchColumn();
 
 // 4. Pagination & Detailed Lists Configuration
@@ -947,8 +951,16 @@ require_once __DIR__ . '/header.php';
     });
 
     Object.keys(households).forEach((addr, idx) => {
-        const members = households[addr];
-        const head = members.find(m => m.role === 'Head') || members[0];
+        let members = households[addr];
+        
+        // Sort so the 'Head' (account owner) is always first
+        members.sort((a, b) => {
+            if (a.role === 'Head') return -1;
+            if (b.role === 'Head') return 1;
+            return 0;
+        });
+
+        const head = members[0];
         
         if (idx > 0) html += `<div style="page-break-before: always;"></div>`;
         
@@ -987,7 +999,9 @@ require_once __DIR__ . '/header.php';
             </thead>
             <tbody>`;
             
-            members.forEach(m => {
+            const nonMigrants = members.filter(m => !(m.migrant_previous_residence || m.migrant_length_of_stay || m.migrant_reason_leaving || m.migrant_date_transfer || m.migrant_reason_for || m.migrant_duration || m.migrant_intention));
+
+            nonMigrants.forEach(m => {
                 let last = m.last_name || '', 
                     first = m.first_name || '', 
                     middle = m.middle_name || '',
@@ -1040,7 +1054,7 @@ require_once __DIR__ . '/header.php';
                 </tr>`;
             });
 
-            for (let i = members.length; i < 5; i++) {
+            for (let i = nonMigrants.length; i < 5; i++) {
                 html += `<tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
             }
 
