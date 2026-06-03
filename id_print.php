@@ -581,7 +581,7 @@ $age = $resident['birthdate'] ? date_diff(date_create($resident['birthdate']), d
 
 .flip-hint {
     position: absolute;
-    bottom: 55px;
+    bottom: 12px;
     right: 20px;
     font-size: 12px;
     color: #ffffff;

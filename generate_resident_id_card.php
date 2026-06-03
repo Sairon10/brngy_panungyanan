@@ -619,7 +619,7 @@ $req_date = $req['created_at'];
 
 .flip-hint {
     position: absolute;
-    bottom: 55px;
+    bottom: 12px;
     right: 20px;
     font-size: 12px;
     color: #ffffff;
