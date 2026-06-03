@@ -84,11 +84,11 @@ $stmt = $pdo->prepare("
     SELECT SUM(amount) FROM (
         SELECT COALESCE(payment_amount_paid, (SELECT price FROM document_types WHERE name = 'Barangay Clearance')) as amount 
         FROM barangay_clearances 
-        WHERE payment_status = 'confirmed' AND DATE(created_at) >= ? AND DATE(created_at) <= ?
+        WHERE payment_status IN ('confirmed', 'pending') AND DATE(created_at) >= ? AND DATE(created_at) <= ?
         UNION ALL
         SELECT COALESCE(payment_amount_paid, (SELECT price FROM document_types dt WHERE dt.name = dr.doc_type)) as amount 
         FROM document_requests dr
-        WHERE payment_status = 'confirmed' AND DATE(created_at) >= ? AND DATE(created_at) <= ?
+        WHERE payment_status IN ('confirmed', 'pending') AND DATE(created_at) >= ? AND DATE(created_at) <= ?
     ) as t
 ");
 $stmt->execute([$start_date, $end_date, $start_date, $end_date]);
