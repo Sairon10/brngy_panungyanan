@@ -184,3 +184,13 @@ POST: Array
     [type] => MEMBER
 )
 
+2026-06-03 15:05:55 - /admin/resident_records
+POST: Array
+(
+    [csrf_token] => d1320c6624eba7d9afa88ba80e4da948cda51a413cf56e02dd85b6c64b7125a7
+    [action] => delete
+    [record_id] => 16
+    [user_id] => 27
+    [type] => MEMBER
+)
+

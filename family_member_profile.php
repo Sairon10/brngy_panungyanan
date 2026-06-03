@@ -42,6 +42,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $is_senior = in_array('Senior Citizen', $classifications) ? 1 : 0;
             $is_others = in_array('Indigenous People', $classifications) ? 1 : 0;
 
+            $fm_migrant_previous_residence = trim($_POST['fm_migrant_previous_residence'] ?? '');
+            $fm_migrant_length_of_stay = trim($_POST['fm_migrant_length_of_stay'] ?? '');
+            
+            $fm_migrant_reason_leaving_raw = trim($_POST['fm_migrant_reason_leaving'] ?? '');
+            $fm_migrant_reason_leaving_other = trim($_POST['fm_migrant_reason_leaving_other'] ?? '');
+            $fm_migrant_reason_leaving = ($fm_migrant_reason_leaving_raw === 'Others' && $fm_migrant_reason_leaving_other !== '') ? $fm_migrant_reason_leaving_other : $fm_migrant_reason_leaving_raw;
+            
+            $fm_migrant_date_transfer = trim($_POST['fm_migrant_date_transfer'] ?? '') ?: null;
+            
+            $fm_migrant_reason_for_raw = trim($_POST['fm_migrant_reason_for'] ?? '');
+            $fm_migrant_reason_for_other = trim($_POST['fm_migrant_reason_for_other'] ?? '');
+            $fm_migrant_reason_for = ($fm_migrant_reason_for_raw === 'Others' && $fm_migrant_reason_for_other !== '') ? $fm_migrant_reason_for_other : $fm_migrant_reason_for_raw;
+            
+            $fm_migrant_duration = trim($_POST['fm_migrant_duration'] ?? '');
+            
+            $fm_migrant_intention_raw = trim($_POST['fm_migrant_intention'] ?? '');
+            $fm_migrant_intention_other = trim($_POST['fm_migrant_intention_other'] ?? '');
+            $fm_migrant_intention = ($fm_migrant_intention_raw === 'Others' && $fm_migrant_intention_other !== '') ? $fm_migrant_intention_other : $fm_migrant_intention_raw;
+
             $name_parts = array_filter([$first_name, $middle_name, $last_name, $suffix]);
             $full_name = implode(' ', $name_parts);
 
@@ -95,8 +114,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (empty($errors)) {
-                $sql = 'UPDATE family_members SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, relationship=?, birthdate=?, sex=?, citizenship=?, civil_status=?, religion=?, occupation=?, educational_attainment=?, classification=?, is_pwd=?, is_senior=?, is_solo_parent=?, is_others=?, philsys_card_no=?, birth_place=?';
-                $params = [$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $relationship, $birthdate, $sex, $citizenship, $civil_status, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json, $is_pwd, $is_senior, $is_solo_parent, $is_others, $philsys_card_no, $birth_place ?: null];
+                $sql = 'UPDATE family_members SET first_name=?, last_name=?, middle_name=?, suffix=?, full_name=?, relationship=?, birthdate=?, sex=?, citizenship=?, civil_status=?, religion=?, occupation=?, educational_attainment=?, classification=?, is_pwd=?, is_senior=?, is_solo_parent=?, is_others=?, philsys_card_no=?, birth_place=?, migrant_previous_residence=?, migrant_length_of_stay=?, migrant_reason_leaving=?, migrant_date_transfer=?, migrant_reason_for=?, migrant_duration=?, migrant_intention=?';
+                $params = [$first_name, $last_name, $middle_name ?: null, $suffix ?: null, $full_name, $relationship, $birthdate, $sex, $citizenship, $civil_status, $religion ?: null, $occupation ?: null, $educational_attainment ?: null, $classification_json, $is_pwd, $is_senior, $is_solo_parent, $is_others, $philsys_card_no, $birth_place ?: null, $fm_migrant_previous_residence, $fm_migrant_length_of_stay, $fm_migrant_reason_leaving, $fm_migrant_date_transfer, $fm_migrant_reason_for, $fm_migrant_duration, $fm_migrant_intention];
 
                 if ($avatarPath !== null) {
                     $sql .= ', avatar=?';
@@ -238,11 +257,11 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                 <form method="post" enctype="multipart/form-data" id="profileForm">
                     <?php echo csrf_field(); ?>
 
-                    <h6 class="text-dark opacity-50 fw-bold small text-uppercase mb-4 pb-2 border-bottom">Profile Picture</h6>
+                    <h6 class="text-dark opacity-50 fw-bold small  mb-4 pb-2 border-bottom">Profile Picture</h6>
 
                     <div class="row g-4 mb-4">
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-secondary small text-uppercase">Upload Profile
+                            <label class="form-label fw-semibold text-secondary small ">Upload Profile
                                 Picture</label>
                             <input type="file" name="profile_picture" class="form-control"
                                 accept="image/jpeg,image/jpg,image/png" id="profilePictureInput">
@@ -260,39 +279,39 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                         </div>
                     </div>
 
-                    <h6 class="text-dark opacity-50 fw-bold small text-uppercase mb-4 pb-2 border-bottom mt-5">Personal
+                    <h6 class="text-dark opacity-50 fw-bold small  mb-4 pb-2 border-bottom mt-5">Personal
                         Information</h6>
 
                     <div class="row g-4 mb-4">
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">First Name <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">First Name <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="first_name" class="form-control"
                                 value="<?php echo htmlspecialchars($data['first_name'] ?? ''); ?>"
                                 placeholder="e.g. Juan" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Last Name <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Last Name <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="last_name" class="form-control"
                                 value="<?php echo htmlspecialchars($data['last_name'] ?? ''); ?>"
                                 placeholder="e.g. Dela Cruz" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Middle
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Middle
                                 Name</label>
                             <input type="text" name="middle_name" class="form-control"
                                 value="<?php echo htmlspecialchars($data['middle_name'] ?? ''); ?>"
                                 placeholder="e.g. Santos">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Suffix</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Suffix</label>
                             <input type="text" name="suffix" class="form-control"
                                 value="<?php echo htmlspecialchars($data['suffix'] ?? ''); ?>"
                                 placeholder="e.g. Jr., Sr., III">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase mb-1">Barangay ID</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small  mb-1">Barangay ID</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light text-secondary"><i class="fas fa-id-badge"></i></span>
                                 <input type="text" name="barangay_id" class="form-control bg-light fw-bold"
@@ -302,32 +321,34 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             <div class="form-text small text-muted"><i class="fas fa-info-circle me-1"></i>Auto-generated</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Relationship to Head <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Relationship to Head <span class="text-danger">*</span></label>
                             <input type="text" name="relationship" class="form-control"
                                 value="<?php echo htmlspecialchars($data['relationship'] ?? ''); ?>"
                                 placeholder="name@example.com" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">PhilSys Card Number</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">PhilSys Card Number</label>
                             <input type="text" name="philsys_card_no" class="form-control"
                                 value="<?php echo htmlspecialchars($data['philsys_card_no'] ?? ''); ?>"
                                 placeholder="e.g. 09123456789" required>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birthdate <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Birthdate <span
                                     class="text-danger">*</span></label>
                             <input type="date" name="birthdate" id="birthdate" class="form-control"
+                                min="<?php echo date('Y-m-d', strtotime('-120 years')); ?>" 
+                                max="<?php echo date('Y-m-d', strtotime('-4 years')); ?>" 
                                 value="<?php echo htmlspecialchars($data['birthdate'] ?? ''); ?>" required>
-                            <div class="form-text small text-muted">Must be at least 18 years old</div>
+                            <div class="form-text small text-muted">Must be between 4 and 120 years old</div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Birth Place</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Birth Place</label>
                             <input type="text" name="birth_place" class="form-control"
                                 value="<?php echo htmlspecialchars(ucwords(strtolower($data['birth_place'] ?? ''))); ?>"
                                 placeholder="e.g. Manila">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Sex <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Sex <span
                                     class="text-danger">*</span></label>
                             <select name="sex" class="form-select" required>
                                 <option value="">Select Sex</option>
@@ -337,14 +358,14 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Citizenship <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Citizenship <span
                                     class="text-danger">*</span></label>
                             <input type="text" name="citizenship" class="form-control"
                                 value="<?php echo htmlspecialchars(ucwords(strtolower($data['citizenship'] ?? ''))); ?>"
                                 placeholder="e.g. Filipino" required>
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Civil Status <span
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Civil Status <span
                                     class="text-danger">*</span></label>
                             <select name="civil_status" class="form-select" required>
                                 <option value="">Select Civil Status</option>
@@ -354,25 +375,25 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             </select>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Purok</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Purok</label>
                             <input type="text" name="purok" class="form-control bg-light"
                                 value="<?php echo htmlspecialchars($head_purok); ?>"
                                 placeholder="e.g. Purok 1, Purok 2" readonly title="Auto-filled from Household Head">
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Complete Address</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Complete Address</label>
                             <input type="text" name="address" class="form-control bg-light"
                                 value="<?php echo htmlspecialchars($head_address); ?>"
                                 placeholder="e.g. 123 Main St., Panungyanan, General Trias, Cavite" readonly title="Auto-filled from Household Head">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Religion</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Religion</label>
                             <input type="text" name="religion" class="form-control"
                                 value="<?php echo htmlspecialchars(ucwords(strtolower($data['religion'] ?? ''))); ?>"
                                 placeholder="e.g. Roman Catholic">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Profession / Occupation</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Profession / Occupation</label>
                             <input type="text" name="occupation" class="form-control"
                                 value="<?php echo htmlspecialchars(ucwords(strtolower($data['occupation'] ?? ''))); ?>"
                                 placeholder="e.g. Teacher, Farmer">
@@ -380,7 +401,7 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                         <div class="col-12">
                             <div class="row g-3">
                                 <div class="col-md-6 border-end pe-4">
-                                    <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-block mb-3">HIGHEST EDUCATIONAL ATTAINMENT</label>
+                                    <label class="form-label fw-semibold text-dark opacity-50 small  d-block mb-3">HIGHEST EDUCATIONAL ATTAINMENT</label>
                                     <div class="d-flex flex-column gap-2">
                                         <?php
                                         $current_edu = $data['educational_attainment'] ?? '';
@@ -399,7 +420,7 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                                     </div>
                                 </div>
                                 <div class="col-md-6 ps-4">
-                                    <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase d-block mb-3">PLEASE SPECIFY</label>
+                                    <label class="form-label fw-semibold text-dark opacity-50 small  d-block mb-3">PLEASE SPECIFY</label>
                                     <div class="d-flex flex-column gap-2">
                                         <?php
                                         $is_under = stripos($current_edu, 'under graduate') !== false || stripos($current_edu, 'undergraduate') !== false;
@@ -420,7 +441,7 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             </div>
                         </div>
                         <div class="col-12">
-                            <label class="form-label fw-semibold text-dark opacity-50 small text-uppercase">Special Classification (Optional - Multiple Selection)</label>
+                            <label class="form-label fw-semibold text-dark opacity-50 small ">Special Classification (Optional - Multiple Selection)</label>
                             <?php
                             $saved_classes = [];
                             if (!empty($data['classification'])) {
@@ -454,7 +475,109 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             </div>
                         </div>
 
-                        </div></div>
+                        </div>
+
+                        <h6 class="text-dark opacity-50 fw-bold small  mb-4 pb-2 border-bottom mt-5">Migrant Information</h6>
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark opacity-50 small ">Previous residence</label>
+                                <input type="text" name="fm_migrant_previous_residence" class="form-control"
+                                    value="<?php echo htmlspecialchars(ucfirst($data['migrant_previous_residence'] ?? '')); ?>"
+                                    placeholder="e.g. Manila">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark opacity-50 small ">Length of stay</label>
+                                <select name="fm_migrant_length_of_stay" class="form-select">
+                                    <option value="">-- SELECT LENGTH OF STAY --</option>
+                                    <?php 
+                                    $options = ['1 Month','2 Months','3 Months','4 Months','5 Months','6 Months','7 Months','8 Months','9 Months','10 Months','11 Months',
+                                                '1 Year','2 Years','3 Years','4 Years','5 Years','6 Years','7 Years','8 Years','9 Years','10 Years','More than 10 Years'];
+                                    foreach ($options as $opt) {
+                                        $selected = ($data['migrant_length_of_stay'] ?? '') === $opt ? 'selected' : '';
+                                        echo "<option value=\"$opt\" $selected>$opt</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark opacity-50 small ">Reason for leaving</label>
+                                <?php 
+                                    $stdReasons = ['Employment / Work', 'Studies / Education', 'Family Relocation', 'End of Lease'];
+                                    $dbReason = $data['migrant_reason_leaving'] ?? '';
+                                    $isOther = $dbReason && !in_array($dbReason, $stdReasons);
+                                ?>
+                                <select name="fm_migrant_reason_leaving" id="fm_migrant_reason_leaving" class="form-select" onchange="toggleMigrantReasonOthers()">
+                                    <option value="">-- SELECT REASON --</option>
+                                    <?php foreach ($stdReasons as $opt) {
+                                        $selected = ($dbReason === $opt) ? 'selected' : '';
+                                        echo "<option value=\"$opt\" $selected>$opt</option>";
+                                    } ?>
+                                    <option value="Others" <?php echo $isOther ? 'selected' : ''; ?>>Others</option>
+                                </select>
+                                <div id="fm_migrant_reason_leaving_other_wrap" style="display:<?php echo $isOther ? 'block' : 'none'; ?>; margin-top:6px;">
+                                    <input type="text" name="fm_migrant_reason_leaving_other" id="fm_migrant_reason_leaving_other" class="form-control" placeholder="Please specify reason..." value="<?php echo $isOther ? htmlspecialchars(ucfirst($dbReason)) : ''; ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark opacity-50 small ">Date of transfer</label>
+                                <input type="date" name="fm_migrant_date_transfer" class="form-control"
+                                    value="<?php echo htmlspecialchars($data['migrant_date_transfer'] ?? ''); ?>">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark opacity-50 small ">Reason for transferring</label>
+                                <?php 
+                                    $dbReasonFor = $data['migrant_reason_for'] ?? '';
+                                    $isOtherFor = $dbReasonFor && !in_array($dbReasonFor, $stdReasons);
+                                ?>
+                                <select name="fm_migrant_reason_for" id="fm_migrant_reason_for" class="form-select" onchange="toggleMigrantReasonForOthers()">
+                                    <option value="">-- SELECT REASON --</option>
+                                    <?php foreach ($stdReasons as $opt) {
+                                        $selected = ($dbReasonFor === $opt) ? 'selected' : '';
+                                        echo "<option value=\"$opt\" $selected>$opt</option>";
+                                    } ?>
+                                    <option value="Others" <?php echo $isOtherFor ? 'selected' : ''; ?>>Others</option>
+                                </select>
+                                <div id="fm_migrant_reason_for_other_wrap" style="display:<?php echo $isOtherFor ? 'block' : 'none'; ?>; margin-top:6px;">
+                                    <input type="text" name="fm_migrant_reason_for_other" id="fm_migrant_reason_for_other" class="form-control" placeholder="Please specify reason..." value="<?php echo $isOtherFor ? htmlspecialchars(ucfirst($dbReasonFor)) : ''; ?>">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark opacity-50 small ">Duration of stay</label>
+                                <select name="fm_migrant_duration" class="form-select">
+                                    <option value="">-- SELECT DURATION --</option>
+                                    <?php 
+                                    $optionsDur = ['1 Month','2 Months','3 Months','4 Months','5 Months','6 Months','7 Months','8 Months','9 Months','10 Months','11 Months',
+                                                '1 Year','2 Years','3 Years','4 Years','5 Years','6 Years','7 Years','8 Years','9 Years','10 Years','More than 10 Years', 'Permanent'];
+                                    foreach ($optionsDur as $opt) {
+                                        $selected = ($data['migrant_duration'] ?? '') === $opt ? 'selected' : '';
+                                        echo "<option value=\"$opt\" $selected>$opt</option>";
+                                    }
+                                    ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-dark opacity-50 small ">Intention to stay</label>
+                                <?php 
+                                    $stdIntentions = ['Settle Permanently', 'Temporary Stay', 'Undecided'];
+                                    $dbIntention = $data['migrant_intention'] ?? '';
+                                    $isOtherInt = $dbIntention && !in_array($dbIntention, $stdIntentions);
+                                ?>
+                                <select name="fm_migrant_intention" id="fm_migrant_intention" class="form-select" onchange="toggleMigrantIntentionOthers()">
+                                    <option value="">-- SELECT INTENTION --</option>
+                                    <?php foreach ($stdIntentions as $opt) {
+                                        $selected = ($dbIntention === $opt) ? 'selected' : '';
+                                        echo "<option value=\"$opt\" $selected>$opt</option>";
+                                    } ?>
+                                    <option value="Others" <?php echo $isOtherInt ? 'selected' : ''; ?>>Others</option>
+                                </select>
+                                <div id="fm_migrant_intention_other_wrap" style="display:<?php echo $isOtherInt ? 'block' : 'none'; ?>; margin-top:6px;">
+                                    <input type="text" name="fm_migrant_intention_other" id="fm_migrant_intention_other" class="form-control" placeholder="Please specify intention..." value="<?php echo $isOtherInt ? htmlspecialchars(ucfirst($dbIntention)) : ''; ?>">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
             </div>
 
             <div class="d-flex justify-content-end mt-3">
@@ -494,8 +617,8 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                 if (date >= today) {
                     this.setCustomValidity('Birthdate must be in the past');
                     this.classList.add('is-invalid');
-                } else if (exactAge < 18) {
-                    this.setCustomValidity('You must be at least 18 years old');
+                } else if (exactAge < 4 || exactAge > 120) {
+                    this.setCustomValidity('Family member must be between 4 and 120 years old');
                     this.classList.add('is-invalid');
                 } else {
                     this.setCustomValidity('');
@@ -519,6 +642,25 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
             });
         }
     });
+
+    function toggleMigrantReasonOthers() {
+        const sel = document.getElementById('fm_migrant_reason_leaving');
+        const wrap = document.getElementById('fm_migrant_reason_leaving_other_wrap');
+        if (!sel || !wrap) return;
+        wrap.style.display = sel.value === 'Others' ? 'block' : 'none';
+    }
+    function toggleMigrantReasonForOthers() {
+        const sel = document.getElementById('fm_migrant_reason_for');
+        const wrap = document.getElementById('fm_migrant_reason_for_other_wrap');
+        if (!sel || !wrap) return;
+        wrap.style.display = sel.value === 'Others' ? 'block' : 'none';
+    }
+    function toggleMigrantIntentionOthers() {
+        const sel = document.getElementById('fm_migrant_intention');
+        const wrap = document.getElementById('fm_migrant_intention_other_wrap');
+        if (!sel || !wrap) return;
+        wrap.style.display = sel.value === 'Others' ? 'block' : 'none';
+    }
 
     function confirmRemoveAvatar() {
         Swal.fire({

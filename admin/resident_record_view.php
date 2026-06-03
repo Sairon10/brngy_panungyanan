@@ -107,7 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $suffix = trim($_POST['fm_suffix'] ?? '');
         $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
 
-        $relationship = trim($_POST['fm_relationship'] ?? '');
+        $relationship_raw = trim($_POST['fm_relationship'] ?? '');
+        $relationship_other = trim($_POST['fm_relationship_other'] ?? '');
+        $relationship = ($relationship_raw === 'Others' && $relationship_other !== '') ? $relationship_other : $relationship_raw;
         $philsys = trim($_POST['fm_philsys_card_no'] ?? '');
         $citizenship = trim($_POST['fm_citizenship'] ?? 'FILIPINO');
 
@@ -129,6 +131,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $is_solo_parent = in_array('Solo Parent', $classifications) ? 1 : 0;
         $is_minor = 0;
 
+        $fm_migrant_previous_residence = trim($_POST['fm_migrant_previous_residence'] ?? '');
+        $fm_migrant_length_of_stay = trim($_POST['fm_migrant_length_of_stay'] ?? '');
+        $fm_migrant_reason_leaving_raw = trim($_POST['fm_migrant_reason_leaving'] ?? '');
+        $fm_migrant_reason_leaving_other = trim($_POST['fm_migrant_reason_leaving_other'] ?? '');
+        $fm_migrant_reason_leaving = ($fm_migrant_reason_leaving_raw === 'Others' && $fm_migrant_reason_leaving_other !== '') ? $fm_migrant_reason_leaving_other : $fm_migrant_reason_leaving_raw;
+        $fm_migrant_date_transfer = trim($_POST['fm_migrant_date_transfer'] ?? '') ?: null;
+        $fm_migrant_reason_for_raw = trim($_POST['fm_migrant_reason_for'] ?? '');
+        $fm_migrant_reason_for_other = trim($_POST['fm_migrant_reason_for_other'] ?? '');
+        $fm_migrant_reason_for = ($fm_migrant_reason_for_raw === 'Others' && $fm_migrant_reason_for_other !== '') ? $fm_migrant_reason_for_other : $fm_migrant_reason_for_raw;
+        $fm_migrant_duration = trim($_POST['fm_migrant_duration'] ?? '');
+        
+        $fm_migrant_intention_raw = trim($_POST['fm_migrant_intention'] ?? '');
+        $fm_migrant_intention_other = trim($_POST['fm_migrant_intention_other'] ?? '');
+        $fm_migrant_intention = ($fm_migrant_intention_raw === 'Others' && $fm_migrant_intention_other !== '') ? $fm_migrant_intention_other : $fm_migrant_intention_raw;
+
         if ($fm_id > 0 && !empty($fname) && !empty($lname)) {
             try {
                 $stmt = $pdo->prepare('UPDATE family_members SET 
@@ -136,7 +153,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     relationship=?, philsys_card_no=?, citizenship=?, 
                     birthdate=?, sex=?, civil_status=?, religion=?, birth_place=?, occupation=?, 
                     educational_attainment=?, educational_status=?, 
-                    is_pwd=?, is_senior=?, is_minor=?, is_solo_parent=?, classification=? 
+                    is_pwd=?, is_senior=?, is_minor=?, is_solo_parent=?, classification=?,
+                    migrant_previous_residence=?, migrant_length_of_stay=?, migrant_reason_leaving=?, 
+                    migrant_date_transfer=?, migrant_reason_for=?, migrant_duration=?, migrant_intention=?
                     WHERE id=?');
                 $stmt->execute([
                     $fname,
@@ -160,6 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     $is_minor,
                     $is_solo_parent,
                     $classification_json,
+                    $fm_migrant_previous_residence,
+                    $fm_migrant_length_of_stay,
+                    $fm_migrant_reason_leaving,
+                    $fm_migrant_date_transfer,
+                    $fm_migrant_reason_for,
+                    $fm_migrant_duration,
+                    $fm_migrant_intention,
                     $fm_id
                 ]);
                 $success = 'Family member details updated successfully.';
@@ -182,7 +208,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $suffix = trim($_POST['fm_suffix'] ?? '');
         $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
 
-        $relationship = trim($_POST['fm_relationship'] ?? '');
+        $relationship_raw = trim($_POST['fm_relationship'] ?? '');
+        $relationship_other = trim($_POST['fm_relationship_other'] ?? '');
+        $relationship = ($relationship_raw === 'Others' && $relationship_other !== '') ? $relationship_other : $relationship_raw;
         $philsys = trim($_POST['fm_philsys_card_no'] ?? '');
         $citizenship = trim($_POST['fm_citizenship'] ?? 'FILIPINO');
 
@@ -204,6 +232,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $is_solo_parent = in_array('Solo Parent', $classifications) ? 1 : 0;
         $is_minor = 0;
 
+        $fm_migrant_previous_residence = trim($_POST['fm_migrant_previous_residence'] ?? '');
+        $fm_migrant_length_of_stay = trim($_POST['fm_migrant_length_of_stay'] ?? '');
+        $fm_migrant_reason_leaving_raw = trim($_POST['fm_migrant_reason_leaving'] ?? '');
+        $fm_migrant_reason_leaving_other = trim($_POST['fm_migrant_reason_leaving_other'] ?? '');
+        $fm_migrant_reason_leaving = ($fm_migrant_reason_leaving_raw === 'Others' && $fm_migrant_reason_leaving_other !== '') ? $fm_migrant_reason_leaving_other : $fm_migrant_reason_leaving_raw;
+        $fm_migrant_date_transfer = trim($_POST['fm_migrant_date_transfer'] ?? '') ?: null;
+        $fm_migrant_reason_for_raw = trim($_POST['fm_migrant_reason_for'] ?? '');
+        $fm_migrant_reason_for_other = trim($_POST['fm_migrant_reason_for_other'] ?? '');
+        $fm_migrant_reason_for = ($fm_migrant_reason_for_raw === 'Others' && $fm_migrant_reason_for_other !== '') ? $fm_migrant_reason_for_other : $fm_migrant_reason_for_raw;
+        $fm_migrant_duration = trim($_POST['fm_migrant_duration'] ?? '');
+        
+        $fm_migrant_intention_raw = trim($_POST['fm_migrant_intention'] ?? '');
+        $fm_migrant_intention_other = trim($_POST['fm_migrant_intention_other'] ?? '');
+        $fm_migrant_intention = ($fm_migrant_intention_raw === 'Others' && $fm_migrant_intention_other !== '') ? $fm_migrant_intention_other : $fm_migrant_intention_raw;
+
         if ($target_user_id > 0 && !empty($fname) && !empty($lname)) {
             try {
                 $stmt = $pdo->prepare('INSERT INTO family_members (
@@ -211,14 +254,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     relationship, philsys_card_no, citizenship, 
                     birthdate, sex, civil_status, religion, birth_place, occupation, 
                     educational_attainment, educational_status, 
-                    is_pwd, is_senior, is_minor, is_solo_parent, classification
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                    is_pwd, is_senior, is_minor, is_solo_parent, classification,
+                    migrant_previous_residence, migrant_length_of_stay, migrant_reason_leaving, 
+                    migrant_date_transfer, migrant_reason_for, migrant_duration, migrant_intention
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
                 $stmt->execute([
                     $target_user_id, $fname, $mname, $lname, $suffix, $fullname,
                     $relationship, $philsys, $citizenship,
                     $birthdate ?: null, $sex ?: null, $civil_status, $religion, $birth_place, $occupation,
                     $edu, $edu_status,
-                    $is_pwd, $is_senior, $is_minor, $is_solo_parent, $classification_json
+                    $is_pwd, $is_senior, $is_minor, $is_solo_parent, $classification_json,
+                    $fm_migrant_previous_residence, $fm_migrant_length_of_stay, $fm_migrant_reason_leaving, 
+                    $fm_migrant_date_transfer, $fm_migrant_reason_for, $fm_migrant_duration, $fm_migrant_intention
                 ]);
                 $success = 'Family member added successfully.';
             } catch (Exception $e) {
@@ -518,7 +565,7 @@ if ($linked_resident) {
 
             <div class="card-body p-5">
                 <div class="row g-4">
-                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12">
+                    <h6 class=" text-muted fw-bold small mb-3 col-12">
                         Personal Information
                         <?php echo $is_family_member ? '<span class="badge bg-secondary ms-2">Family Member</span>' : ''; ?>
                     </h6>
@@ -583,6 +630,21 @@ if ($linked_resident) {
                         <label class="form-label fw-semibold text-muted small">Birth Date</label>
                         <div class="form-control-plaintext border-bottom pb-2">
                             <?php echo empty($display_data['birthdate']) ? '-' : date('F j, Y', strtotime($display_data['birthdate'])); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Age</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php 
+                            if (empty($display_data['birthdate'])) {
+                                echo '-';
+                            } else {
+                                $dob = new DateTime($display_data['birthdate']);
+                                $now = new DateTime();
+                                $age = $now->diff($dob)->y;
+                                echo $age . ' Years Old';
+                            }
+                            ?>
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -699,8 +761,63 @@ if ($linked_resident) {
                             ?>
                         </div>
                     </div>
+                    <?php
+                    $has_migrant_info = !empty($display_data['migrant_previous_residence']) || 
+                                        !empty($display_data['migrant_length_of_stay']) || 
+                                        !empty($display_data['migrant_reason_leaving']) || 
+                                        !empty($display_data['migrant_date_transfer']) || 
+                                        !empty($display_data['migrant_reason_for']) || 
+                                        !empty($display_data['migrant_duration']) || 
+                                        !empty($display_data['migrant_intention']);
+                    if ($has_migrant_info):
+                    ?>
+                    <h6 class=" text-muted fw-bold small mb-3 col-12 mt-4">Migrant Information</h6>
 
-                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-4">Barangay Records</h6>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Previous residence</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['migrant_previous_residence']) ? '-' : ucfirst($display_data['migrant_previous_residence'])); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Length of stay</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['migrant_length_of_stay']) ? '-' : $display_data['migrant_length_of_stay']); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Reason for leaving</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['migrant_reason_leaving']) ? '-' : ucfirst($display_data['migrant_reason_leaving'])); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Date of transfer</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['migrant_date_transfer']) ? '-' : date('F j, Y', strtotime($display_data['migrant_date_transfer']))); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Reason for transferring</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['migrant_reason_for']) ? '-' : ucfirst($display_data['migrant_reason_for'])); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Duration of stay</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['migrant_duration']) ? '-' : $display_data['migrant_duration']); ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-muted small">Intention to stay</label>
+                        <div class="form-control-plaintext border-bottom pb-2">
+                            <?php echo htmlspecialchars(empty($display_data['migrant_intention']) ? '-' : ucfirst($display_data['migrant_intention'])); ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <h6 class=" text-muted fw-bold small mb-3 col-12 mt-4">Barangay Records</h6>
 
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Barangay ID</label>
@@ -710,6 +827,13 @@ if ($linked_resident) {
                                 $barangay_id = date('Y', strtotime($display_data['created_at'])) . '-F' . str_pad($display_data['id'], 4, '0', STR_PAD_LEFT);
                             } else {
                                 $barangay_id = $record['barangay_id'] ?? ($linked_resident['barangay_id'] ?? null);
+                                if (empty($barangay_id)) {
+                                    if (!empty($linked_resident['user_id'])) {
+                                        $barangay_id = date('Y', strtotime($linked_resident['created_at'] ?? $record['created_at'] ?? 'now')) . '-' . str_pad($linked_resident['user_id'], 4, '0', STR_PAD_LEFT);
+                                    } elseif (!empty($record['id'])) {
+                                        $barangay_id = date('Y', strtotime($record['created_at'] ?? 'now')) . '-R' . str_pad($record['id'], 4, '0', STR_PAD_LEFT);
+                                    }
+                                }
                             }
                             echo $barangay_id ? htmlspecialchars($barangay_id) : '-';
                             ?>
@@ -725,7 +849,7 @@ if ($linked_resident) {
                         </div>
                     </div>
 
-                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-4">Account Information</h6>
+                    <h6 class=" text-muted fw-bold small mb-3 col-12 mt-4">Account Information</h6>
 
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Account Status</label>
@@ -841,7 +965,7 @@ if ($linked_resident) {
                         </div>
                     <?php endif; ?>
 
-                    <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-4">System Information</h6>
+                    <h6 class=" text-muted fw-bold small mb-3 col-12 mt-4">System Information</h6>
 
                     <div class="col-md-6">
                         <label class="form-label fw-semibold text-muted small">Record Status</label>
@@ -879,7 +1003,7 @@ if ($linked_resident) {
                     <div class="row g-4 mt-2">
                         <?php if (!empty($all_requests)): ?>
                             <div class="col-12">
-                                <h6 class="text-uppercase text-muted fw-bold small mb-3">Document Requests
+                                <h6 class=" text-muted fw-bold small mb-3">Document Requests
                                     (<?php echo count($all_requests); ?>)</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered">
@@ -922,7 +1046,7 @@ if ($linked_resident) {
 
                         <?php if (!empty($incidents)): ?>
                             <div class="col-12">
-                                <h6 class="text-uppercase text-muted fw-bold small mb-3">Incident Reports
+                                <h6 class=" text-muted fw-bold small mb-3">Incident Reports
                                     (<?php echo count($incidents); ?>)</h6>
                                 <div class="table-responsive">
                                     <table class="table table-sm table-bordered">
@@ -958,7 +1082,7 @@ if ($linked_resident) {
                         <?php if (true): // Always show so admin can add ?>
                             <div class="col-12 mt-2">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="text-uppercase text-muted fw-bold small mb-0">
+                                    <h6 class=" text-muted fw-bold small mb-0">
                                         <i class="fas fa-users me-1"></i>Family Members (<?php echo count($family_members); ?>)
                                     </h6>
                                     <?php if ($linked_user && $linked_user['user_id'] > 0): ?>
@@ -1050,7 +1174,7 @@ if ($linked_resident) {
 
                 <?php if ($is_family_member): ?>
                     <div class="mt-4 pt-4 border-top">
-                        <h6 class="text-uppercase text-muted fw-bold small mb-3">
+                        <h6 class=" text-muted fw-bold small mb-3">
                             <i class="fas fa-home me-2"></i>Household Head Information
                         </h6>
                         <div class="bg-light p-4 rounded-3 border">
@@ -1154,7 +1278,7 @@ if ($linked_resident) {
                 <input type="hidden" name="user_id" id="edit_user_id">
                 <div class="modal-body">
                     <div class="row g-3">
-                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12">Personal Information</h6>
+                        <h6 class=" text-muted fw-bold small mb-3 col-12">Personal Information</h6>
 
                         <div class="col-md-6">
                             <label class="form-label">First Name *</label>
@@ -1223,7 +1347,7 @@ if ($linked_resident) {
                         <div class="col-12 mt-2">
                             <div class="row g-3">
                                 <div class="col-md-6 border-end pe-4">
-                                    <label class="form-label text-uppercase small fw-bold text-muted">Highest
+                                    <label class="form-label  small fw-bold text-muted">Highest
                                         Educational Attainment</label>
                                     <div class="d-flex flex-column gap-2" id="edit_edu_base_options">
                                         <?php
@@ -1241,7 +1365,7 @@ if ($linked_resident) {
                                     </div>
                                 </div>
                                 <div class="col-md-6 ps-4">
-                                    <label class="form-label text-uppercase small fw-bold text-muted">Please
+                                    <label class="form-label  small fw-bold text-muted">Please
                                         Specify</label>
                                     <div class="d-flex flex-column gap-2">
                                         <div class="form-check">
@@ -1260,13 +1384,13 @@ if ($linked_resident) {
                         </div>
 
                         <div class="col-12">
-                            <label class="form-label text-uppercase small fw-bold text-muted">Complete Address *</label>
+                            <label class="form-label  small fw-bold text-muted">Complete Address *</label>
                             <input type="text" name="address" id="edit_address" class="form-control" required
                                 placeholder="e.g. 106, Panungyanan, City of General Trias, Cavite">
                             <div class="form-text small">Please include House No., Street, Barangay, etc.</div>
                         </div>
 
-                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-3">Barangay Records</h6>
+                        <h6 class=" text-muted fw-bold small mb-3 col-12 mt-3">Barangay Records</h6>
 
                         <div class="col-md-6">
                             <label class="form-label">Barangay ID</label>
@@ -1282,7 +1406,7 @@ if ($linked_resident) {
                                 placeholder="e.g. Purok 1, Purok 2">
                         </div>
 
-                        <h6 class="text-uppercase text-muted fw-bold small mb-3 col-12 mt-3">Special Classification
+                        <h6 class=" text-muted fw-bold small mb-3 col-12 mt-3">Special Classification
                             (Multiple Selection)</h6>
                         <div class="col-12">
                             <div class="row g-2">
@@ -1345,7 +1469,7 @@ if ($linked_resident) {
                         <!-- Personal Info Section -->
                         <div class="col-lg-12">
                             <h6
-                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small  letter-spacing-1">
                                 <i class="fas fa-id-card me-2"></i>Personal Identification</h6>
                             <div class="row g-3">
                                 <div class="col-md-3">
@@ -1374,15 +1498,21 @@ if ($linked_resident) {
                                     <label class="form-label rbi-label">Relationship to Head <span
                                             class="text-danger">*</span></label>
                                     <select name="fm_relationship" id="fm_edit_relationship"
-                                        class="form-select rbi-input" required>
+                                        class="form-select rbi-input" required
+                                        onchange="toggleOthersInput('fm_edit_relationship','fm_edit_relationship_other_wrap')">
                                         <option value="Spouse">Spouse</option>
                                         <option value="Child">Child</option>
                                         <option value="Parent">Parent</option>
                                         <option value="Sibling">Sibling</option>
                                         <option value="Grandparent">Grandparent</option>
                                         <option value="Grandchild">Grandchild</option>
-                                        <option value="Other">Other</option>
+                                        <option value="Others">Others</option>
                                     </select>
+                                    <div id="fm_edit_relationship_other_wrap" style="display:none; margin-top:6px;">
+                                        <input type="text" name="fm_relationship_other" id="fm_edit_relationship_other"
+                                            class="form-control rbi-input" placeholder="Please specify relationship..."
+                                            maxlength="100">
+                                    </div>
                                 </div>
                                 <div class="col-md-5">
                                     <label class="form-label rbi-label">PhilSys Card Number</label>
@@ -1400,14 +1530,17 @@ if ($linked_resident) {
                         <!-- Demographics Section -->
                         <div class="col-lg-12">
                             <h6
-                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small  letter-spacing-1">
                                 <i class="fas fa-map-marker-alt me-2"></i>Demographics & Status</h6>
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Birthdate <span
                                             class="text-danger">*</span></label>
                                     <input type="date" name="fm_birthdate" id="fm_edit_birthdate"
-                                        class="form-control rbi-input" required>
+                                        class="form-control rbi-input" 
+                                        min="<?php echo date('Y-m-d', strtotime('-120 years')); ?>" 
+                                        max="<?php echo date('Y-m-d', strtotime('-4 years')); ?>" 
+                                        required>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label rbi-label">Sex <span class="text-danger">*</span></label>
@@ -1450,7 +1583,7 @@ if ($linked_resident) {
                         <!-- Education Section -->
                         <div class="col-lg-12">
                             <h6
-                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small  letter-spacing-1">
                                 <i class="fas fa-graduation-cap me-2"></i>Educational Background</h6>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -1482,10 +1615,124 @@ if ($linked_resident) {
                             </div>
                         </div>
 
+                        <!-- Migrant Information Section -->
+                        <div id="fm_edit_migrant_info_wrap" class="col-lg-12 mt-4" style="display:none;">
+                            <h6
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small  letter-spacing-1">
+                                <i class="fas fa-plane-arrival me-2"></i>Migrant Information</h6>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label rbi-label">Previous residence <span class="text-danger">*</span></label>
+                                    <input type="text" name="fm_migrant_previous_residence" id="fm_edit_migrant_previous_residence" class="form-control rbi-input">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label rbi-label">Length of stay <span class="text-danger">*</span></label>
+                                    <select name="fm_migrant_length_of_stay" id="fm_edit_migrant_length_of_stay" class="form-select rbi-input">
+                                        <option value="">-- SELECT LENGTH --</option>
+                                        <option value="1 Month">1 Month</option>
+                                        <option value="2 Months">2 Months</option>
+                                        <option value="3 Months">3 Months</option>
+                                        <option value="4 Months">4 Months</option>
+                                        <option value="5 Months">5 Months</option>
+                                        <option value="6 Months">6 Months</option>
+                                        <option value="7 Months">7 Months</option>
+                                        <option value="8 Months">8 Months</option>
+                                        <option value="9 Months">9 Months</option>
+                                        <option value="10 Months">10 Months</option>
+                                        <option value="11 Months">11 Months</option>
+                                        <option value="1 Year">1 Year</option>
+                                        <option value="2 Years">2 Years</option>
+                                        <option value="3 Years">3 Years</option>
+                                        <option value="4 Years">4 Years</option>
+                                        <option value="5 Years">5 Years</option>
+                                        <option value="6 Years">6 Years</option>
+                                        <option value="7 Years">7 Years</option>
+                                        <option value="8 Years">8 Years</option>
+                                        <option value="9 Years">9 Years</option>
+                                        <option value="10 Years">10 Years</option>
+                                        <option value="More than 10 Years">More than 10 Years</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label rbi-label">Reason/s for Leaving <span class="text-danger">*</span></label>
+                                    <select name="fm_migrant_reason_leaving" id="fm_edit_migrant_reason_leaving" class="form-select rbi-input" onchange="toggleMigrantReasonOthers()">
+                                        <option value="">-- SELECT REASON --</option>
+                                        <option value="Employment / Work">Employment / Work</option>
+                                        <option value="Studies / Education">Studies / Education</option>
+                                        <option value="Family Relocation">Family Relocation</option>
+                                        <option value="End of Lease">End of Lease</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                    <div id="fm_edit_migrant_reason_leaving_other_wrap" style="display:none; margin-top:6px;">
+                                        <input type="text" name="fm_migrant_reason_leaving_other" id="fm_edit_migrant_reason_leaving_other" class="form-control rbi-input" placeholder="Please specify reason...">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label rbi-label">Date of transfer <span class="text-danger">*</span></label>
+                                    <input type="date" name="fm_migrant_date_transfer" id="fm_edit_migrant_date_transfer" class="form-control rbi-input">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label rbi-label">Reason/s for Transferring <span class="text-danger">*</span></label>
+                                    <select name="fm_migrant_reason_for" id="fm_edit_migrant_reason_for" class="form-select rbi-input" onchange="toggleMigrantReasonForOthers()">
+                                        <option value="">-- SELECT REASON --</option>
+                                        <option value="Employment / Work">Employment / Work</option>
+                                        <option value="Studies / Education">Studies / Education</option>
+                                        <option value="Family Relocation">Family Relocation</option>
+                                        <option value="End of Lease">End of Lease</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                    <div id="fm_edit_migrant_reason_for_other_wrap" style="display:none; margin-top:6px;">
+                                        <input type="text" name="fm_migrant_reason_for_other" id="fm_edit_migrant_reason_for_other" class="form-control rbi-input" placeholder="Please specify reason...">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label rbi-label">Duration of stay <span class="text-danger">*</span></label>
+                                    <select name="fm_migrant_duration" id="fm_edit_migrant_duration" class="form-select rbi-input">
+                                        <option value="">-- SELECT DURATION --</option>
+                                        <option value="1 Month">1 Month</option>
+                                        <option value="2 Months">2 Months</option>
+                                        <option value="3 Months">3 Months</option>
+                                        <option value="4 Months">4 Months</option>
+                                        <option value="5 Months">5 Months</option>
+                                        <option value="6 Months">6 Months</option>
+                                        <option value="7 Months">7 Months</option>
+                                        <option value="8 Months">8 Months</option>
+                                        <option value="9 Months">9 Months</option>
+                                        <option value="10 Months">10 Months</option>
+                                        <option value="11 Months">11 Months</option>
+                                        <option value="1 Year">1 Year</option>
+                                        <option value="2 Years">2 Years</option>
+                                        <option value="3 Years">3 Years</option>
+                                        <option value="4 Years">4 Years</option>
+                                        <option value="5 Years">5 Years</option>
+                                        <option value="6 Years">6 Years</option>
+                                        <option value="7 Years">7 Years</option>
+                                        <option value="8 Years">8 Years</option>
+                                        <option value="9 Years">9 Years</option>
+                                        <option value="10 Years">10 Years</option>
+                                        <option value="More than 10 Years">More than 10 Years</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label rbi-label">Intention to stay <span class="text-danger">*</span></label>
+                                    <select name="fm_migrant_intention" id="fm_edit_migrant_intention" class="form-select rbi-input" onchange="toggleMigrantIntentionOthers()">
+                                        <option value="">-- SELECT INTENTION --</option>
+                                        <option value="Settle Permanently">Settle Permanently</option>
+                                        <option value="Temporary Stay">Temporary Stay</option>
+                                        <option value="Undecided">Undecided</option>
+                                        <option value="Others">Others</option>
+                                    </select>
+                                    <div id="fm_edit_migrant_intention_other_wrap" style="display:none; margin-top:6px;">
+                                        <input type="text" name="fm_migrant_intention_other" id="fm_edit_migrant_intention_other" class="form-control rbi-input" placeholder="Please specify intention...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Classifications Section -->
                         <div class="col-lg-12">
                             <h6
-                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
+                                class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small  letter-spacing-1">
                                 <i class="fas fa-tags me-2"></i>Special Classifications</h6>
                             <div class="row g-2">
                                 <?php
@@ -1719,6 +1966,53 @@ if ($linked_resident) {
         new bootstrap.Modal(document.getElementById('familyMemberEditModal')).show();
     }
 
+    function toggleOthersInput(selectId, wrapId) {
+        const sel = document.getElementById(selectId);
+        const wrap = document.getElementById(wrapId);
+        const migrantWrap = document.getElementById('fm_edit_migrant_info_wrap');
+        if (!sel || !wrap) return;
+        const isOthers = sel.value === 'Others';
+        wrap.style.display = isOthers ? 'block' : 'none';
+        if (migrantWrap) migrantWrap.style.display = isOthers ? 'block' : 'none';
+        const input = wrap.querySelector('input');
+        if (input) input.required = isOthers;
+        
+        if (migrantWrap) {
+            const mInputs = migrantWrap.querySelectorAll('input:not(#fm_edit_migrant_reason_leaving_other):not(#fm_edit_migrant_reason_for_other):not(#fm_edit_migrant_intention_other), select');
+            mInputs.forEach(i => i.required = isOthers);
+        }
+    }
+
+    function toggleMigrantReasonOthers() {
+        const sel = document.getElementById('fm_edit_migrant_reason_leaving');
+        const wrap = document.getElementById('fm_edit_migrant_reason_leaving_other_wrap');
+        const input = document.getElementById('fm_edit_migrant_reason_leaving_other');
+        if (!sel || !wrap) return;
+        const isOthers = sel.value === 'Others';
+        wrap.style.display = isOthers ? 'block' : 'none';
+        if (input) input.required = isOthers;
+    }
+
+    function toggleMigrantReasonForOthers() {
+        const sel = document.getElementById('fm_edit_migrant_reason_for');
+        const wrap = document.getElementById('fm_edit_migrant_reason_for_other_wrap');
+        const input = document.getElementById('fm_edit_migrant_reason_for_other');
+        if (!sel || !wrap) return;
+        const isOthers = sel.value === 'Others';
+        wrap.style.display = isOthers ? 'block' : 'none';
+        if (input) input.required = isOthers;
+    }
+
+    function toggleMigrantIntentionOthers() {
+        const sel = document.getElementById('fm_edit_migrant_intention');
+        const wrap = document.getElementById('fm_edit_migrant_intention_other_wrap');
+        const input = document.getElementById('fm_edit_migrant_intention_other');
+        if (!sel || !wrap) return;
+        const isOthers = sel.value === 'Others';
+        wrap.style.display = isOthers ? 'block' : 'none';
+        if (input) input.required = isOthers;
+    }
+
     function editFamilyMember(fm) {
         document.getElementById('fm_action').value = 'edit_family_member';
         document.getElementById('fmModalLabelText').textContent = 'Update Record';
@@ -1728,7 +2022,57 @@ if ($linked_resident) {
         document.getElementById('fm_edit_last_name').value = fm.last_name || '';
         document.getElementById('fm_edit_suffix').value = fm.suffix || '';
 
-        document.getElementById('fm_edit_relationship').value = fm.relationship || 'Child';
+        const stdRels = ['Spouse','Child','Parent','Sibling','Grandparent','Grandchild','Others'];
+        if (fm.relationship && !stdRels.includes(fm.relationship)) {
+            document.getElementById('fm_edit_relationship').value = 'Others';
+            document.getElementById('fm_edit_relationship_other').value = fm.relationship;
+            document.getElementById('fm_edit_relationship_other_wrap').style.display = 'block';
+            document.getElementById('fm_edit_migrant_info_wrap').style.display = 'block';
+        } else {
+            document.getElementById('fm_edit_relationship').value = fm.relationship || 'Child';
+            document.getElementById('fm_edit_relationship_other').value = '';
+            document.getElementById('fm_edit_relationship_other_wrap').style.display = 'none';
+            document.getElementById('fm_edit_migrant_info_wrap').style.display = 'none';
+        }
+        
+        document.getElementById('fm_edit_migrant_previous_residence').value = fm.migrant_previous_residence || '';
+        document.getElementById('fm_edit_migrant_length_of_stay').value = fm.migrant_length_of_stay || '';
+        const stdMigrantReasons = ['Employment / Work','Studies / Education','Family Relocation','End of Lease','Others'];
+        if (fm.migrant_reason_leaving && !stdMigrantReasons.includes(fm.migrant_reason_leaving)) {
+            document.getElementById('fm_edit_migrant_reason_leaving').value = 'Others';
+            document.getElementById('fm_edit_migrant_reason_leaving_other').value = fm.migrant_reason_leaving;
+            document.getElementById('fm_edit_migrant_reason_leaving_other_wrap').style.display = 'block';
+        } else {
+            document.getElementById('fm_edit_migrant_reason_leaving').value = fm.migrant_reason_leaving || '';
+            document.getElementById('fm_edit_migrant_reason_leaving_other').value = '';
+            document.getElementById('fm_edit_migrant_reason_leaving_other_wrap').style.display = 'none';
+        }
+        
+        document.getElementById('fm_edit_migrant_date_transfer').value = fm.migrant_date_transfer || '';
+
+        if (fm.migrant_reason_for && !stdMigrantReasons.includes(fm.migrant_reason_for)) {
+            document.getElementById('fm_edit_migrant_reason_for').value = 'Others';
+            document.getElementById('fm_edit_migrant_reason_for_other').value = fm.migrant_reason_for;
+            document.getElementById('fm_edit_migrant_reason_for_other_wrap').style.display = 'block';
+        } else {
+            document.getElementById('fm_edit_migrant_reason_for').value = fm.migrant_reason_for || '';
+            document.getElementById('fm_edit_migrant_reason_for_other').value = '';
+            document.getElementById('fm_edit_migrant_reason_for_other_wrap').style.display = 'none';
+        }
+
+        document.getElementById('fm_edit_migrant_duration').value = fm.migrant_duration || '';
+        
+        const stdMigrantIntentions = ['Settle Permanently', 'Temporary Stay', 'Undecided', 'Others'];
+        if (fm.migrant_intention && !stdMigrantIntentions.includes(fm.migrant_intention)) {
+            document.getElementById('fm_edit_migrant_intention').value = 'Others';
+            document.getElementById('fm_edit_migrant_intention_other').value = fm.migrant_intention;
+            document.getElementById('fm_edit_migrant_intention_other_wrap').style.display = 'block';
+        } else {
+            document.getElementById('fm_edit_migrant_intention').value = fm.migrant_intention || '';
+            document.getElementById('fm_edit_migrant_intention_other').value = '';
+            document.getElementById('fm_edit_migrant_intention_other_wrap').style.display = 'none';
+        }
+
         document.getElementById('fm_edit_philsys').value = fm.philsys_card_no || '';
         document.getElementById('fm_edit_citizenship').value = fm.citizenship || 'FILIPINO';
 
@@ -1768,6 +2112,40 @@ if ($linked_resident) {
         const editForm = document.getElementById('editForm');
         if (editForm) {
             editForm.addEventListener('submit', function (e) {
+                Swal.fire({
+                    title: 'Saving...',
+                    text: 'Please wait while your changes are saved.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+            });
+        }
+
+        const adminFamilyForm = document.getElementById('adminFamilyEditForm');
+        if (adminFamilyForm) {
+            adminFamilyForm.addEventListener('submit', function (e) {
+                const birthdateInput = document.getElementById('fm_edit_birthdate');
+                if (birthdateInput && birthdateInput.value) {
+                    const dob = new Date(birthdateInput.value);
+                    const today = new Date();
+                    let age = today.getFullYear() - dob.getFullYear();
+                    const m = today.getMonth() - dob.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                        age--;
+                    }
+                    if (age < 4 || age > 120) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid Age',
+                            text: 'Family member must be between 4 and 120 years old.',
+                            confirmButtonColor: '#dc3545'
+                        });
+                        return;
+                    }
+                }
                 Swal.fire({
                     title: 'Saving...',
                     text: 'Please wait while your changes are saved.',
@@ -1844,7 +2222,7 @@ if ($linked_resident) {
             <div class="modal-body p-4">
                 <div class="row g-4 justify-content-center">
                     <div class="col-12 mb-2">
-                        <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i
+                        <label class="form-label fw-bold small  text-muted mb-1"><i
                                 class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
                         <div class="p-3 bg-light rounded-3 border fw-semibold text-dark" style="font-size: 0.95rem;">
                             <?php echo !empty($linked_resident['address_on_id']) ? htmlspecialchars($linked_resident['address_on_id']) : '<i class="text-muted fw-normal">No address provided during upload.</i>'; ?>
@@ -1852,7 +2230,7 @@ if ($linked_resident) {
                     </div>
                     <?php if (!empty($linked_resident['id_front_path'])): ?>
                         <div class="col-md-6 text-center">
-                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">Front ID View</label>
+                            <label class="form-label fw-bold small  text-muted mb-2">Front ID View</label>
                             <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_front_path']); ?>"
                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
                                 onclick="window.open(this.src, '_blank')">
@@ -1860,7 +2238,7 @@ if ($linked_resident) {
                     <?php endif; ?>
                     <?php if (!empty($linked_resident['id_back_path'])): ?>
                         <div class="col-md-6 text-center">
-                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">Back ID View</label>
+                            <label class="form-label fw-bold small  text-muted mb-2">Back ID View</label>
                             <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_back_path']); ?>"
                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
                                 onclick="window.open(this.src, '_blank')">
@@ -1868,7 +2246,7 @@ if ($linked_resident) {
                     <?php endif; ?>
                     <?php if (empty($linked_resident['id_front_path']) && empty($linked_resident['id_back_path']) && !empty($linked_resident['id_document_path'])): ?>
                         <div class="col-12 text-center">
-                            <label class="form-label fw-bold small text-uppercase text-muted mb-2">ID Document</label>
+                            <label class="form-label fw-bold small  text-muted mb-2">ID Document</label>
                             <img src="../uploads/id_documents/<?php echo htmlspecialchars($linked_resident['id_document_path']); ?>"
                                 class="img-fluid rounded border shadow-sm" style="max-height: 400px; cursor: pointer;"
                                 onclick="window.open(this.src, '_blank')">

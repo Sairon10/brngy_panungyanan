@@ -1042,6 +1042,93 @@ require_once __DIR__ . '/header.php';
         html += `</tbody>
         </table>
 
+        <div style="page-break-before: always;"></div>
+        <table style="margin-top: 40px;">
+            <thead>
+                <tr>
+                    <th colspan="4" style="text-align:center;">NAME</th>
+                    <th colspan="7" style="text-align:center;">MIGRANT INFORMATION</th>
+                </tr>
+                <tr>
+                    <th style="width:90px;">LAST NAME</th>
+                    <th style="width:90px;">FIRST NAME</th>
+                    <th style="width:90px;">MIDDLE NAME</th>
+                    <th style="width:55px;">EXT. NAME</th>
+                    <th style="width:110px;">PREVIOUS RESIDENCE</th>
+                    <th style="width:70px;">LENGTH OF STAY</th>
+                    <th style="width:110px;">REASON/S FOR LEAVING</th>
+                    <th style="width:80px;">DATE OF TRANSFER</th>
+                    <th style="width:80px;">REASON/S FOR</th>
+                    <th style="width:70px;">DURATION OF</th>
+                    <th style="width:80px;">INTENTION TO</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        const migrants = members.filter(m => 
+            m.migrant_previous_residence || 
+            m.migrant_length_of_stay || 
+            m.migrant_reason_leaving || 
+            m.migrant_date_transfer || 
+            m.migrant_reason_for || 
+            m.migrant_duration || 
+            m.migrant_intention
+        );
+
+        migrants.forEach(m => {
+            let last = m.last_name || '';
+            let first = m.first_name || '';
+            let middle = m.middle_name || '';
+            let ext = m.suffix || '';
+            
+            if (!first && !last && m.full_name) {
+                const parts = m.full_name.split(' ');
+                if (parts.length >= 3) {
+                    last = parts[parts.length - 1];
+                    first = parts[0];
+                    middle = parts.slice(1, -1).join(' ');
+                } else if (parts.length === 2) {
+                    last = parts[1];
+                    first = parts[0];
+                } else {
+                    first = parts[0];
+                }
+            }
+
+            html += `<tr>
+                <td style="height:22px;">${esc(last)}</td>
+                <td>${esc(first)}</td>
+                <td>${esc(middle)}</td>
+                <td>${esc(ext)}</td>
+                <td>${esc(m.migrant_previous_residence || '')}</td>
+                <td>${esc(m.migrant_length_of_stay || '')}</td>
+                <td>${esc(m.migrant_reason_leaving || '')}</td>
+                <td>${esc(m.migrant_date_transfer || '')}</td>
+                <td>${esc(m.migrant_reason_for || '')}</td>
+                <td>${esc(m.migrant_duration || '')}</td>
+                <td>${esc(m.migrant_intention || '')}</td>
+            </tr>`;
+        });
+
+        for (let i = migrants.length; i < 7; i++) {
+            html += `<tr>
+                <td style="height:22px;"></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>`;
+        }
+
+        html += `</tbody>
+        </table>
+
         <div class="footer-sig">
             <div class="sig-block">
                 <div class="sig-line">Prepared by:</div>

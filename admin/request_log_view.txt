@@ -98,3 +98,32 @@ POST: Array
     [fm_is_solo_parent] => on
 )
 
+2026-06-03 15:05:08 - /admin/resident_record_view?id=0&user_id=27
+POST: Array
+(
+    [csrf_token] => d1320c6624eba7d9afa88ba80e4da948cda51a413cf56e02dd85b6c64b7125a7
+    [action] => add_family_member
+    [fm_id] => 
+    [user_id] => 27
+    [fm_first_name] => kevin
+    [fm_middle_name] => 
+    [fm_last_name] => olegario
+    [fm_suffix] => 
+    [fm_relationship] => Spouse
+    [fm_philsys_card_no] => 
+    [fm_citizenship] => FILIPINO
+    [fm_birthdate] => 2026-04-04
+    [fm_sex] => Male
+    [fm_civil_status] => Single
+    [fm_religion] => Roman Catholic
+    [fm_birth_place] => Gen. Trias Cavite
+    [fm_occupation] => 
+    [fm_educational_attainment] => 
+    [fm_educational_status] => N/A
+    [classifications] => Array
+        (
+            [0] => Unemployed
+        )
+
+)
+

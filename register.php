@@ -108,8 +108,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		if ($age < 18) {
 			$errors[] = 'You must be at least 18 years old to register';
-		} elseif ($age > 100) {
-            $errors[] = 'Age must not exceed 100 years old';
+		} elseif ($age > 120) {
+            $errors[] = 'Age must not exceed 120 years old';
         }
 	}
 
@@ -520,6 +520,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 													<span class="text-danger">*</span></label>
 												<input type="date" name="birthdate" id="birthdate"
 													class="form-control form-control-lg"
+													min="<?php echo date('Y-m-d', strtotime('-120 years')); ?>"
+													max="<?php echo date('Y-m-d', strtotime('-18 years')); ?>"
 													value="<?php echo htmlspecialchars($_POST['birthdate'] ?? ''); ?>"
 													required>
 											</div>
@@ -998,10 +1000,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						isValid = false;
 						field.classList.add('is-invalid');
 						field.setCustomValidity('You must be at least 18 years old to register');
-					} else if (exactAge > 100) {
+					} else if (exactAge > 120) {
 						isValid = false;
 						field.classList.add('is-invalid');
-						field.setCustomValidity('Age must not exceed 100 years old');
+						field.setCustomValidity('Age must not exceed 120 years old');
 					} else {
 						field.setCustomValidity('');
 					}

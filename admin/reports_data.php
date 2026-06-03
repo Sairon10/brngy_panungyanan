@@ -163,19 +163,19 @@ switch ($type) {
 
     case 'households':
         $stmt = $pdo->query("
-            SELECT 'Head' as role, u.id as user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status, r.citizenship
+            SELECT 'Head' as role, u.id as user_id, u.first_name, u.middle_name, u.last_name, u.suffix, u.full_name, u.email, r.birthdate, r.sex, r.civil_status, COALESCE(r.address, 'N/A') as address, r.purok, r.phone, r.birth_place, r.occupation, r.classification, r.religion, r.educational_attainment, r.educational_status, r.citizenship, NULL as migrant_previous_residence, NULL as migrant_length_of_stay, NULL as migrant_reason_leaving, NULL as migrant_date_transfer, NULL as migrant_reason_for, NULL as migrant_duration, NULL as migrant_intention
             FROM users u LEFT JOIN residents r ON u.id = r.user_id
             WHERE u.role IN ('resident', 'admin', 'sub_admin')
             
             UNION ALL
             
-            SELECT 'Head' as role, 0 as user_id, rr.first_name, rr.middle_name, rr.last_name, rr.suffix, rr.full_name, rr.email, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.purok, rr.phone, NULL as birth_place, NULL as occupation, '' as classification, NULL as religion, '' as educational_attainment, '' as educational_status, rr.citizenship
+            SELECT 'Head' as role, 0 as user_id, rr.first_name, rr.middle_name, rr.last_name, rr.suffix, rr.full_name, rr.email, rr.birthdate, rr.sex, rr.civil_status, COALESCE(rr.address, 'N/A') as address, rr.purok, rr.phone, NULL as birth_place, NULL as occupation, '' as classification, NULL as religion, '' as educational_attainment, '' as educational_status, rr.citizenship, NULL as migrant_previous_residence, NULL as migrant_length_of_stay, NULL as migrant_reason_leaving, NULL as migrant_date_transfer, NULL as migrant_reason_for, NULL as migrant_duration, NULL as migrant_intention
             FROM resident_records rr
             WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
             
             UNION ALL
             
-            SELECT 'Member' as role, fm.user_id, fm.first_name, fm.middle_name, fm.last_name, fm.suffix, fm.full_name, '' as email, fm.birthdate, fm.sex, fm.civil_status, COALESCE(r2.address, 'N/A') as address, r2.purok, r2.phone, fm.birth_place, fm.occupation, fm.classification, fm.religion, fm.educational_attainment, fm.educational_status, fm.citizenship
+            SELECT 'Member' as role, fm.user_id, fm.first_name, fm.middle_name, fm.last_name, fm.suffix, fm.full_name, '' as email, fm.birthdate, fm.sex, fm.civil_status, COALESCE(r2.address, 'N/A') as address, r2.purok, r2.phone, fm.birth_place, fm.occupation, fm.classification, fm.religion, fm.educational_attainment, fm.educational_status, fm.citizenship, fm.migrant_previous_residence, fm.migrant_length_of_stay, fm.migrant_reason_leaving, fm.migrant_date_transfer, fm.migrant_reason_for, fm.migrant_duration, fm.migrant_intention
             FROM family_members fm
             JOIN users u2 ON fm.user_id = u2.id
             LEFT JOIN residents r2 ON fm.user_id = r2.user_id
