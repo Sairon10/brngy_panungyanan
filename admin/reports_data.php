@@ -323,7 +323,9 @@ switch ($type) {
                    bc.purpose
             FROM barangay_clearances bc
             JOIN users u ON bc.user_id = u.id
-            WHERE bc.payment_status IN ('confirmed', 'pending', 'refund_pending', 'refunded', 'rejected') AND DATE(bc.created_at) >= ? AND DATE(bc.created_at) <= ?
+            WHERE bc.payment_status IN ('confirmed', 'pending', 'refund_pending', 'refunded', 'rejected') 
+              AND bc.payment_receipt IS NOT NULL AND bc.payment_receipt != '' 
+              AND DATE(bc.created_at) >= ? AND DATE(bc.created_at) <= ?
             
             UNION ALL
             
@@ -335,7 +337,9 @@ switch ($type) {
             FROM document_requests dr
             JOIN users u ON dr.user_id = u.id
             LEFT JOIN family_members fm ON dr.family_member_id = fm.id
-            WHERE dr.payment_status IN ('confirmed', 'pending', 'refund_pending', 'refunded', 'rejected') AND DATE(dr.created_at) >= ? AND DATE(dr.created_at) <= ?
+            WHERE dr.payment_status IN ('confirmed', 'pending', 'refund_pending', 'refunded', 'rejected') 
+              AND dr.payment_receipt IS NOT NULL AND dr.payment_receipt != '' 
+              AND DATE(dr.created_at) >= ? AND DATE(dr.created_at) <= ?
             
             ORDER BY created_at DESC
         ");
