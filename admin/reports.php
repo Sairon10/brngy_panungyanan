@@ -17,14 +17,15 @@ $end_date = $_GET['end_date'] ?? date('Y-m-t');     // Last day of current month
 $db_start = $start_date . ' 00:00:00';
 $db_end = $end_date . ' 23:59:59';
 
-// 1. Residents Demographics (Unified Count - NOT filtered by date, always shows ALL residents)
-$stmt = $pdo->query("
+// 1. Residents Demographics (Unified Count - Filtered by date)
+$stmt = $pdo->prepare("
     SELECT 
-        (SELECT COUNT(*) FROM users WHERE role IN ('resident', 'admin', 'sub_admin')) +
-        (SELECT COUNT(*) FROM family_members) +
+        (SELECT COUNT(*) FROM users WHERE role IN ('resident', 'admin', 'sub_admin') AND created_at BETWEEN ? AND ?) +
+        (SELECT COUNT(*) FROM family_members WHERE created_at BETWEEN ? AND ?) +
         (SELECT COUNT(*) FROM resident_records rr 
-         WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name)))
+         WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name)))
 ");
+$stmt->execute([$db_start, $db_end, $db_start, $db_end, $db_start, $db_end]);
 $total_residents = $stmt->fetchColumn();
 
 $stmt = $pdo->prepare("
