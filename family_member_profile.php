@@ -344,7 +344,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                             <label class="form-label fw-semibold text-dark opacity-50 small ">PhilSys Card Number</label>
                             <input type="text" name="philsys_card_no" class="form-control"
                                 value="<?php echo htmlspecialchars($data['philsys_card_no'] ?? ''); ?>"
-                                placeholder="e.g. 09123456789" required>
+                                placeholder="e.g. 09123456789">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold text-dark opacity-50 small ">Birthdate <span
