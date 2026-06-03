@@ -11,11 +11,14 @@ $breadcrumb = [
 $pdo = get_db_connection();
 
 // Filter parameters
-$start_date = $_GET['start_date'] ?? date('Y-m-01'); // First day of current month
-$end_date = $_GET['end_date'] ?? date('Y-m-t');     // Last day of current month
+$start_date = $_GET['start_date'] ?? '';
+$end_date = $_GET['end_date'] ?? '';
 
-$db_start = $start_date . ' 00:00:00';
-$db_end = $end_date . ' 23:59:59';
+$query_start = !empty($start_date) ? $start_date : '1970-01-01';
+$query_end = !empty($end_date) ? $end_date : '2099-12-31';
+
+$db_start = !empty($start_date) ? $start_date . ' 00:00:00' : '1970-01-01 00:00:00';
+$db_end = !empty($end_date) ? $end_date . ' 23:59:59' : '2099-12-31 23:59:59';
 
 // 1. Residents Demographics (Unified Count - Filtered by date)
 $stmt = $pdo->prepare("
@@ -25,7 +28,7 @@ $stmt = $pdo->prepare("
         (SELECT COUNT(*) FROM resident_records rr 
          WHERE DATE(rr.created_at) >= ? AND DATE(rr.created_at) <= ? AND NOT EXISTS (SELECT 1 FROM users u WHERE u.role IN ('resident', 'admin', 'sub_admin') AND (u.email = rr.email OR u.full_name = rr.full_name)))
 ");
-$stmt->execute([$start_date, $end_date, $start_date, $end_date, $start_date, $end_date]);
+$stmt->execute([$query_start, $query_end, $query_start, $query_end, $query_start, $query_end]);
 $total_residents = $stmt->fetchColumn();
 
 $stmt = $pdo->prepare("
@@ -54,7 +57,7 @@ $stmt = $pdo->prepare("
         (SELECT COUNT(*) FROM residents r JOIN users u ON r.user_id = u.id WHERE r.is_solo_parent = 1 AND r.verification_status = 'verified' AND DATE(u.created_at) >= ? AND DATE(u.created_at) <= ?) +
         (SELECT COUNT(*) FROM family_members WHERE is_solo_parent = 1 AND DATE(created_at) >= ? AND DATE(created_at) <= ?) as solo_parents
 ");
-$stmt->execute([$start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date, $start_date, $end_date]);
+$stmt->execute([$query_start, $query_end, $query_start, $query_end, $query_start, $query_end, $query_start, $query_end, $query_start, $query_end, $query_start, $query_end, $query_start, $query_end, $query_start, $query_end, $query_start, $query_end, $query_start, $query_end]);
 $special_sectors = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // 2. Document Requests (Summary Stats - Keep for the top cards)
@@ -65,7 +68,7 @@ $stmt = $pdo->prepare("
         SELECT COUNT(*) as count FROM barangay_clearances WHERE DATE(created_at) >= ? AND DATE(created_at) <= ?
     ) as t
 ");
-$stmt->execute([$start_date, $end_date, $start_date, $end_date]);
+$stmt->execute([$query_start, $query_end, $query_start, $query_end]);
 $total_docs = (int)$stmt->fetchColumn();
 
 // 3. Incidents (Summary Stats - Keep for the top cards)
@@ -75,7 +78,7 @@ $stmt = $pdo->prepare("
     WHERE DATE(created_at) >= ? AND DATE(created_at) <= ? 
     GROUP BY status
 ");
-$stmt->execute([$start_date, $end_date]);
+$stmt->execute([$query_start, $query_end]);
 $incidents_summary_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $total_incidents = array_sum($incidents_summary_raw);
 
@@ -91,7 +94,7 @@ $stmt = $pdo->prepare("
         WHERE payment_status IN ('confirmed', 'pending') AND DATE(created_at) >= ? AND DATE(created_at) <= ?
     ) as t
 ");
-$stmt->execute([$start_date, $end_date, $start_date, $end_date]);
+$stmt->execute([$query_start, $query_end, $query_start, $query_end]);
 $total_payments = (float)$stmt->fetchColumn();
 
 // 4. Pagination & Detailed Lists Configuration
@@ -210,8 +213,17 @@ require_once __DIR__ . '/header.php';
         <h4 class="mb-0">Barangay Panungyanan</h4>
         <p class="text-muted">General Trias, Cavite</p>
         <h5 class="mt-3 text-uppercase">System Activity Report</h5>
-        <small>Period: <?php echo date('F d, Y', strtotime($start_date)); ?> to
-            <?php echo date('F d, Y', strtotime($end_date)); ?></small>
+        <small>Period: <?php 
+            if (!empty($start_date) && !empty($end_date)) {
+                echo date('F d, Y', strtotime($start_date)) . ' to ' . date('F d, Y', strtotime($end_date)); 
+            } elseif (!empty($start_date)) {
+                echo 'From ' . date('F d, Y', strtotime($start_date));
+            } elseif (!empty($end_date)) {
+                echo 'Until ' . date('F d, Y', strtotime($end_date));
+            } else {
+                echo 'All Time';
+            }
+        ?></small>
         <hr>
     </div>
 
@@ -356,8 +368,19 @@ require_once __DIR__ . '/header.php';
         if (type === 'households') {
             document.getElementById('reportModalPeriod').textContent = 'All Records (Not filtered by date)';
         } else {
-            document.getElementById('reportModalPeriod').textContent =
-                'Period: ' + formatDate(START_DATE) + ' to ' + formatDate(END_DATE);
+            if (START_DATE && END_DATE) {
+                document.getElementById('reportModalPeriod').textContent =
+                    'Period: ' + formatDate(START_DATE) + ' to ' + formatDate(END_DATE);
+            } else if (START_DATE) {
+                document.getElementById('reportModalPeriod').textContent =
+                    'Period: From ' + formatDate(START_DATE);
+            } else if (END_DATE) {
+                document.getElementById('reportModalPeriod').textContent =
+                    'Period: Until ' + formatDate(END_DATE);
+            } else {
+                document.getElementById('reportModalPeriod').textContent =
+                    'Period: All Time';
+            }
         }
         
         // Hide Excel export button for RBI Form Reports (type 'households' or 'summary')
@@ -391,7 +414,9 @@ require_once __DIR__ . '/header.php';
     }
 
     function formatDate(d) {
+        if (!d) return '—';
         const dt = new Date(d + 'T00:00:00');
+        if (isNaN(dt.getTime())) return '—';
         return dt.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric' });
     }
 

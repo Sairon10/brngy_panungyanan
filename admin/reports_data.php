@@ -7,8 +7,15 @@ if (!is_admin()) {
 
 $pdo = get_db_connection();
 $type = $_GET['type'] ?? '';
-$start = $_GET['start'] ?? date('Y-m-01');
-$end = $_GET['end'] ?? date('Y-m-t');
+$start = $_GET['start'] ?? '';
+$end = $_GET['end'] ?? '';
+
+if (empty($start)) {
+    $start = '1970-01-01';
+}
+if (empty($end)) {
+    $end = '2099-12-31';
+}
 
 header('Content-Type: application/json');
 
