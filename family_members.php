@@ -199,7 +199,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                     <?php if ($is_verified): ?>
                     <button type="button" class="btn btn-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
                         data-bs-target="#familyModal" onclick="prepareAddModal()">
-                        <i class="fas fa-plus me-1 text-primary"></i> Add Member
+                        <i class="fas fa-plus me-1 text-white"></i> <span class="text-white">Add Member</span>
                     </button>
                     <?php else: ?>
                     <a href="id_verification.php" class="btn btn-warning rounded-pill px-4 shadow-sm">
@@ -452,7 +452,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                     <label class="form-label rbi-label">Relationship to Head <span
                                             class="text-danger">*</span></label>
                                     <select name="fm_relationship" id="fm_relationship" class="form-select rbi-input"
-                                        required onchange="toggleOthersInput('fm_relationship', 'fm_relationship_other_wrap')">
+                                        required onchange="toggleOthersInput('fm_relationship', 'fm_relationship_other_wrap'); toggleMigrantSection();">
                                         <option value="">-- SELECT --</option>
                                         <?php foreach ($relationship_options as $rel): ?>
                                             <option value="<?php echo $rel; ?>"><?php echo $rel; ?></option>
@@ -559,7 +559,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                         </div>
 
                         <!-- Migrant Information Section -->
-                        <div id="fm_migrant_info_wrap" class="col-lg-12 mt-5" style="display:block;">
+                        <div id="fm_migrant_info_wrap" class="col-lg-12 mt-5" style="display:none;">
                             <h6
                                 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
                                 <i class="fas fa-plane-arrival me-2"></i>Migrant Information</h6>
@@ -887,6 +887,25 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
         if (input) input.required = isOthers;
     }
 
+    function toggleMigrantSection() {
+        const rel = document.getElementById('fm_relationship');
+        const migrantWrap = document.getElementById('fm_migrant_info_wrap');
+        if (!rel || !migrantWrap) return;
+        const show = rel.value === 'Others';
+        migrantWrap.style.display = show ? 'block' : 'none';
+        // Clear migrant fields when hidden
+        if (!show) {
+            migrantWrap.querySelectorAll('input, select, textarea').forEach(el => {
+                el.value = '';
+            });
+            // Hide sub-other fields
+            ['fm_migrant_reason_leaving_other_wrap','fm_migrant_reason_for_other_wrap','fm_migrant_intention_other_wrap'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+    }
+
     function toggleMigrantReasonOthers() {
         const sel = document.getElementById('fm_migrant_reason_leaving');
         const wrap = document.getElementById('fm_migrant_reason_leaving_other_wrap');
@@ -925,6 +944,9 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
         document.getElementById('fm_barangay_id').value = 'Pending creation';
         document.getElementById('fm_id_front').required = true;
         document.getElementById('fm_id_back').required = true;
+        // Hide migrant section on fresh add
+        const migrantWrap = document.getElementById('fm_migrant_info_wrap');
+        if (migrantWrap) migrantWrap.style.display = 'none';
     }
 
     function prepareEditModal(fm) {
@@ -952,6 +974,8 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
         } else {
             document.getElementById('fm_relationship_other').value = '';
         }
+        // Show/hide migrant section based on relationship
+        toggleMigrantSection();
         
         document.getElementById('fm_migrant_previous_residence').value = fm.migrant_previous_residence || '';
         document.getElementById('fm_migrant_length_of_stay').value = fm.migrant_length_of_stay || '';

@@ -1499,7 +1499,7 @@ if ($linked_resident) {
                                             class="text-danger">*</span></label>
                                     <select name="fm_relationship" id="fm_edit_relationship"
                                         class="form-select rbi-input" required
-                                        onchange="toggleOthersInput('fm_edit_relationship','fm_edit_relationship_other_wrap')">
+                                        onchange="toggleOthersInput('fm_edit_relationship','fm_edit_relationship_other_wrap'); toggleAdminMigrantSection();">
                                         <option value="Spouse">Spouse</option>
                                         <option value="Child">Child</option>
                                         <option value="Parent">Parent</option>
@@ -1616,7 +1616,7 @@ if ($linked_resident) {
                         </div>
 
                         <!-- Migrant Information Section -->
-                        <div id="fm_edit_migrant_info_wrap" class="col-lg-12 mt-4" style="display:block;">
+                        <div id="fm_edit_migrant_info_wrap" class="col-lg-12 mt-4" style="display:none;">
                             <h6
                                 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small  letter-spacing-1">
                                 <i class="fas fa-plane-arrival me-2"></i>Migrant Information</h6>
@@ -1977,6 +1977,23 @@ if ($linked_resident) {
         if (input) input.required = isOthers;
     }
 
+    function toggleAdminMigrantSection() {
+        const rel = document.getElementById('fm_edit_relationship');
+        const migrantWrap = document.getElementById('fm_edit_migrant_info_wrap');
+        if (!rel || !migrantWrap) return;
+        const show = rel.value === 'Others';
+        migrantWrap.style.display = show ? 'block' : 'none';
+        if (!show) {
+            migrantWrap.querySelectorAll('input, select, textarea').forEach(el => {
+                el.value = '';
+            });
+            ['fm_edit_migrant_reason_leaving_other_wrap','fm_edit_migrant_reason_for_other_wrap','fm_edit_migrant_intention_other_wrap'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+        }
+    }
+
     function toggleMigrantReasonOthers() {
         const sel = document.getElementById('fm_edit_migrant_reason_leaving');
         const wrap = document.getElementById('fm_edit_migrant_reason_leaving_other_wrap');
@@ -2026,7 +2043,9 @@ if ($linked_resident) {
             document.getElementById('fm_edit_relationship').value = fm.relationship || 'Child';
             document.getElementById('fm_edit_relationship_other').value = '';
             document.getElementById('fm_edit_relationship_other_wrap').style.display = 'none';
-            document.getElementById('fm_edit_migrant_info_wrap').style.display = 'block';
+            // Only show migrant section if relationship is Others
+            document.getElementById('fm_edit_migrant_info_wrap').style.display =
+                (fm.relationship === 'Others') ? 'block' : 'none';
         }
         
         document.getElementById('fm_edit_migrant_previous_residence').value = fm.migrant_previous_residence || '';
