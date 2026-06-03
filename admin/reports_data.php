@@ -319,7 +319,8 @@ switch ($type) {
         $stmt = $pdo->prepare("
             SELECT 'Barangay Clearance' as doc_type, bc.payment_reference_no as reference_no, 
                    COALESCE(bc.payment_amount_paid, (SELECT price FROM document_types WHERE name = 'Barangay Clearance')) as amount, 
-                   bc.payment_status as status, bc.created_at, u.full_name as display_name
+                   bc.payment_status as status, bc.created_at, u.full_name as display_name,
+                   bc.purpose
             FROM barangay_clearances bc
             JOIN users u ON bc.user_id = u.id
             WHERE bc.payment_status IN ('confirmed', 'pending', 'refund_pending', 'refunded', 'rejected') AND DATE(bc.created_at) >= ? AND DATE(bc.created_at) <= ?
@@ -329,7 +330,8 @@ switch ($type) {
             SELECT dr.doc_type, dr.payment_reference_no as reference_no, 
                    COALESCE(dr.payment_amount_paid, (SELECT price FROM document_types WHERE name = dr.doc_type)) as amount, 
                    dr.payment_status as status, dr.created_at, 
-                   COALESCE(fm.full_name, u.full_name) as display_name
+                   COALESCE(fm.full_name, u.full_name) as display_name,
+                   dr.purpose
             FROM document_requests dr
             JOIN users u ON dr.user_id = u.id
             LEFT JOIN family_members fm ON dr.family_member_id = fm.id
@@ -338,7 +340,15 @@ switch ($type) {
             ORDER BY created_at DESC
         ");
         $stmt->execute([$start, $end, $start, $end]);
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        $results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($results as &$row) {
+            if (!empty($row['purpose']) && preg_match('/\[Walk-in Requestor: (.*?)\]/', $row['purpose'], $m)) {
+                $row['display_name'] = trim($m[1]);
+            }
+        }
+        
+        echo json_encode($results);
         break;
 
     default:
