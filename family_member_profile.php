@@ -42,23 +42,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $is_senior = in_array('Senior Citizen', $classifications) ? 1 : 0;
             $is_others = in_array('Indigenous People', $classifications) ? 1 : 0;
 
-            $fm_migrant_previous_residence = trim($_POST['fm_migrant_previous_residence'] ?? '');
-            $fm_migrant_length_of_stay = trim($_POST['fm_migrant_length_of_stay'] ?? '');
+            $is_migrant_class = in_array('Migrant / Transferee', $classifications);
+
+            $fm_migrant_previous_residence = $is_migrant_class ? trim($_POST['fm_migrant_previous_residence'] ?? '') : '';
+            $fm_migrant_length_of_stay = $is_migrant_class ? trim($_POST['fm_migrant_length_of_stay'] ?? '') : '';
             
-            $fm_migrant_reason_leaving_raw = trim($_POST['fm_migrant_reason_leaving'] ?? '');
-            $fm_migrant_reason_leaving_other = trim($_POST['fm_migrant_reason_leaving_other'] ?? '');
+            $fm_migrant_reason_leaving_raw = $is_migrant_class ? trim($_POST['fm_migrant_reason_leaving'] ?? '') : '';
+            $fm_migrant_reason_leaving_other = $is_migrant_class ? trim($_POST['fm_migrant_reason_leaving_other'] ?? '') : '';
             $fm_migrant_reason_leaving = ($fm_migrant_reason_leaving_raw === 'Others' && $fm_migrant_reason_leaving_other !== '') ? $fm_migrant_reason_leaving_other : $fm_migrant_reason_leaving_raw;
             
-            $fm_migrant_date_transfer = trim($_POST['fm_migrant_date_transfer'] ?? '') ?: null;
+            $fm_migrant_date_transfer = ($is_migrant_class && trim($_POST['fm_migrant_date_transfer'] ?? '')) ? trim($_POST['fm_migrant_date_transfer']) : null;
             
-            $fm_migrant_reason_for_raw = trim($_POST['fm_migrant_reason_for'] ?? '');
-            $fm_migrant_reason_for_other = trim($_POST['fm_migrant_reason_for_other'] ?? '');
+            $fm_migrant_reason_for_raw = $is_migrant_class ? trim($_POST['fm_migrant_reason_for'] ?? '') : '';
+            $fm_migrant_reason_for_other = $is_migrant_class ? trim($_POST['fm_migrant_reason_for_other'] ?? '') : '';
             $fm_migrant_reason_for = ($fm_migrant_reason_for_raw === 'Others' && $fm_migrant_reason_for_other !== '') ? $fm_migrant_reason_for_other : $fm_migrant_reason_for_raw;
             
-            $fm_migrant_duration = trim($_POST['fm_migrant_duration'] ?? '');
+            $fm_migrant_duration = $is_migrant_class ? trim($_POST['fm_migrant_duration'] ?? '') : '';
             
-            $fm_migrant_intention_raw = trim($_POST['fm_migrant_intention'] ?? '');
-            $fm_migrant_intention_other = trim($_POST['fm_migrant_intention_other'] ?? '');
+            $fm_migrant_intention_raw = $is_migrant_class ? trim($_POST['fm_migrant_intention'] ?? '') : '';
+            $fm_migrant_intention_other = $is_migrant_class ? trim($_POST['fm_migrant_intention_other'] ?? '') : '';
             $fm_migrant_intention = ($fm_migrant_intention_raw === 'Others' && $fm_migrant_intention_other !== '') ? $fm_migrant_intention_other : $fm_migrant_intention_raw;
 
             $name_parts = array_filter([$first_name, $middle_name, $last_name, $suffix]);
@@ -465,7 +467,7 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                                 <?php foreach ($all_classes as $idx => $cls): ?>
                                 <div class="col-md-4">
                                     <div class="form-check p-2 border rounded-3 h-100 d-flex align-items-center">
-                                        <input class="form-check-input ms-0 me-2" type="checkbox" name="classifications[]"
+                                        <input class="form-check-input classification-checkbox ms-0 me-2" type="checkbox" name="classifications[]"
                                             id="cls_<?php echo $idx; ?>" value="<?php echo htmlspecialchars($cls); ?>"
                                             <?php echo in_array($cls, $saved_classes) ? 'checked' : ''; ?>>
                                         <label class="form-check-label fw-semibold small" for="cls_<?php echo $idx; ?>"><?php echo $cls; ?></label>
@@ -477,7 +479,8 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
 
                         </div>
 
-                        <div id="fm_migrant_info_wrap" style="display: block;">
+                        <?php $is_migrant = in_array('Migrant / Transferee', $saved_classes); ?>
+                        <div id="fm_migrant_info_wrap" style="display: <?php echo $is_migrant ? 'block' : 'none'; ?>;">
                             <h6 class="text-dark opacity-50 fw-bold small  mb-4 pb-2 border-bottom mt-5">Migrant Information</h6>
 
                         <div class="row g-4 mb-4">
@@ -594,6 +597,24 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Toggle Migrant Information section based on checkbox status
+        const checkboxes = document.querySelectorAll('.classification-checkbox');
+        const migrantWrap = document.getElementById('fm_migrant_info_wrap');
+        if (checkboxes.length && migrantWrap) {
+            function updateMigrantVisibility() {
+                let isMigrant = false;
+                checkboxes.forEach(cb => {
+                    if (cb.value === 'Migrant / Transferee' && cb.checked) {
+                        isMigrant = true;
+                    }
+                });
+                migrantWrap.style.display = isMigrant ? 'block' : 'none';
+            }
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', updateMigrantVisibility);
+            });
+        }
+
         // Set date input limits for age 18-59
         const birthdateInput = document.getElementById('birthdate');
         if (birthdateInput) {
