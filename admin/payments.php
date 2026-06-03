@@ -240,6 +240,9 @@ $stmt = $pdo->query("
 ");
 if ($stmt) {
 	foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+		if (!empty($row['doc_detail']) && preg_match('/\[Walk-in Requestor:\s*(.*?)\]/', $row['doc_detail'], $matches)) {
+			$row['display_name'] = trim($matches[1]);
+		}
 		$payments[] = $row;
 	}
 }
@@ -263,6 +266,9 @@ $stmt = $pdo->query("
 ");
 if ($stmt) {
 	foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+		if (!empty($row['doc_detail']) && preg_match('/\[Walk-in Requestor:\s*(.*?)\]/', $row['doc_detail'], $matches)) {
+			$row['display_name'] = trim($matches[1]);
+		}
 		$payments[] = $row;
 	}
 }
