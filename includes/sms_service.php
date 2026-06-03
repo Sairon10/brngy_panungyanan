@@ -489,3 +489,17 @@ function send_registration_sms($phoneNumber, $userName) {
     
     return send_sms($phoneNumber, $smsText);
 }
+
+/**
+ * Send family member added SMS
+ */
+function send_family_member_added_sms($phoneNumber, $userName, $fmName) {
+    if (empty($phoneNumber)) {
+        return ['success' => false, 'message' => 'Recipient phone number is required'];
+    }
+    
+    $barangayName = getenv('BARANGAY_NAME') ?: $_ENV['BARANGAY_NAME'] ?? 'Barangay Panungyanan';
+    $smsText = $barangayName . "\n\nHi " . $userName . "!\n\nYou have successfully added " . $fmName . " as a new family member to your profile. Thank you for keeping your household records updated!";
+    
+    return send_sms($phoneNumber, $smsText);
+}

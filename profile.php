@@ -455,7 +455,7 @@ try {
                             }
                             $all_classes = [
                                 'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
-                                'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen', 'Migrant / Transferee'
                             ];
                             ?>
                             <div class="row g-2">

@@ -1052,3 +1052,75 @@ function send_registration_email($email, $userName) {
     
     return send_resend_email($email, $subject, $htmlContent, $textContent);
 }
+
+/**
+ * Generate family member added email HTML template
+ */
+function generate_family_member_added_email_html($userName, $fmName) {
+    $barangayName = getenv('BARANGAY_NAME') ?: $_ENV['BARANGAY_NAME'] ?? 'Barangay Panungyanan';
+    $html = '
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Family Member Added</title>
+    </head>
+    <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, \'Helvetica Neue\', Arial, sans-serif; background-color: #f3f4f6;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <td style="padding: 40px 20px;">
+                    <table role="presentation" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <tr>
+                            <td style="background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%); padding: 30px; text-align: center;">
+                                <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 600;">' . htmlspecialchars($barangayName) . '</h1>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                <div style="text-align: center; margin-bottom: 30px;">
+                                    <div style="font-size: 48px; margin-bottom: 15px;">👨‍👩‍👧‍👦</div>
+                                    <h2 style="margin: 0; color: #0f766e; font-size: 28px; font-weight: 600;">Family Member Added</h2>
+                                </div>
+                                <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                                    Dear <strong>' . htmlspecialchars($userName) . '</strong>,
+                                </p>
+                                <p style="margin: 0 0 20px; color: #374151; font-size: 16px; line-height: 1.6;">
+                                    You have successfully added <strong>' . htmlspecialchars($fmName) . '</strong> as a new family member to your profile.
+                                </p>
+                                <p style="margin: 20px 0 0; color: #374151; font-size: 16px; line-height: 1.6;">
+                                    Thank you for keeping your household records updated!
+                                </p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+                                <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">
+                                    <strong>' . htmlspecialchars($barangayName) . '</strong>
+                                </p>
+                                <p style="margin: 15px 0 0; color: #9ca3af; font-size: 12px;">
+                                    This is an automated email. Please do not reply to this message.
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>';
+    return $html;
+}
+
+/**
+ * Send family member added email
+ */
+function send_family_member_added_email($email, $userName, $fmName) {
+    if (empty($email)) {
+        return ['success' => false, 'message' => 'Recipient email is required'];
+    }
+    $subject = 'New Family Member Added - Barangay Panungyanan';
+    $htmlContent = generate_family_member_added_email_html($userName, $fmName);
+    $textContent = "Hello {$userName},\n\nYou have successfully added {$fmName} as a new family member to your profile.\n\nThank you for keeping your household records updated!";
+    return send_resend_email($email, $subject, $htmlContent, $textContent);
+}

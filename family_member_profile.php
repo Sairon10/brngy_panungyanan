@@ -458,7 +458,7 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                             }
                             $all_classes = [
                                 'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
-                                'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen', 'Migrant / Transferee'
                             ];
                             ?>
                             <div class="row g-2">
@@ -477,7 +477,8 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
 
                         </div>
 
-                        <h6 class="text-dark opacity-50 fw-bold small  mb-4 pb-2 border-bottom mt-5">Migrant Information</h6>
+                        <div id="fm_migrant_info_wrap" style="display: block;">
+                            <h6 class="text-dark opacity-50 fw-bold small  mb-4 pb-2 border-bottom mt-5">Migrant Information</h6>
 
                         <div class="row g-4 mb-4">
                             <div class="col-md-6">
@@ -548,7 +549,7 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                                     <option value="">-- SELECT DURATION --</option>
                                     <?php 
                                     $optionsDur = ['1 Month','2 Months','3 Months','4 Months','5 Months','6 Months','7 Months','8 Months','9 Months','10 Months','11 Months',
-                                                '1 Year','2 Years','3 Years','4 Years','5 Years','6 Years','7 Years','8 Years','9 Years','10 Years','More than 10 Years', 'Permanent'];
+                                                '1 Year','2 Years','3 Years','4 Years','5 Years','6 Years','7 Years','8 Years','9 Years','10 Years','More than 10 Years', 'Permanent', 'Undecided'];
                                     foreach ($optionsDur as $opt) {
                                         $selected = ($data['migrant_duration'] ?? '') === $opt ? 'selected' : '';
                                         echo "<option value=\"$opt\" $selected>$opt</option>";
@@ -575,6 +576,7 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                                     <input type="text" name="fm_migrant_intention_other" id="fm_migrant_intention_other" class="form-control" placeholder="Please specify intention..." value="<?php echo $isOtherInt ? htmlspecialchars(ucfirst($dbIntention)) : ''; ?>">
                                 </div>
                             </div>
+                        </div>
                         </div>
 
                     </div>
@@ -641,6 +643,8 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
                 saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
             });
         }
+
+
     });
 
     function toggleMigrantReasonOthers() {

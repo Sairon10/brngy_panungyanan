@@ -464,7 +464,7 @@ require_once __DIR__ . '/header.php';
                                         }
                                         $all_classes = [
                                             'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
-                                            'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                            'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen', 'Migrant / Transferee'
                                         ];
                                         if ($is_editing):
                                         ?>

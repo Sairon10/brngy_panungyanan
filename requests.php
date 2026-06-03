@@ -1254,7 +1254,7 @@ $documents = $documents_stmt->fetchAll();
 
         Swal.fire({
             title: '<div class="' + titleColor + ' fw-bold">' + titleText + '</div>',
-            html: '<div class="text-start p-3 bg-light rounded border-start border-4 ' + borderColor + '" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;">' + notes + '</div>',
+            html: '<div class="text-start p-3 bg-light rounded border-start border-4 ' + borderColor + '" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;">' + (notes.charAt(0).toUpperCase() + notes.slice(1)) + '</div>',
             icon: 'info',
             confirmButtonText: 'Understood',
             confirmButtonColor: btnColor,
@@ -1498,6 +1498,17 @@ $documents = $documents_stmt->fetchAll();
                 Swal.fire({
                     title: 'Receipt Required',
                     text: 'Please upload your E-Wallet payment receipt before submitting.',
+                    icon: 'warning',
+                    confirmButtonColor: '#0d9488'
+                });
+                return false;
+            }
+            
+            const refInput = document.getElementById('payment_reference_no');
+            if (!refInput.value) {
+                Swal.fire({
+                    title: 'Invalid Receipt',
+                    text: 'No reference number was detected in the uploaded receipt. Please ensure the receipt is clear and shows the reference number.',
                     icon: 'warning',
                     confirmButtonColor: '#0d9488'
                 });

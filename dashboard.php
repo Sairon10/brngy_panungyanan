@@ -49,7 +49,7 @@ try {
     $incidents_submitted = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents WHERE user_id=$user_id AND status='submitted'")->fetch()['c'] ?? 0);
     $incidents_review = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents WHERE user_id=$user_id AND status='in_review'")->fetch()['c'] ?? 0);
     $incidents_resolved = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents WHERE user_id=$user_id AND status='resolved'")->fetch()['c'] ?? 0);
-    $incidents_rejected = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents WHERE user_id=$user_id AND status='rejected'")->fetch()['c'] ?? 0);
+    $incidents_rejected = (int) ($pdo->query("SELECT COUNT(*) as c FROM incidents WHERE user_id=$user_id AND status='closed'")->fetch()['c'] ?? 0);
 } catch (PDOException $e) {
     $total_pending = 0;
     $total_approved = 0;
@@ -72,8 +72,8 @@ try {
         <div class="col-lg-5">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
-                    <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>Documents
-                        Request</h5>
+                    <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-pie me-2 text-primary"></i>Document
+                        Requests</h5>
                 </div>
                 <div class="card-body d-flex flex-column justify-content-center align-items-center p-4">
                     <?php
@@ -179,7 +179,7 @@ try {
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-header bg-transparent border-0 pt-4 pb-0 px-4">
                     <h5 class="fw-bold mb-0 text-dark"><i
-                            class="fas fa-exclamation-triangle me-2 text-danger"></i>Incidents Report</h5>
+                            class="fas fa-exclamation-triangle me-2 text-danger"></i>Report Incident</h5>
                 </div>
                 <div class="card-body d-flex flex-column justify-content-center align-items-center p-4">
                     <?php if ($incidents_submitted == 0 && $incidents_review == 0 && $incidents_resolved == 0): ?>

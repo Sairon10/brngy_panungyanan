@@ -986,7 +986,7 @@ unset($row);
 
             Swal.fire({
                 title: '<div class="' + titleColor + ' fw-bold">' + titleText + '</div>',
-                html: '<div class="text-start p-3 bg-light rounded border-start border-4 ' + borderColor + '" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;">' + notes + '</div>',
+                html: '<div class="text-start p-3 bg-light rounded border-start border-4 ' + borderColor + '" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;">' + (notes.charAt(0).toUpperCase() + notes.slice(1)) + '</div>',
                 icon: 'info',
                 confirmButtonText: 'Understood',
                 confirmButtonColor: btnColor,

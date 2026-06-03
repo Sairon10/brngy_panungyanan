@@ -96,6 +96,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
 
                     $pdo->prepare('INSERT INTO family_members (user_id, first_name, middle_name, last_name, suffix, full_name, relationship, birthdate, sex, civil_status, birth_place, citizenship, philsys_card_no, religion, occupation, educational_attainment, educational_status, classification, id_front_path, id_back_path, id_type, verification_status, is_pwd, is_senior, is_solo_parent, is_others, migrant_previous_residence, migrant_length_of_stay, migrant_reason_leaving, migrant_date_transfer, migrant_reason_for, migrant_duration, migrant_intention) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
                         ->execute([$user_id, $fname, $mname, $lname, $fmsuffix, $fm_name, $fm_relationship, $fm_birthdate ?: null, $fm_sex ?: null, $fm_civil_status, $fm_birth_place, $fm_citizenship, $fm_philsys, $fm_religion, $fm_occupation, $fm_edu, $fm_edu_status, $classification_json, $id_front_path, $id_back_path, $fm_id_type, 'pending', $fm_is_pwd, $fm_is_senior, $fm_is_solo_parent, $fm_is_others, $fm_migrant_previous_residence, $fm_migrant_length_of_stay, $fm_migrant_reason_leaving, $fm_migrant_date_transfer, $fm_migrant_reason_for, $fm_migrant_duration, $fm_migrant_intention]);
+                    
+                    // Send Email and SMS Notification
+                    $stmt_res = $pdo->prepare("SELECT u.email, u.full_name, r.phone FROM users u LEFT JOIN residents r ON u.id = r.user_id WHERE u.id = ?");
+                    $stmt_res->execute([$user_id]);
+                    $resident_info = $stmt_res->fetch(PDO::FETCH_ASSOC);
+                    
+                    if ($resident_info) {
+                        require_once __DIR__ . '/includes/email_service.php';
+                        require_once __DIR__ . '/includes/sms_service.php';
+                        
+                        $res_email = $resident_info['email'] ?? '';
+                        $res_phone = $resident_info['phone'] ?? '';
+                        $res_name = $resident_info['full_name'] ?? 'Resident';
+                        
+                        if (!empty($res_email)) {
+                            send_family_member_added_email($res_email, $res_name, $fm_name);
+                        }
+                        if (!empty($res_phone)) {
+                            send_family_member_added_sms($res_phone, $res_name, $fm_name);
+                        }
+                    }
+
                     $family_msg = 'Family member added successfully. Verification is pending.';
                 } else {
                     $fm_id = (int) ($_POST['fm_id'] ?? 0);
@@ -516,7 +538,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                         </div>
 
                         <!-- Migrant Information Section -->
-                        <div id="fm_migrant_info_wrap" class="col-lg-12 mt-5" style="display:none;">
+                        <div id="fm_migrant_info_wrap" class="col-lg-12 mt-5" style="display:block;">
                             <h6
                                 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small text-uppercase letter-spacing-1">
                                 <i class="fas fa-plane-arrival me-2"></i>Migrant Information</h6>
@@ -611,6 +633,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                         <option value="9 Years">9 Years</option>
                                         <option value="10 Years">10 Years</option>
                                         <option value="More than 10 Years">More than 10 Years</option>
+                                        <option value="Undecided">Undecided</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -640,7 +663,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                         <?php
                                         $all_classes = [
                                             'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
-                                            'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                            'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen', 'Migrant / Transferee'
                                         ];
                                         foreach ($all_classes as $idx => $cls): ?>
                                         <div class="col-md-4">
@@ -836,18 +859,11 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
     function toggleOthersInput(selectId, wrapId) {
         const sel = document.getElementById(selectId);
         const wrap = document.getElementById(wrapId);
-        const migrantWrap = document.getElementById('fm_migrant_info_wrap');
         if (!sel || !wrap) return;
         const isOthers = sel.value === 'Others';
         wrap.style.display = isOthers ? 'block' : 'none';
-        if (migrantWrap) migrantWrap.style.display = isOthers ? 'block' : 'none';
         const input = wrap.querySelector('input');
         if (input) input.required = isOthers;
-        
-        if (migrantWrap) {
-            const mInputs = migrantWrap.querySelectorAll('input:not(#fm_migrant_reason_leaving_other):not(#fm_migrant_reason_for_other):not(#fm_migrant_intention_other), select');
-            mInputs.forEach(i => i.required = isOthers);
-        }
     }
 
     function toggleMigrantReasonOthers() {
@@ -912,7 +928,6 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
             document.getElementById('fm_relationship').value = 'Others';
             document.getElementById('fm_relationship_other').value = fm.relationship;
             document.getElementById('fm_relationship_other_wrap').style.display = 'block';
-            document.getElementById('fm_migrant_info_wrap').style.display = 'block';
         } else {
             document.getElementById('fm_relationship_other').value = '';
         }

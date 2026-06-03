@@ -1413,7 +1413,7 @@ if ($linked_resident) {
                                 <?php
                                 $all_classes = [
                                     'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
-                                    'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                    'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen', 'Migrant / Transferee'
                                 ];
                                 foreach ($all_classes as $idx => $cls): ?>
                                 <div class="col-md-4">
@@ -1616,7 +1616,7 @@ if ($linked_resident) {
                         </div>
 
                         <!-- Migrant Information Section -->
-                        <div id="fm_edit_migrant_info_wrap" class="col-lg-12 mt-4" style="display:none;">
+                        <div id="fm_edit_migrant_info_wrap" class="col-lg-12 mt-4" style="display:block;">
                             <h6
                                 class="text-teal-700 fw-bold border-bottom pb-2 mb-3 small  letter-spacing-1">
                                 <i class="fas fa-plane-arrival me-2"></i>Migrant Information</h6>
@@ -1711,6 +1711,7 @@ if ($linked_resident) {
                                         <option value="9 Years">9 Years</option>
                                         <option value="10 Years">10 Years</option>
                                         <option value="More than 10 Years">More than 10 Years</option>
+                                        <option value="Undecided">Undecided</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -1738,7 +1739,7 @@ if ($linked_resident) {
                                 <?php
                                 $all_classes = [
                                     'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
-                                    'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
+                                    'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen', 'Migrant / Transferee'
                                 ];
                                 foreach ($all_classes as $idx => $cls): ?>
                                 <div class="col-md-4">
@@ -1969,18 +1970,11 @@ if ($linked_resident) {
     function toggleOthersInput(selectId, wrapId) {
         const sel = document.getElementById(selectId);
         const wrap = document.getElementById(wrapId);
-        const migrantWrap = document.getElementById('fm_edit_migrant_info_wrap');
         if (!sel || !wrap) return;
         const isOthers = sel.value === 'Others';
         wrap.style.display = isOthers ? 'block' : 'none';
-        if (migrantWrap) migrantWrap.style.display = isOthers ? 'block' : 'none';
         const input = wrap.querySelector('input');
         if (input) input.required = isOthers;
-        
-        if (migrantWrap) {
-            const mInputs = migrantWrap.querySelectorAll('input:not(#fm_edit_migrant_reason_leaving_other):not(#fm_edit_migrant_reason_for_other):not(#fm_edit_migrant_intention_other), select');
-            mInputs.forEach(i => i.required = isOthers);
-        }
     }
 
     function toggleMigrantReasonOthers() {
@@ -2032,7 +2026,7 @@ if ($linked_resident) {
             document.getElementById('fm_edit_relationship').value = fm.relationship || 'Child';
             document.getElementById('fm_edit_relationship_other').value = '';
             document.getElementById('fm_edit_relationship_other_wrap').style.display = 'none';
-            document.getElementById('fm_edit_migrant_info_wrap').style.display = 'none';
+            document.getElementById('fm_edit_migrant_info_wrap').style.display = 'block';
         }
         
         document.getElementById('fm_edit_migrant_previous_residence').value = fm.migrant_previous_residence || '';

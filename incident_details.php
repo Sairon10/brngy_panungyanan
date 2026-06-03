@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($incident)) {
                                                     <div class="fw-bold <?php echo $status === 'canceled' ? 'text-dark' : 'text-danger'; ?> small mb-1">
                                                         <i class="fas fa-info-circle me-1"></i> <?php echo $status === 'canceled' ? 'Reason for Cancellation:' : 'Reason for Rejection:'; ?>
                                                     </div>
-                                                    <div class="<?php echo $status === 'canceled' ? 'text-secondary' : 'text-danger'; ?>"><?php echo nl2br(htmlspecialchars($reason)); ?></div>
+                                                    <div class="<?php echo $status === 'canceled' ? 'text-secondary' : 'text-danger'; ?>"><?php echo nl2br(htmlspecialchars(ucfirst($reason))); ?></div>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
