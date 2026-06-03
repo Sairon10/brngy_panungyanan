@@ -8,6 +8,29 @@ require_once __DIR__ . '/partials/user_dashboard_header.php';
 $pdo = get_db_connection();
 $msg = '';
 $family_msg = '';
+
+$fm_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if ($fm_id === 0) {
+    redirect('family_members.php');
+}
+
+// Ensure the family member belongs to the current user
+$stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ? AND user_id = ?');
+$stmt->execute([$fm_id, $_SESSION['user_id']]);
+$data = $stmt->fetch();
+
+if (!$data) {
+    redirect('family_members.php');
+}
+
+$head_stmt = $pdo->prepare('SELECT purok, address FROM residents WHERE user_id = ?');
+$head_stmt->execute([$_SESSION['user_id']]);
+$head_data = $head_stmt->fetch();
+$head_purok = $head_data['purok'] ?? '';
+$head_address = $head_data['address'] ?? '';
+
+$barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F' . str_pad((string)$fm_id, 4, '0', STR_PAD_LEFT);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         if (!csrf_validate()) {
@@ -42,25 +65,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $is_senior = in_array('Senior Citizen', $classifications) ? 1 : 0;
             $is_others = in_array('Indigenous People', $classifications) ? 1 : 0;
 
-            $is_migrant_class = in_array('Migrant / Transferee', $classifications);
+            $has_existing_migrant_data = !empty($data['migrant_previous_residence']) ||
+                                         !empty($data['migrant_length_of_stay']) ||
+                                         !empty($data['migrant_reason_leaving']) ||
+                                         !empty($data['migrant_date_transfer']) ||
+                                         !empty($data['migrant_reason_for']) ||
+                                         !empty($data['migrant_duration']) ||
+                                         !empty($data['migrant_intention']);
 
-            $fm_migrant_previous_residence = $is_migrant_class ? trim($_POST['fm_migrant_previous_residence'] ?? '') : '';
-            $fm_migrant_length_of_stay = $is_migrant_class ? trim($_POST['fm_migrant_length_of_stay'] ?? '') : '';
+            $is_migrant_class = in_array('Migrant / Transferee', $classifications);
+            $should_process_migrant = $is_migrant_class || $has_existing_migrant_data;
+
+            $fm_migrant_previous_residence = $should_process_migrant ? trim($_POST['fm_migrant_previous_residence'] ?? '') : '';
+            $fm_migrant_length_of_stay = $should_process_migrant ? trim($_POST['fm_migrant_length_of_stay'] ?? '') : '';
             
-            $fm_migrant_reason_leaving_raw = $is_migrant_class ? trim($_POST['fm_migrant_reason_leaving'] ?? '') : '';
-            $fm_migrant_reason_leaving_other = $is_migrant_class ? trim($_POST['fm_migrant_reason_leaving_other'] ?? '') : '';
+            $fm_migrant_reason_leaving_raw = $should_process_migrant ? trim($_POST['fm_migrant_reason_leaving'] ?? '') : '';
+            $fm_migrant_reason_leaving_other = $should_process_migrant ? trim($_POST['fm_migrant_reason_leaving_other'] ?? '') : '';
             $fm_migrant_reason_leaving = ($fm_migrant_reason_leaving_raw === 'Others' && $fm_migrant_reason_leaving_other !== '') ? $fm_migrant_reason_leaving_other : $fm_migrant_reason_leaving_raw;
             
-            $fm_migrant_date_transfer = ($is_migrant_class && trim($_POST['fm_migrant_date_transfer'] ?? '')) ? trim($_POST['fm_migrant_date_transfer']) : null;
+            $fm_migrant_date_transfer = ($should_process_migrant && trim($_POST['fm_migrant_date_transfer'] ?? '')) ? trim($_POST['fm_migrant_date_transfer']) : null;
             
-            $fm_migrant_reason_for_raw = $is_migrant_class ? trim($_POST['fm_migrant_reason_for'] ?? '') : '';
-            $fm_migrant_reason_for_other = $is_migrant_class ? trim($_POST['fm_migrant_reason_for_other'] ?? '') : '';
+            $fm_migrant_reason_for_raw = $should_process_migrant ? trim($_POST['fm_migrant_reason_for'] ?? '') : '';
+            $fm_migrant_reason_for_other = $should_process_migrant ? trim($_POST['fm_migrant_reason_for_other'] ?? '') : '';
             $fm_migrant_reason_for = ($fm_migrant_reason_for_raw === 'Others' && $fm_migrant_reason_for_other !== '') ? $fm_migrant_reason_for_other : $fm_migrant_reason_for_raw;
             
-            $fm_migrant_duration = $is_migrant_class ? trim($_POST['fm_migrant_duration'] ?? '') : '';
+            $fm_migrant_duration = $should_process_migrant ? trim($_POST['fm_migrant_duration'] ?? '') : '';
             
-            $fm_migrant_intention_raw = $is_migrant_class ? trim($_POST['fm_migrant_intention'] ?? '') : '';
-            $fm_migrant_intention_other = $is_migrant_class ? trim($_POST['fm_migrant_intention_other'] ?? '') : '';
+            $fm_migrant_intention_raw = $should_process_migrant ? trim($_POST['fm_migrant_intention'] ?? '') : '';
+            $fm_migrant_intention_other = $should_process_migrant ? trim($_POST['fm_migrant_intention_other'] ?? '') : '';
             $fm_migrant_intention = ($fm_migrant_intention_raw === 'Others' && $fm_migrant_intention_other !== '') ? $fm_migrant_intention_other : $fm_migrant_intention_raw;
 
             $name_parts = array_filter([$first_name, $middle_name, $last_name, $suffix]);
@@ -161,27 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-$fm_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-if ($fm_id === 0) {
-    redirect('family_members.php');
-}
 
-// Ensure the family member belongs to the current user
-$stmt = $pdo->prepare('SELECT * FROM family_members WHERE id = ? AND user_id = ?');
-$stmt->execute([$fm_id, $_SESSION['user_id']]);
-$data = $stmt->fetch();
-
-if (!$data) {
-    redirect('family_members.php');
-}
-
-$head_stmt = $pdo->prepare('SELECT purok, address FROM residents WHERE user_id = ?');
-$head_stmt->execute([$_SESSION['user_id']]);
-$head_data = $head_stmt->fetch();
-$head_purok = $head_data['purok'] ?? '';
-$head_address = $head_data['address'] ?? '';
-
-$barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F' . str_pad((string)$fm_id, 4, '0', STR_PAD_LEFT);
 ?>
 
 <div class="mb-4">
@@ -479,7 +491,16 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
 
                         </div>
 
-                        <?php $is_migrant = in_array('Migrant / Transferee', $saved_classes); ?>
+                        <?php 
+                        $has_migrant_data = !empty($data['migrant_previous_residence']) ||
+                                            !empty($data['migrant_length_of_stay']) ||
+                                            !empty($data['migrant_reason_leaving']) ||
+                                            !empty($data['migrant_date_transfer']) ||
+                                            !empty($data['migrant_reason_for']) ||
+                                            !empty($data['migrant_duration']) ||
+                                            !empty($data['migrant_intention']);
+                        $is_migrant = in_array('Migrant / Transferee', $saved_classes) || $has_migrant_data;
+                        ?>
                         <div id="fm_migrant_info_wrap" style="display: <?php echo $is_migrant ? 'block' : 'none'; ?>;">
                             <h6 class="text-dark opacity-50 fw-bold small  mb-4 pb-2 border-bottom mt-5">Migrant Information</h6>
 
@@ -601,9 +622,10 @@ $barangay_id_display = date('Y', strtotime($data['created_at'] ?? 'now')) . '-F'
         // Toggle Migrant Information section based on checkbox status
         const checkboxes = document.querySelectorAll('.classification-checkbox');
         const migrantWrap = document.getElementById('fm_migrant_info_wrap');
+        const hasMigrantData = <?php echo $has_migrant_data ? 'true' : 'false'; ?>;
         if (checkboxes.length && migrantWrap) {
             function updateMigrantVisibility() {
-                let isMigrant = false;
+                let isMigrant = hasMigrantData;
                 checkboxes.forEach(cb => {
                     if (cb.value === 'Migrant / Transferee' && cb.checked) {
                         isMigrant = true;
