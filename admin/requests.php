@@ -248,14 +248,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					redirect('requests.php');
 				}
 
+				// Fetch document price
+				$price_stmt = $pdo->prepare('SELECT price FROM document_types WHERE name = ? LIMIT 1');
+				$price_stmt->execute([$wi_doc_type]);
+				$doc_price = (float)($price_stmt->fetchColumn() ?: 0.0);
+
+				$payment_method_db = ($wi_payment_method === 'GCash') ? 'E-Wallet' : 'Cash';
+				$payment_status_db = ($wi_payment_method === 'GCash') ? 'pending' : 'confirmed';
+
 				if ($wi_doc_type === 'Barangay Clearance') {
 					$cn = 'BC-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6));
-					$pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, status, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, "pending", ?, ?, NOW())')
-						->execute([$wi_user_id, $cn, $final_purpose, $db_ref, $payment_receipt_path]);
+					$pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, status, payment_method, payment_status, payment_amount_paid, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, "pending", ?, ?, ?, ?, ?, NOW())')
+						->execute([$wi_user_id, $cn, $final_purpose, $payment_method_db, $payment_status_db, $doc_price, $db_ref, $payment_receipt_path]);
 				} else {
 					$wi_indigency_purpose = (stripos($wi_doc_type, 'Indigency') !== false) ? $wi_purpose : null;
-					$pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, indigency_purposes, status, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, ?, "pending", ?, ?, NOW())')
-						->execute([$wi_user_id, $wi_doc_type, $final_purpose, $wi_indigency_purpose, $db_ref, $payment_receipt_path]);
+					$pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, indigency_purposes, status, payment_method, payment_status, payment_amount_paid, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, ?, "pending", ?, ?, ?, ?, ?, NOW())')
+						->execute([$wi_user_id, $wi_doc_type, $final_purpose, $wi_indigency_purpose, $payment_method_db, $payment_status_db, $doc_price, $db_ref, $payment_receipt_path]);
 				}
 				$_SESSION['action_success'] = [
 					'title' => 'Walk-in Request Added',
