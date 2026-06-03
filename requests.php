@@ -218,6 +218,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             }
 
+            if ($doc_type === 'Resident ID') {
+                if ($family_member_id) {
+                    $stmt_av = $pdo->prepare("SELECT avatar FROM family_members WHERE id = ?");
+                    $stmt_av->execute([$family_member_id]);
+                    $av_path = $stmt_av->fetchColumn();
+                } else {
+                    $stmt_av = $pdo->prepare("SELECT avatar FROM residents WHERE user_id = ?");
+                    $stmt_av->execute([$_SESSION['user_id']]);
+                    $av_path = $stmt_av->fetchColumn();
+                }
+                
+                if (empty($av_path)) {
+                    $message = 'Error: Profile picture (avatar) is required before requesting a Resident ID.';
+                    goto skip_request;
+                }
+            }
+
             // Duplicate reference number check — block if ref no. already used
             if (!empty($payment_reference_no)) {
                 $dup1 = $pdo->prepare("SELECT id FROM barangay_clearances WHERE payment_reference_no = ? AND payment_status NOT IN ('rejected','refunded') LIMIT 1");
@@ -377,17 +394,17 @@ $documents = $documents_stmt->fetchAll();
                             <input type="hidden" name="family_member_id" id="family_member_id_hidden" value="">
                             <select id="request_for_select" class="form-select form-select-lg bg-light border-0" required
                                 onchange="handleRequestForChange(this)">
-                                <option value="self">
+                                <option value="self" data-has-avatar="<?php echo !empty($nav_avatar) ? '1' : '0'; ?>">
                                     <?php echo htmlspecialchars($_SESSION['full_name'] ?? 'Account Owner'); ?> — Owner
                                 </option>
                                 <?php if (!empty($family_members)): ?>
                                     <?php foreach ($family_members as $fm): ?>
-                                        <option value="<?php echo $fm['id']; ?>">
+                                        <option value="<?php echo $fm['id']; ?>" data-has-avatar="<?php echo !empty($fm['avatar']) ? '1' : '0'; ?>">
                                             <?php echo htmlspecialchars($fm['full_name']); ?> — Family Member
                                         </option>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
-                                <option value="add_new_fm" class="text-primary fw-bold">+ Add Family Member</option>
+                                <option value="add_new_fm" class="text-primary fw-bold" data-has-avatar="0">+ Add Family Member</option>
                             </select>
                             <?php if ($pending_fm_count > 0): ?>
                                 <div class="form-text small text-amber-600 mt-2">
@@ -1359,6 +1376,45 @@ $documents = $documents_stmt->fetchAll();
         }
     });
 
+    function checkResidentIdAvatarStatus() {
+        const docTypeSelect = document.getElementById('doc_type');
+        if (!docTypeSelect || docTypeSelect.value !== 'Resident ID') {
+            return true;
+        }
+
+        const requestForSelect = document.getElementById('request_for_select');
+        const selectedOption = requestForSelect.options[requestForSelect.selectedIndex];
+        if (!selectedOption) return true;
+
+        const hasAvatar = selectedOption.getAttribute('data-has-avatar') === '1';
+        if (!hasAvatar) {
+            const isSelf = requestForSelect.value === 'self';
+            const targetUrl = isSelf ? 'profile.php' : 'family_member_profile.php?id=' + requestForSelect.value;
+            const targetLabel = isSelf ? 'your profile' : 'this family member\'s profile';
+
+            Swal.fire({
+                icon: 'warning',
+                title: 'Profile Picture Required',
+                text: `Resident ID requires a profile picture. Please upload one in ${targetLabel} first before requesting a Resident ID.`,
+                showCancelButton: true,
+                confirmButtonColor: '#0f766e',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Go to Profile Settings',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = targetUrl;
+                }
+            });
+
+            // Reset document type selection to empty
+            docTypeSelect.value = '';
+            docTypeSelect.dispatchEvent(new Event('change'));
+            return false;
+        }
+        return true;
+    }
+
     // Handle Request For dropdown change
     function handleRequestForChange(select) {
         if (select.value === 'add_new_fm') {
@@ -1383,8 +1439,12 @@ $documents = $documents_stmt->fetchAll();
         Array.from(docTypeSelect.options).forEach(option => {
             if (option.value === 'Resident ID') {
                 option.disabled = false; // Removed logic disabling Resident ID for family members
-  }
+            }
         });
+
+        if (docTypeSelect.value === 'Resident ID') {
+            checkResidentIdAvatarStatus();
+        }
     }
 
     // Multi-Step Request Wizard State and Controls
@@ -1432,7 +1492,6 @@ $documents = $documents_stmt->fetchAll();
         }
     }
 
-    // Step 1 Validation
     function validateStep1() {
         const docTypeSelect = document.getElementById('doc_type');
         if (!docTypeSelect.value) {
@@ -1443,6 +1502,10 @@ $documents = $documents_stmt->fetchAll();
                 confirmButtonColor: '#0d9488'
             });
             return false;
+        }
+
+        if (docTypeSelect.value === 'Resident ID') {
+            if (!checkResidentIdAvatarStatus()) return false;
         }
 
         const docType = docTypeSelect.value.toLowerCase();
@@ -1596,6 +1659,9 @@ $documents = $documents_stmt->fetchAll();
 
     // Show/hide purpose selection based on document type
     document.getElementById('doc_type').addEventListener('change', function () {
+        if (this.value === 'Resident ID') {
+            if (!checkResidentIdAvatarStatus()) return;
+        }
         const indigencyPurposeField = document.getElementById('indigency_purpose_field');
         const clearancePurposeField = document.getElementById('clearance_purpose_field');
         const purposeTextField = document.getElementById('purpose_text_field');
