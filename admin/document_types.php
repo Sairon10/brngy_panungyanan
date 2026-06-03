@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($action === 'create') {
             $name = trim($_POST['name'] ?? '');
-            $requires_validity = isset($_POST['requires_validity']) ? 1 : 0;
+            $requires_validity = 0;
             $requires_special_handling = 0; // Hidden from UI, always 0 for new docs
             $display_order = (int)($_POST['display_order'] ?? 0);
             $price = isset($_POST['price']) ? (float)$_POST['price'] : 0.00;
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
-            $validity_months = $requires_validity ? max(1, (int)($_POST['validity_months'] ?? 1)) : 1;
+            $validity_months = 1;
             
             if ($name !== '') {
                 try {
@@ -65,8 +65,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($action === 'update') {
             $id = (int)($_POST['id'] ?? 0);
             $name = trim($_POST['name'] ?? '');
-            $requires_validity = isset($_POST['requires_validity']) ? 1 : 0;
-            $validity_months = $requires_validity ? max(1, (int)($_POST['validity_months'] ?? 1)) : 1;
+            $requires_validity = 0;
+            $validity_months = 1;
             $display_order = (int)($_POST['display_order'] ?? 0);
             $is_active = isset($_POST['is_active']) ? 1 : 0;
             $price = isset($_POST['price']) ? (float)$_POST['price'] : 0.00;
@@ -183,38 +183,30 @@ if (isset($_GET['edit'])) {
 	<div class="p-3">
 		<div class="table-card">
 		<div class="table-responsive">
-			<table class="table table-hover align-middle">
+			<table class="table table-hover align-middle" style="table-layout: fixed; width: 100%;">
 				<thead>
 					<tr>
-						<th>Name</th>
-						<th>Price</th>
-						<th>Requires Validity</th>
-						<th>Status</th>
-						<th>Actions</th>
+						<th style="width: 45%;">Name</th>
+						<th style="width: 20%;">Price</th>
+						<th style="width: 20%;">Status</th>
+						<th style="width: 15%;">Actions</th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php if (empty($document_types)): ?>
 						<tr>
-							<td colspan="7" class="text-center py-5">
+							<td colspan="4" class="text-center py-5">
 								<p class="text-muted mb-0">No document types found. Create one to get started.</p>
 							</td>
 						</tr>
 					<?php else: ?>
 						<?php foreach ($document_types as $type): ?>
 							<tr>
-								<td>
+								<td class="text-nowrap" style="overflow: hidden; text-overflow: ellipsis; white-space: normal;">
 									<strong><?php echo htmlspecialchars($type['name']); ?></strong>
 								</td>
 								<td>
 									<strong class="text-success">₱<?php echo number_format($type['price'] ?? 0, 2); ?></strong>
-								</td>
-								<td>
-									<?php if ($type['requires_validity']): ?>
-										<span class="badge bg-info">Yes (<?php echo $type['validity_months']; ?> <?php echo $type['validity_months'] > 1 ? 'Months' : 'Month'; ?>)</span>
-									<?php else: ?>
-										<span class="badge bg-secondary">No</span>
-									<?php endif; ?>
 								</td>
 								<td>
 									<?php if ($type['is_active']): ?>
@@ -280,38 +272,6 @@ if (isset($_GET['edit'])) {
 								step="0.01" min="0" required>
 						</div>
 						<small class="text-muted">Set the price for this document type</small>
-					</div>
-					<div class="mb-3">
-						<div class="form-check">
-							<input type="checkbox" name="requires_validity" class="form-check-input" id="requires_validity"
-								<?php echo ($edit_type['requires_validity'] ?? 0) ? 'checked' : ''; ?>>
-							<label class="form-check-label fw-semibold" for="requires_validity">
-								Requires Validity Period
-							</label>
-							<small class="d-block text-muted">If checked, you can select how many months this document type remains valid.</small>
-						</div>
-						
-						<div class="mt-3 p-3 bg-light rounded-3 border" id="validity_period_container" style="display: none;">
-							<label class="form-label small fw-bold text-dark mb-1">Validity Duration <span class="text-danger">*</span></label>
-							<select name="validity_months" class="form-select rounded-3">
-								<?php
-								$selected_months = $edit_type['validity_months'] ?? 1;
-								$options = [
-									1 => '1 Month (30 Days)',
-									2 => '2 Months (60 Days)',
-									3 => '3 Months (90 Days)',
-									6 => '6 Months (180 Days)',
-									12 => '12 Months (1 Year)',
-								];
-								foreach ($options as $val => $label) {
-									$sel = ($val == $selected_months) ? 'selected' : '';
-									echo "<option value=\"$val\" $sel>$label</option>";
-								}
-								?>
-							</select>
-							<small class="d-block text-muted mt-1" style="font-size: 0.72rem;">Select the duration of validity for this document type.</small>
-						</div>
-					</div>
 					<div class="mb-3 border-top pt-3">
 						<label class="form-label fw-bold">Blank PDF Upload (Optional)</label>
 						<input type="file" name="pdf_template" class="form-control" accept=".pdf">
@@ -348,20 +308,6 @@ if (isset($_GET['edit'])) {
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-	const checkbox = document.getElementById('requires_validity');
-	const container = document.getElementById('validity_period_container');
-	if (checkbox && container) {
-		function toggleValidityField() {
-			if (checkbox.checked) {
-				container.style.display = 'block';
-			} else {
-				container.style.display = 'none';
-			}
-		}
-		checkbox.addEventListener('change', toggleValidityField);
-		toggleValidityField();
-	}
-	
 	<?php if ($edit_type): ?>
 	var modal = new bootstrap.Modal(document.getElementById('createModal'));
 	modal.show();

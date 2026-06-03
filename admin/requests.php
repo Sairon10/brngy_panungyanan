@@ -193,9 +193,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		// ── Walk-in Request ──────────────────────────────────────────
 		if (!empty($_POST['walkin_action'])) {
 			$wi_resident_id = (int) ($_POST['wi_resident_id'] ?? 0);
-			$wi_requestor_name = trim($_POST['wi_requestor_name'] ?? '');
+			$wi_requestor_name = ucwords(strtolower(trim($_POST['wi_requestor_name'] ?? '')));
 			$wi_civil_status = trim($_POST['wi_civil_status'] ?? '');
 			$wi_purok = trim($_POST['wi_purok'] ?? '');
+			$wi_house_no = trim($_POST['wi_house_no'] ?? '');
 			$wi_doc_type = trim($_POST['wi_doc_type'] ?? '');
 			$wi_purpose = trim($_POST['wi_purpose'] ?? '');
 			
@@ -219,6 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$tags = '[Walk-in Requestor: ' . $wi_requestor_name . ']';
 					if ($wi_civil_status) $tags .= '[CS: ' . $wi_civil_status . ']';
 					if ($wi_purok) $tags .= '[Purok: ' . $wi_purok . ']';
+					if ($wi_house_no) $tags .= '[Houseno: ' . $wi_house_no . ']';
 					$final_purpose = $tags . ' ' . $wi_purpose;
 				}
 
@@ -238,13 +240,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					}
 				}
 
+				if ($wi_payment_method === 'GCash' && empty($payment_receipt_path)) {
+					$_SESSION['action_error'] = [
+						'title' => 'Receipt Required',
+						'text' => 'Please upload a valid GCash / E-Wallet payment receipt before submitting.'
+					];
+					redirect('requests.php');
+				}
+
 				if ($wi_doc_type === 'Barangay Clearance') {
 					$cn = 'BC-' . date('Y') . '-' . strtoupper(substr(uniqid(), -6));
 					$pdo->prepare('INSERT INTO barangay_clearances (user_id, clearance_number, purpose, status, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, "pending", ?, ?, NOW())')
 						->execute([$wi_user_id, $cn, $final_purpose, $db_ref, $payment_receipt_path]);
 				} else {
-					$pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, status, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, "pending", ?, ?, NOW())')
-						->execute([$wi_user_id, $wi_doc_type, $final_purpose, $db_ref, $payment_receipt_path]);
+					$wi_indigency_purpose = (stripos($wi_doc_type, 'Indigency') !== false) ? $wi_purpose : null;
+					$pdo->prepare('INSERT INTO document_requests (user_id, doc_type, purpose, indigency_purposes, status, payment_reference_no, payment_receipt, created_at) VALUES (?, ?, ?, ?, "pending", ?, ?, NOW())')
+						->execute([$wi_user_id, $wi_doc_type, $final_purpose, $wi_indigency_purpose, $db_ref, $payment_receipt_path]);
 				}
 				$_SESSION['action_success'] = [
 					'title' => 'Walk-in Request Added',
@@ -1126,7 +1137,7 @@ require_once __DIR__ . '/header.php';
 					<div id="wi_form_step_1">
 						<!-- Resident Search -->
 						<div class="mb-3">
-							<label class="form-label fw-semibold small text-uppercase text-secondary">Requestor Name</label>
+							<label class="form-label fw-semibold small text-uppercase text-muted">Requestor Name</label>
 							<input type="text" id="wiResidentSearch" name="wi_requestor_name" class="form-control"
 								placeholder="Search resident or enter full name..." autocomplete="off">
 							<div id="wiResidentDropdown" class="list-group mt-1 shadow-sm"
@@ -1141,7 +1152,7 @@ require_once __DIR__ . '/header.php';
 						<div class="mb-3" id="wiExtraFields">
 							<div class="row">
 								<div class="col-md-6">
-									<label class="form-label fw-semibold small text-uppercase text-secondary">Civil Status</label>
+									<label class="form-label fw-semibold small text-uppercase text-muted">Civil Status</label>
 									<select name="wi_civil_status" id="wiCivilStatus" class="form-select">
 										<option value="">-- Select --</option>
 										<option value="Single">Single</option>
@@ -1150,7 +1161,7 @@ require_once __DIR__ . '/header.php';
 									</select>
 								</div>
 								<div class="col-md-6">
-									<label class="form-label fw-semibold small text-uppercase text-secondary">Purok</label>
+									<label class="form-label fw-semibold small text-uppercase text-muted">Purok</label>
 									<select name="wi_purok" id="wiPurok" class="form-select">
 										<option value="">-- Select --</option>
 										<option value="1">1</option>
@@ -1163,11 +1174,17 @@ require_once __DIR__ . '/header.php';
 									</select>
 								</div>
 							</div>
+							<div class="row mt-3">
+								<div class="col-12">
+									<label class="form-label fw-semibold small text-uppercase text-muted">Housenumber/Block/Lot</label>
+									<input type="text" name="wi_house_no" id="wiHouseNo" class="form-control" placeholder="House No. / Block / Lot...">
+								</div>
+							</div>
 						</div>
 
 						<!-- Document Type -->
 						<div class="mb-3">
-							<label class="form-label fw-semibold small text-uppercase text-secondary">Document Type</label>
+							<label class="form-label fw-semibold small text-uppercase text-muted">Document Type</label>
 							<select name="wi_doc_type" id="wiDocType" class="form-select" onchange="wiUpdatePurpose()">
 								<option value="">-- Select document --</option>
 								<?php foreach ($wi_doc_types as $dt): ?>
@@ -1186,7 +1203,7 @@ require_once __DIR__ . '/header.php';
 
 						<!-- Purpose -->
 						<div class="mb-3" id="wiPurposeWrap">
-							<label class="form-label fw-semibold small text-uppercase text-secondary">Purpose</label>
+							<label class="form-label fw-semibold small text-uppercase text-muted">Purpose</label>
 							<select name="wi_purpose" id="wiPurposeSelect" class="form-select" style="display:none;">
 								<option value="">-- Select purpose --</option>
 							</select>
@@ -1196,7 +1213,7 @@ require_once __DIR__ . '/header.php';
 						
 						<!-- Payment Method -->
 						<div class="mb-3">
-							<label class="form-label fw-semibold small text-uppercase text-secondary">Payment Method</label>
+							<label class="form-label fw-semibold small text-uppercase text-muted">Payment Method</label>
 							<select name="wi_payment_method" id="wiPaymentMethod" class="form-select" onchange="updateWalkinNav()">
 								<option value="Cash">Cash</option>
 								<option value="GCash">GCash / E-Wallet</option>
@@ -1932,6 +1949,39 @@ require_once __DIR__ . '/header.php';
 				priceContainer.style.display = 'none';
 			}
 		};
+
+		if (searchInput) {
+			searchInput.addEventListener('blur', function () {
+				this.value = this.value.toLowerCase().replace(/\b\w/g, function (char) {
+					return char.toUpperCase();
+				});
+			});
+		}
+
+		var walkinForm = document.getElementById('walkinForm');
+		if (walkinForm) {
+			walkinForm.addEventListener('submit', function (e) {
+				if (searchInput && searchInput.value) {
+					searchInput.value = searchInput.value.toLowerCase().replace(/\b\w/g, function (char) {
+						return char.toUpperCase();
+					});
+				}
+
+				var method = document.getElementById('wiPaymentMethod').value;
+				if (method === 'GCash') {
+					var receipt = document.getElementById('wi_payment_receipt');
+					if (!receipt || !receipt.files || receipt.files.length === 0) {
+						e.preventDefault();
+						Swal.fire({
+							title: 'Receipt Required',
+							text: 'Please upload the payment receipt before submitting.',
+							icon: 'warning',
+							confirmButtonColor: '#0f766e'
+						});
+					}
+				}
+			});
+		}
 	})();
 </script>
 

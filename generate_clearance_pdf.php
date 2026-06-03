@@ -56,6 +56,7 @@ if (preg_match('/\[Walk-in Requestor:\s*(.*?)\]/', $raw_purpose, $matches)) {
     $clearance['birthdate'] = '';
     $clearance['civil_status'] = '';
     $clearance['purok'] = '';
+    $clearance['houseno'] = '';
     
     if (preg_match('/\[CS:\s*(.*?)\]/', $raw_purpose, $cs_matches)) {
         $clearance['civil_status'] = trim($cs_matches[1]);
@@ -65,6 +66,23 @@ if (preg_match('/\[Walk-in Requestor:\s*(.*?)\]/', $raw_purpose, $matches)) {
         $clearance['purok'] = trim($purok_matches[1]);
         $raw_purpose = trim(str_replace($purok_matches[0], '', $raw_purpose));
     }
+    if (preg_match('/\[Houseno:\s*(.*?)\]/', $raw_purpose, $house_matches)) {
+        $clearance['houseno'] = trim($house_matches[1]);
+        $raw_purpose = trim(str_replace($house_matches[0], '', $raw_purpose));
+    }
+    
+    // Dynamically build address for walk-in
+    $addr_parts = [];
+    if (!empty($clearance['houseno'])) {
+        $addr_parts[] = $clearance['houseno'];
+    }
+    if (!empty($clearance['purok'])) {
+        $addr_parts[] = 'Purok ' . $clearance['purok'];
+    }
+    $addr_parts[] = 'Barangay Panungyanan';
+    $addr_parts[] = 'City of General Trias';
+    $addr_parts[] = 'Cavite';
+    $clearance['address'] = implode(', ', $addr_parts);
     
     $clearance['purpose'] = $raw_purpose;
 }
