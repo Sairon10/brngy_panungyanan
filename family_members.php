@@ -10,11 +10,19 @@ if (!is_logged_in())
 $pdo = get_db_connection();
 $user_id = $_SESSION['user_id'];
 
+// Check resident verification status
+$res_stmt = $pdo->prepare('SELECT verification_status FROM residents WHERE user_id = ?');
+$res_stmt->execute([$user_id]);
+$resident_data = $res_stmt->fetch();
+$is_verified = $resident_data && $resident_data['verification_status'] === 'verified';
+
 // Handle family member actions
 $family_msg = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
     if (!csrf_validate()) {
         $family_msg = 'Invalid session. Please reload and try again.';
+    } elseif (!$is_verified && (($_POST['family_action'] ?? '') === 'add_family_member')) {
+        $family_msg = 'Your account is not yet verified. Please complete ID verification before adding family members.';
     } else {
         $family_action = $_POST['family_action'];
 
@@ -188,10 +196,16 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                     <div>
                         <h3 class="fw-bold mb-1"><i class="fas fa-users me-2"></i>Household Members</h3>
                     </div>
+                    <?php if ($is_verified): ?>
                     <button type="button" class="btn btn-white rounded-pill px-4 shadow-sm" data-bs-toggle="modal"
                         data-bs-target="#familyModal" onclick="prepareAddModal()">
                         <i class="fas fa-plus me-1 text-primary"></i> Add Member
                     </button>
+                    <?php else: ?>
+                    <a href="id_verification.php" class="btn btn-warning rounded-pill px-4 shadow-sm">
+                        <i class="fas fa-lock me-1"></i> Verify Account First
+                    </a>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -215,10 +229,17 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                         <h5 class="fw-bold text-dark">Registry is Empty</h5>
                         <p class="text-muted mb-4 max-w-md mx-auto">Please add your family members to complete your
                             household profile and enable faster document requests.</p>
+                        <?php if ($is_verified): ?>
                         <button type="button" class="btn btn-primary rounded-pill px-5 shadow" data-bs-toggle="modal"
                             data-bs-target="#familyModal" onclick="prepareAddModal()">
                             <i class="fas fa-plus me-2"></i>Register New Member
                         </button>
+                        <?php else: ?>
+                        <a href="id_verification.php" class="btn btn-warning rounded-pill px-5 shadow">
+                            <i class="fas fa-lock me-2"></i>Verify Account to Add Members
+                        </a>
+                        <p class="text-muted small mt-2">Your ID verification is still pending. Please wait for admin approval.</p>
+                        <?php endif; ?>
                     </div>
                 <?php else: ?>
                     <div class="row g-4">
