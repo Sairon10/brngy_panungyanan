@@ -189,31 +189,39 @@ switch ($type) {
     case 'summary':
         // Comprehensive stats for RBI Form C (Unified)
         // Select only specific shared columns to avoid UNION mismatch errors
-        $residents = $pdo->query("
+        $stmt_res = $pdo->prepare("
             SELECT r.birthdate, r.sex, r.civil_status, r.is_senior, r.is_pwd, r.is_solo_parent, r.occupation, r.classification, r.citizenship, u.full_name 
             FROM users u LEFT JOIN residents r ON u.id = r.user_id 
-            WHERE u.role IN ('resident', 'admin', 'sub_admin')
+            WHERE u.role IN ('resident', 'admin', 'sub_admin') AND u.created_at BETWEEN ? AND ?
             
             UNION ALL
             
             SELECT rr.birthdate, rr.sex, rr.civil_status, rr.is_senior, rr.is_pwd, rr.is_solo_parent, NULL as occupation, '' as classification, rr.citizenship, rr.full_name 
             FROM resident_records rr 
-            WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
-        ")->fetchAll(PDO::FETCH_ASSOC);
+            WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
+        ");
+        $stmt_res->execute([$start, $end, $start, $end]);
+        $residents = $stmt_res->fetchAll(PDO::FETCH_ASSOC);
         
-        $family = $pdo->query("SELECT fm.*, r.address, r.purok FROM family_members fm JOIN residents r ON fm.user_id = r.user_id")->fetchAll(PDO::FETCH_ASSOC);
+        $stmt_fam = $pdo->prepare("SELECT fm.*, r.address, r.purok FROM family_members fm JOIN residents r ON fm.user_id = r.user_id WHERE fm.created_at BETWEEN ? AND ?");
+        $stmt_fam->execute([$start, $end]);
+        $family = $stmt_fam->fetchAll(PDO::FETCH_ASSOC);
         
         $all = array_merge($residents, $family);
         
+        $stmt_households = $pdo->prepare("
+            SELECT COUNT(DISTINCT address) FROM (
+                SELECT COALESCE(r.address, 'N/A') as address FROM users u LEFT JOIN residents r ON u.id = r.user_id WHERE u.role IN ('resident', 'admin', 'sub_admin') AND u.created_at BETWEEN ? AND ?
+                UNION
+                SELECT COALESCE(rr.address, 'N/A') as address FROM resident_records rr WHERE rr.created_at BETWEEN ? AND ? AND NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
+            ) t
+        ");
+        $stmt_households->execute([$start, $end, $start, $end]);
+        $total_households_count = $stmt_households->fetchColumn();
+        
         $stats = [
             'total_inhabitants' => count($all),
-            'total_households' => $pdo->query("
-                SELECT COUNT(DISTINCT address) FROM (
-                    SELECT COALESCE(r.address, 'N/A') as address FROM users u LEFT JOIN residents r ON u.id = r.user_id WHERE u.role IN ('resident', 'admin', 'sub_admin')
-                    UNION
-                    SELECT COALESCE(rr.address, 'N/A') as address FROM resident_records rr WHERE NOT EXISTS (SELECT 1 FROM users u WHERE (u.email = rr.email OR u.full_name = rr.full_name))
-                ) t
-            ")->fetchColumn(),
+            'total_households' => $total_households_count,
             'age_brackets' => [],
             'sectors' => [
                 'Employed' => ['M' => 0, 'F' => 0],

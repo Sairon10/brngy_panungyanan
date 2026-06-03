@@ -348,8 +348,12 @@ require_once __DIR__ . '/header.php';
 
     function loadReport(type, label) {
         document.getElementById('reportModalTitle').innerHTML = '<i class="fas fa-list me-2"></i>' + label;
-        document.getElementById('reportModalPeriod').textContent =
-            'Period: ' + formatDate(START_DATE) + ' to ' + formatDate(END_DATE);
+        if (type === 'households') {
+            document.getElementById('reportModalPeriod').textContent = 'All Records (Not filtered by date)';
+        } else {
+            document.getElementById('reportModalPeriod').textContent =
+                'Period: ' + formatDate(START_DATE) + ' to ' + formatDate(END_DATE);
+        }
         
         // Hide Excel export button for RBI Form Reports (type 'households' or 'summary')
         const excelBtn = document.getElementById('btnExportExcel');
