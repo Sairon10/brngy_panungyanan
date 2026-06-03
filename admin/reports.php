@@ -618,10 +618,12 @@ require_once __DIR__ . '/header.php';
         } else if (type === 'incidents') {
             headers = '<th>#</th><th>Date</th><th>Resident Name</th><th>Description</th><th>Status</th>';
             data.forEach((r, i) => {
-                const badgeMap = { submitted: 'bg-danger', in_review: 'bg-warning text-dark', resolved: 'bg-success' };
+                const badgeMap = { submitted: 'bg-warning text-dark', in_review: 'bg-info text-dark', resolved: 'bg-success', closed: 'bg-danger', canceled: 'bg-secondary' };
                 const badge = badgeMap[r.status] || 'bg-secondary';
                 let statusLabel = r.status ? r.status.replace('_', ' ').replace(/^./, c => c.toUpperCase()) : '';
                 if (r.status === 'submitted') statusLabel = 'Pending';
+                if (r.status === 'closed') statusLabel = 'Rejected';
+                if (r.status === 'canceled') statusLabel = 'Cancelled';
                 
                 let displayName = r.full_name;
                 let desc = r.description || '';
