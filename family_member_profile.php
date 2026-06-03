@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $last_name = trim($_POST['last_name'] ?? '');
             $middle_name = trim($_POST['middle_name'] ?? '');
             $suffix = trim($_POST['suffix'] ?? '');
-            $relationship = trim($_POST['relationship'] ?? '');
+            $relationship = ucfirst(strtolower(trim($_POST['relationship'] ?? '')));
             $birthdate = $_POST['birthdate'] ?? null;
             $sex = $_POST['sex'] ?? null;
             $citizenship = trim($_POST['citizenship'] ?? '');

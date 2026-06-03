@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
 
         $relationship_raw = trim($_POST['fm_relationship'] ?? '');
-        $relationship_other = trim($_POST['fm_relationship_other'] ?? '');
+        $relationship_other = ucfirst(strtolower(trim($_POST['fm_relationship_other'] ?? '')));
         $relationship = ($relationship_raw === 'Others' && $relationship_other !== '') ? $relationship_other : $relationship_raw;
         $philsys = trim($_POST['fm_philsys_card_no'] ?? '');
         $citizenship = trim($_POST['fm_citizenship'] ?? 'FILIPINO');
@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $fullname = implode(' ', array_filter([$fname, $mname, $lname, $suffix]));
 
         $relationship_raw = trim($_POST['fm_relationship'] ?? '');
-        $relationship_other = trim($_POST['fm_relationship_other'] ?? '');
+        $relationship_other = ucfirst(strtolower(trim($_POST['fm_relationship_other'] ?? '')));
         $relationship = ($relationship_raw === 'Others' && $relationship_other !== '') ? $relationship_other : $relationship_raw;
         $philsys = trim($_POST['fm_philsys_card_no'] ?? '');
         $citizenship = trim($_POST['fm_citizenship'] ?? 'FILIPINO');

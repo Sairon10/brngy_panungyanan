@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['family_action'])) {
             $fmsuffix = trim($_POST['fm_suffix'] ?? '');
             $fm_name = implode(' ', array_filter([$fname, $mname, $lname, $fmsuffix]));
             $fm_relationship_raw = trim($_POST['fm_relationship'] ?? '');
-            $fm_relationship_other = trim($_POST['fm_relationship_other'] ?? '');
+            $fm_relationship_other = ucfirst(strtolower(trim($_POST['fm_relationship_other'] ?? '')));
             $fm_relationship = ($fm_relationship_raw === 'Others' && $fm_relationship_other !== '') ? $fm_relationship_other : $fm_relationship_raw;
             $fm_birthdate = $_POST['fm_birthdate'] ?? null;
             $fm_sex = $_POST['fm_sex'] ?? null;
