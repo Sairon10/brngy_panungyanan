@@ -533,7 +533,7 @@ $residents_data = $residents->fetchAll();
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fw-bold small text-uppercase text-muted mb-1">Address on ID</label>
-                        <div id="modalAddressOnID" class="p-2 bg-light rounded-3 border small fw-medium"></div>
+                        <div id="modalAddressOnID" class="p-2 bg-light rounded-3 border small fw-medium" style="text-transform: capitalize;"></div>
                     </div>
                 </div>
                 <hr class="my-4 opacity-50">

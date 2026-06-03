@@ -243,7 +243,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
                                     <div class="mb-4">
                                         <label
-                                            class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Select
+                                            class="form-label fw-medium text-dark small">Select
                                             ID Type <span class="text-danger">*</span></label>
                                         <select name="id_type"
                                             class="form-select bg-light border-0 rounded-3 p-3 focus-ring" required>
@@ -264,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                     <div class="row mb-4">
                                         <div class="col-md-6">
                                             <label
-                                                class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Front
+                                                class="form-label fw-medium text-dark small">Front
                                                 ID View <span class="text-danger">*</span></label>
                                             <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2"
                                                 style="height: 180px;">
@@ -286,7 +286,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                                         </div>
                                         <div class="col-md-6">
                                             <label
-                                                class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Back
+                                                class="form-label fw-medium text-dark small">Back
                                                 ID View <span class="text-danger">*</span></label>
                                             <div class="upload-zone border-2 border-dashed rounded-4 p-4 text-center bg-light position-relative overflow-hidden mb-2"
                                                 style="height: 180px;">
@@ -310,7 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
                                     <div class="mb-4">
                                         <label
-                                            class="form-label fw-medium text-dark small text-uppercase letter-spacing-1">Address
+                                            class="form-label fw-medium text-dark small">Address
                                             on ID <span class="text-danger">*</span></label>
                                         <textarea name="address_note"
                                             class="form-control bg-light border-0 rounded-3 p-3 focus-ring" rows="3"
@@ -507,8 +507,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <div class="col-12 mb-2">
                         <label class="form-label fw-bold small text-uppercase text-muted mb-1"><i
                                 class="fas fa-map-marker-alt me-1"></i> Address as written on ID:</label>
-                        <div class="p-3 bg-light rounded-3 border fw-semibold text-dark" style="font-size: 0.95rem;">
-                            <?php echo !empty($resident['address_on_id']) ? htmlspecialchars($resident['address_on_id']) : '<i class="text-muted fw-normal">No address provided.</i>'; ?>
+                        <div class="p-3 bg-light rounded-3 border fw-semibold text-dark" style="font-size: 0.95rem; text-transform: capitalize;">
+                            <?php echo !empty($resident['address_on_id']) ? htmlspecialchars(ucwords(strtolower($resident['address_on_id']))) : '<i class="text-muted fw-normal">No address provided.</i>'; ?>
                         </div>
                     </div>
                     <?php if (!empty($resident['id_front_path'])): ?>
