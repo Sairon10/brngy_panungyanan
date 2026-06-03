@@ -49,6 +49,11 @@ function admin_requests_apply_status(
 		if ($expected_current_status !== null && $clearance['status'] !== $expected_current_status) {
 			return ['ok' => false, 'reason' => 'status_mismatch'];
 		}
+		if (($status === 'approved' || $status === 'released') && 
+			$clearance['payment_method'] === 'E-Wallet' && 
+			!in_array($clearance['payment_status'], ['confirmed', 'verified'])) {
+			return ['ok' => false, 'reason' => 'payment_pending'];
+		}
 		$userEmail = $clearance['email'];
 		$userName = $clearance['full_name'];
 		$userPhone = $clearance['phone'] ?? null;
@@ -111,6 +116,11 @@ function admin_requests_apply_status(
 	}
 	if ($expected_current_status !== null && $document['status'] !== $expected_current_status) {
 		return ['ok' => false, 'reason' => 'status_mismatch'];
+	}
+	if (($status === 'approved' || $status === 'released') && 
+		$document['payment_method'] === 'E-Wallet' && 
+		!in_array($document['payment_status'], ['confirmed', 'verified'])) {
+		return ['ok' => false, 'reason' => 'payment_pending'];
 	}
 	$userEmail = $document['email'];
 	$userPhone = $document['phone'] ?? null;
@@ -337,7 +347,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 								}
 								$st->execute([$rid]);
 								$row = $st->fetch(PDO::FETCH_ASSOC);
-								$reason_msg = ($res['reason'] === 'status_mismatch') ? 'Current status (' . ($row['status'] ?? 'unknown') . ') does not match required status' : 'Request not found';
+								$reason_msg = 'Request not found';
+								if ($res['reason'] === 'status_mismatch') {
+									$reason_msg = 'Current status (' . ($row['status'] ?? 'unknown') . ') does not match required status';
+								} elseif ($res['reason'] === 'payment_pending') {
+									$reason_msg = 'E-Wallet payment is pending confirmation';
+								}
 								$skipped_details[] = [
 									'name' => $row['full_name'] ?? 'Unknown',
 									'label' => $info_label,
@@ -373,6 +388,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					'text' => 'The request status has been updated and notifications have been triggered.',
 					'sms_error' => $notification_res['sms_error'] ?? null
 				];
+			} else {
+				$_SESSION['error'] = ($res['reason'] === 'payment_pending') ? 'Cannot update status. E-Wallet payment must be confirmed first.' : 'Failed to update request status.';
 			}
 			if (!empty($res['should_redirect_pdf']) && !empty($res['pdf_document_id'])) {
 				redirect('../generate_indigency_cert.php?id=' . (int) $res['pdf_document_id']);
@@ -685,7 +702,9 @@ require_once __DIR__ . '/header.php';
 							'fm_is_senior' => $c['fm_is_senior'] ?? 0,
 							'fm_civil_status' => $c['fm_civil_status'] ?? null,
 							'fm_id_photo_path' => $c['fm_id_photo_path'] ?? null,
-							'fm_birthdate' => $c['fm_birthdate'] ?? null
+							'fm_birthdate' => $c['fm_birthdate'] ?? null,
+							'payment_method' => $c['payment_method'] ?? 'Cash',
+							'payment_status' => $c['payment_status'] ?? 'pending'
 						];
 					}
 					foreach ($documents as $d) {
@@ -720,7 +739,9 @@ require_once __DIR__ . '/header.php';
 							'fm_is_senior' => $d['fm_is_senior'] ?? 0,
 							'fm_civil_status' => $d['fm_civil_status'] ?? null,
 							'fm_id_photo_path' => $d['fm_id_photo_path'] ?? null,
-							'fm_birthdate' => $d['fm_birthdate'] ?? null
+							'fm_birthdate' => $d['fm_birthdate'] ?? null,
+							'payment_method' => $d['payment_method'] ?? 'Cash',
+							'payment_status' => $d['payment_status'] ?? 'pending'
 						];
 					}
 					usort($all_requests, function ($a, $b) {
@@ -890,7 +911,8 @@ require_once __DIR__ . '/header.php';
 										data-status-class="<?php echo htmlspecialchars($statusClass, ENT_QUOTES); ?>"
 										data-icon="<?php echo htmlspecialchars($statusIcon, ENT_QUOTES); ?>"
 										data-date="<?php echo date('F d, Y', strtotime($req['date'])); ?>"
-										data-notes="<?php echo htmlspecialchars($req['notes'] ?? '', ENT_QUOTES); ?>">
+										data-notes="<?php echo htmlspecialchars($req['notes'] ?? '', ENT_QUOTES); ?>"
+										data-payment-method="<?php echo htmlspecialchars($req['payment_method'] ?? 'Cash', ENT_QUOTES); ?>">
 										<i class="fas <?php echo $statusIcon; ?> me-1"></i>
 										<?php echo $statusLabel; ?>
 									</div>
@@ -915,6 +937,7 @@ require_once __DIR__ . '/header.php';
 											data-icon="<?php echo htmlspecialchars($statusIcon, ENT_QUOTES); ?>"
 											data-date="<?php echo date('F d, Y', strtotime($req['date'])); ?>"
 											data-notes="<?php echo htmlspecialchars($req['notes'] ?? '', ENT_QUOTES); ?>"
+											data-payment-method="<?php echo htmlspecialchars($req['payment_method'] ?? 'Cash', ENT_QUOTES); ?>"
 											title="View Details">
 											<i class="fas fa-eye"></i>
 										</button>
@@ -927,11 +950,23 @@ require_once __DIR__ . '/header.php';
 												<input type="hidden" name="request_type"
 													value="<?php echo htmlspecialchars($req['type']); ?>">
 												<input type="hidden" name="status" value="approved">
-												<button type="button"
-													class="btn btn-action btn-light text-success btn-confirm-submit"
-													title="Ready to pick up">
-													<i class="fas fa-check"></i>
-												</button>
+												<?php
+												$is_payment_pending = ($req['payment_method'] === 'E-Wallet' && !in_array($req['payment_status'], ['confirmed', 'verified']));
+												if ($is_payment_pending):
+												?>
+													<button type="button"
+														class="btn btn-action btn-light text-muted opacity-50"
+														title="Verify E-Wallet payment first"
+														disabled>
+														<i class="fas fa-check"></i>
+													</button>
+												<?php else: ?>
+													<button type="button"
+														class="btn btn-action btn-light text-success btn-confirm-submit"
+														title="Ready to pick up">
+														<i class="fas fa-check"></i>
+													</button>
+												<?php endif; ?>
 											</form>
 											<button type="button" class="btn btn-action btn-light text-danger btn-admin-reject"
 												data-id="<?php echo (int) $req['id']; ?>"
@@ -1288,27 +1323,31 @@ require_once __DIR__ . '/header.php';
 				</div>
 				<table class="table table-borderless mb-0">
 					<tr>
-						<td class="text-secondary fw-semibold small" style="width: 130px;">Document</td>
+						<td class="text-muted fw-semibold small" style="width: 130px;">Document</td>
 						<td class="fw-bold" id="admin_detail_doc"></td>
 					</tr>
 					<tr>
-						<td class="text-secondary fw-semibold small">Requester</td>
+						<td class="text-muted fw-semibold small">Requester</td>
 						<td id="admin_detail_requester"></td>
 					</tr>
 					<tr id="admin_detail_family_row" style="display: none;">
-						<td class="text-secondary fw-semibold small">Family of</td>
+						<td class="text-muted fw-semibold small">Family of</td>
 						<td id="admin_detail_family"></td>
 					</tr>
 					<tr>
-						<td class="text-secondary fw-semibold small">Purpose</td>
+						<td class="text-muted fw-semibold small">Purpose</td>
 						<td id="admin_detail_purpose"></td>
 					</tr>
 					<tr>
-						<td class="text-secondary fw-semibold small">Status</td>
+						<td class="text-muted fw-semibold small">Status</td>
 						<td id="admin_detail_status"></td>
 					</tr>
 					<tr>
-						<td class="text-secondary fw-semibold small" style="width: 130px;">Date Filed</td>
+						<td class="text-muted fw-semibold small">Payment Method</td>
+						<td id="admin_detail_payment_method"></td>
+					</tr>
+					<tr>
+						<td class="text-muted fw-semibold small" style="width: 130px;">Date Filed</td>
 						<td id="admin_detail_date"></td>
 					</tr>
 				</table>
@@ -1518,6 +1557,7 @@ require_once __DIR__ . '/header.php';
 		document.getElementById('admin_detail_status').innerHTML = '<span class="badge ' + btn.dataset.statusClass + ' rounded-pill px-3 py-2"><i class="fas ' + btn.dataset.icon + ' me-1"></i>' + btn.dataset.statusLabel + '</span>' +
 			(isReasonable && btn.dataset.notes && btn.dataset.notes.trim() !== '' ?
 				' <a href="javascript:void(0)" class="text-primary ms-2 small fw-bold btn-show-reason" title="View Reason"><i class="fas fa-eye"></i> View Details</a>' : '');
+		document.getElementById('admin_detail_payment_method').textContent = btn.dataset.paymentMethod || 'Cash';
 		document.getElementById('admin_detail_date').textContent = btn.dataset.date;
 
 		// Store notes for the "show reason" link

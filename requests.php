@@ -684,7 +684,8 @@ $documents = $documents_stmt->fetchAll();
                                     'refund_notes' => $c['refund_notes'] ?? null,
                                     'refund_receipt' => $c['refund_receipt'] ?? null,
                                     'admin_refund_number' => $c['admin_refund_number'] ?? null,
-                                    'admin_refund_notes' => $c['admin_refund_notes'] ?? null
+                                    'admin_refund_notes' => $c['admin_refund_notes'] ?? null,
+                                    'payment_method' => $c['payment_method'] ?? 'Cash'
                                 ];
                             }
                             foreach ($documents as $d) {
@@ -707,7 +708,8 @@ $documents = $documents_stmt->fetchAll();
                                     'refund_notes' => $d['refund_notes'] ?? null,
                                     'refund_receipt' => $d['refund_receipt'] ?? null,
                                     'admin_refund_number' => $d['admin_refund_number'] ?? null,
-                                    'admin_refund_notes' => $d['admin_refund_notes'] ?? null
+                                    'admin_refund_notes' => $d['admin_refund_notes'] ?? null,
+                                    'payment_method' => $d['payment_method'] ?? 'Cash'
                                 ];
                             }
 
@@ -817,7 +819,8 @@ $documents = $documents_stmt->fetchAll();
                                                 data-admin-refund-number="<?php echo htmlspecialchars($req['admin_refund_number'] ?? '', ENT_QUOTES); ?>"
                                                 data-admin-refund-notes="<?php echo htmlspecialchars($req['admin_refund_notes'] ?? '', ENT_QUOTES); ?>"
                                                 data-req-id="<?php echo $req['id']; ?>"
-                                                data-req-type="<?php echo htmlspecialchars($req['type']); ?>">
+                                                data-req-type="<?php echo htmlspecialchars($req['type']); ?>" 
+                                                data-payment-method="<?php echo htmlspecialchars($req['payment_method'] ?? 'Cash', ENT_QUOTES); ?>">
                                                 <i class="fas <?php echo $icon; ?> me-1"></i>
                                                 <?php echo $statusLabel; ?>
                                             </div>
@@ -851,7 +854,8 @@ $documents = $documents_stmt->fetchAll();
                                                     data-admin-refund-number="<?php echo htmlspecialchars($req['admin_refund_number'] ?? '', ENT_QUOTES); ?>"
                                                     data-admin-refund-notes="<?php echo htmlspecialchars($req['admin_refund_notes'] ?? '', ENT_QUOTES); ?>"
                                                     data-req-id="<?php echo $req['id']; ?>"
-                                                    data-req-type="<?php echo htmlspecialchars($req['type']); ?>">
+                                                    data-req-type="<?php echo htmlspecialchars($req['type']); ?>"
+                                                    data-payment-method="<?php echo htmlspecialchars($req['payment_method'] ?? 'Cash', ENT_QUOTES); ?>">
                                                     <i class="fas fa-eye" style="font-size: 0.8rem;"></i>
                                                 </button>
                                                 <!-- Cancel (only for pending) -->
@@ -971,8 +975,8 @@ $documents = $documents_stmt->fetchAll();
                         <td class="text-dark opacity-75 fw-semibold small">Date Filed</td>
                         <td id="detail_date"></td>
                     </tr>
-                    <tr id="detail_payment_row" style="display: none;">
-                        <td class="text-dark opacity-75 fw-semibold small">Payment</td>
+                    <tr id="detail_payment_row">
+                        <td class="text-dark opacity-75 fw-semibold small">Payment Method</td>
                         <td id="detail_payment_value"></td>
                     </tr>
                 </table>
@@ -1157,8 +1161,10 @@ $documents = $documents_stmt->fetchAll();
         const paymentRow = document.getElementById('detail_payment_row');
         const paymentVal = document.getElementById('detail_payment_value');
         const receipt = btn.dataset.paymentReceipt || '';
+        const payMethod = btn.dataset.paymentMethod || 'Cash';
 
-        if (receipt) {
+        let paymentHtml = payMethod;
+        if (payMethod === 'E-Wallet' || receipt) {
             let badgeClass = 'bg-amber-50 text-amber-600';
             let statusText = 'Pending Verification';
             if (payStatusLower === 'verified' || payStatusLower === 'approved' || payStatusLower === 'success' || payStatusLower === 'confirmed') {
@@ -1175,34 +1181,30 @@ $documents = $documents_stmt->fetchAll();
                 statusText = 'Refund Pending';
             }
 
-            let paymentHtml = `<span class="badge ${badgeClass} rounded-pill px-3 py-2"><i class="fas fa-receipt me-1"></i>${statusText}</span>`;
+            paymentHtml = `E-Wallet <span class="badge ${badgeClass} rounded-pill px-2 py-1 ms-1" style="font-size: 0.7rem;"><i class="fas fa-receipt me-1"></i>${statusText}</span>`;
             if (payStatusLower === 'refund_pending') {
-                paymentHtml = `
-                    <span class="badge ${badgeClass} rounded-pill px-3 py-2" style="cursor: pointer;" onclick="toggleResidentRefundDetails()"><i class="fas fa-hourglass-half me-1"></i>${statusText}</span>
+                paymentHtml += `
                     <a href="javascript:void(0)" class="text-indigo-600 fw-bold ms-2 small d-inline-flex align-items-center gap-1 text-decoration-none" onclick="toggleResidentRefundDetails()">
                         <i class="fas fa-info-circle"></i> View Refund Request
                     </a>
                 `;
             } else if (payStatusLower === 'refunded') {
-                paymentHtml = `
-                    <span class="badge ${badgeClass} rounded-pill px-3 py-2" style="cursor: pointer;" onclick="toggleAdminRefundDetails()"><i class="fas fa-undo-alt me-1"></i>${statusText}</span>
+                paymentHtml += `
                     <a href="javascript:void(0)" class="text-purple-600 fw-bold ms-2 small d-inline-flex align-items-center gap-1 text-decoration-none" onclick="toggleAdminRefundDetails()">
                         <i class="fas fa-eye"></i> View Refund Details
                     </a>
                 `;
-            } else {
+            } else if (receipt) {
                 paymentHtml += `
                     <a href="${receipt}" target="_blank" class="text-teal-600 fw-bold ms-2 small d-inline-flex align-items-center gap-1 text-decoration-none">
                         <i class="fas fa-image"></i> View Receipt
                     </a>
                 `;
             }
-
-            paymentVal.innerHTML = paymentHtml;
-            paymentRow.style.display = 'table-row';
-        } else {
-            paymentRow.style.display = 'none';
         }
+
+        paymentVal.innerHTML = paymentHtml;
+        paymentRow.style.display = 'table-row';
 
         // Show refund action if receipt exists, document status is pending, and payment is either pending or confirmed
         const refundContainer = document.getElementById('detail_refund_action_container');

@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // ── Walk-in Incident Report ────────────────────────────────────────────
         if ($action === 'add_walkin_incident') {
-            $wi_reporter_name = trim($_POST['wi_reporter_name'] ?? '');
+            $wi_reporter_name = ucwords(strtolower(trim($_POST['wi_reporter_name'] ?? '')));
             $wi_resident_id   = (int) ($_POST['wi_resident_id'] ?? 0);
             $wi_description   = trim($_POST['wi_description'] ?? '');
             $wi_lat           = $_POST['wi_latitude'] ?? '';
@@ -425,7 +425,7 @@ $wi_residents_inc = $pdo->query("
                         </div>
                     </div>
                     <div class="d-flex align-items-center gap-2 flex-nowrap">
-                        <button type="button" class="btn btn-danger btn-sm rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#walkinIncidentModal">
+                        <button type="button" class="btn btn-success btn-sm rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#walkinIncidentModal">
                             <i class="fas fa-plus me-1"></i> Report Incident
                         </button>
                         <div class="input-group" style="max-width: 260px; min-width: 160px;">
@@ -700,8 +700,7 @@ $wi_residents_inc = $pdo->query("
                     <!-- 0. Resident Name (free text — no account required) -->
                     <div class="mb-4 pb-3 border-bottom">
                         <label class="form-label fw-semibold text-dark small text-uppercase">Resident Name</label>
-                        <input type="text" name="wi_reporter_name" id="wiReporterName" class="form-control" placeholder="Enter resident's full name..." autocomplete="off">
-                        <div class="form-text text-muted"><i class="fas fa-info-circle me-1"></i>Type any name — account not required for walk-in reports.</div>
+                        <input type="text" name="wi_reporter_name" id="wiReporterName" class="form-control" placeholder="Enter resident's full name..." style="text-transform: capitalize;" autocomplete="off">
                         <!-- Optional: live-search to link to a registered resident -->
                         <input type="hidden" name="wi_resident_id" id="wiIncidentResidentId">
                         <div id="wiIncidentResidentSuggestions" class="list-group mt-1 shadow-sm" style="display:none; max-height:150px; overflow-y:auto; position:absolute; z-index:9999; width:calc(100% - 3rem);"></div>
@@ -746,7 +745,7 @@ $wi_residents_inc = $pdo->query("
                                 <input type="file" name="wi_incident_image" id="wiIncidentImage" class="form-control form-control-sm bg-light border-0" accept="image/*">
                             </div>
                             <div class="d-grid pt-2">
-                                <button class="btn btn-teal btn-lg rounded-pill shadow-sm py-3" type="submit">
+                                <button class="btn btn-success text-white btn-lg rounded-pill shadow-sm py-3" type="submit">
                                     <i class="fas fa-paper-plane me-2"></i>Submit Report
                                 </button>
                             </div>
