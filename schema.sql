@@ -175,6 +175,7 @@ CREATE TABLE IF NOT EXISTS family_members (
     relationship VARCHAR(100) NOT NULL,
     birthdate DATE DEFAULT NULL,
     sex ENUM('Male', 'Female') DEFAULT NULL,
+    avatar VARCHAR(255) DEFAULT NULL,
     is_pwd TINYINT(1) NOT NULL DEFAULT 0,
     is_senior TINYINT(1) NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

@@ -154,6 +154,12 @@ $updates = [
         'column' => 'requestor_type',
         'sql' => "ALTER TABLE document_requests ADD COLUMN requestor_type ENUM('self','family_member') DEFAULT 'self' AFTER family_member_id;"
     ],
+    // family_members table
+    [
+        'table' => 'family_members',
+        'column' => 'avatar',
+        'sql' => "ALTER TABLE family_members ADD COLUMN avatar VARCHAR(255) DEFAULT NULL AFTER sex;"
+    ],
 ];
 
 try {
