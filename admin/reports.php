@@ -665,15 +665,15 @@ require_once __DIR__ . '/header.php';
                 <i class="fas fa-filter me-2" style="color: #14b8a6;"></i>
                 <select id="reportClassFilter" class="form-select form-select-sm rounded-pill shadow-sm border-light-subtle" style="width: 200px; cursor: pointer; font-size: 0.85rem;" onchange="filterReportTable()">
                     <option value="all">All Residents</option>
-                    <option value="labor">👷 Labor/Employed</option>
-                    <option value="unemployed">👤 Unemployed</option>
-                    <option value="pwd">♿ PWD</option>
-                    <option value="ofw">✈️ OFW</option>
-                    <option value="solo_parent">👪 Solo Parent</option>
-                    <option value="osy">🎓 OSY</option>
-                    <option value="osc">🎒 OSC</option>
-                    <option value="indigenous">🏕️ Indigenous People</option>
-                    <option value="senior">👴 Senior Citizen</option>
+                    <option value="labor">Labor/Employed</option>
+                    <option value="unemployed">Unemployed</option>
+                    <option value="pwd">PWD</option>
+                    <option value="ofw">OFW</option>
+                    <option value="solo_parent">Solo Parent</option>
+                    <option value="osy">OSY</option>
+                    <option value="osc">OSC</option>
+                    <option value="indigenous">Indigenous People</option>
+                    <option value="senior">Senior Citizen</option>
                 </select>
             </div>
         ` : '';
@@ -1312,10 +1312,12 @@ function printRbiFormC(data, label) {
         sectorRows += `<tr><td>${s}</td><td>${m}</td><td>${f}</td><td>${m+f}</td><td></td></tr>`;
     });
 
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>RBI Form C - Print</title>
+    win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title> </title>
     <style>
-        @page { size: portrait; margin: 0; }
-        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.3; padding: 0.25in; margin: 0; color: #000; }
+        @page { size: portrait; margin: 0mm; }
+        @page { orphans: 0; widows: 0; }
+        html { height: 100%; }
+        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.3; padding: 0.6in 0.6in 0.6in 0.6in; margin: 0; color: #000; }
         .header { text-align: center; margin-bottom: 8px; position: relative; }
         .form-id { text-align: left; font-size: 7pt; font-weight: bold; position: absolute; top: -15px; left: 0; }
         .main-title { font-size: 11pt; font-weight: bold; text-decoration: underline; margin-top: 0; }
@@ -1341,7 +1343,6 @@ function printRbiFormC(data, label) {
         .footer-note { font-size: 7pt; color: #444; border-top: 1px solid #ccc; padding-top: 5px; margin-top: 15px; font-style: italic; }
         
         @media print {
-            body { padding: 0; }
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style></head><body>

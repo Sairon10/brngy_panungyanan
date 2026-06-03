@@ -593,15 +593,15 @@ $display_records = array_slice($unified_records, $offset, $limit);
                 style="max-width: 250px; cursor: pointer; font-size: 0.85rem;" 
                 onchange="window.location.href='?search=<?php echo urlencode($search); ?>&filter=' + this.value">
             <option value="all" <?php echo $filter === 'all' ? 'selected' : ''; ?>>All Residents</option>
-            <option value="labor" <?php echo $filter === 'labor' ? 'selected' : ''; ?>>👷 Labor/Employed</option>
-            <option value="unemployed" <?php echo $filter === 'unemployed' ? 'selected' : ''; ?>>👤 Unemployed</option>
-            <option value="pwd" <?php echo $filter === 'pwd' ? 'selected' : ''; ?>>♿ PWD</option>
-            <option value="ofw" <?php echo $filter === 'ofw' ? 'selected' : ''; ?>>✈️ OFW</option>
-            <option value="solo_parent" <?php echo $filter === 'solo_parent' ? 'selected' : ''; ?>>👪 Solo Parent</option>
-            <option value="osy" <?php echo $filter === 'osy' ? 'selected' : ''; ?>>🎓 OSY (Out of School Youth)</option>
-            <option value="osc" <?php echo $filter === 'osc' ? 'selected' : ''; ?>>🎒 OSC (Out of School Children)</option>
-            <option value="indigenous" <?php echo $filter === 'indigenous' ? 'selected' : ''; ?>>🏕️ Indigenous People</option>
-            <option value="senior" <?php echo $filter === 'senior' ? 'selected' : ''; ?>>👴 Senior Citizen</option>
+            <option value="labor" <?php echo $filter === 'labor' ? 'selected' : ''; ?>>Labor/Employed</option>
+            <option value="unemployed" <?php echo $filter === 'unemployed' ? 'selected' : ''; ?>>Unemployed</option>
+            <option value="pwd" <?php echo $filter === 'pwd' ? 'selected' : ''; ?>>PWD</option>
+            <option value="ofw" <?php echo $filter === 'ofw' ? 'selected' : ''; ?>>OFW</option>
+            <option value="solo_parent" <?php echo $filter === 'solo_parent' ? 'selected' : ''; ?>>Solo Parent</option>
+            <option value="osy" <?php echo $filter === 'osy' ? 'selected' : ''; ?>>OSY (Out of School Youth)</option>
+            <option value="osc" <?php echo $filter === 'osc' ? 'selected' : ''; ?>>OSC (Out of School Children)</option>
+            <option value="indigenous" <?php echo $filter === 'indigenous' ? 'selected' : ''; ?>>Indigenous People</option>
+            <option value="senior" <?php echo $filter === 'senior' ? 'selected' : ''; ?>>Senior Citizen</option>
         </select>
     </div>
 
