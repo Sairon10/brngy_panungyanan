@@ -684,7 +684,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                         <?php
                                         $all_classes = [
                                             'Labor/Employed', 'Unemployed', 'PWD', 'OFW', 'Solo Parent',
-                                            'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen', 'Migrant / Transferee'
+                                            'Out of School Youth (OSY)', 'Out of School Children (OSC)', 'Indigenous People', 'Senior Citizen'
                                         ];
                                         foreach ($all_classes as $idx => $cls): ?>
                                         <div class="col-md-4">
