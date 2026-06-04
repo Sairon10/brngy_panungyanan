@@ -19,9 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $last_name = ucwords(strtolower(trim($_POST['last_name'] ?? '')));
             $middle_name = ucwords(strtolower(trim($_POST['middle_name'] ?? '')));
             $suffix = ucwords(strtolower(trim($_POST['suffix'] ?? '')));
-            $birth_place = trim($_POST['birth_place'] ?? '');
+            $birth_place = ucwords(strtolower(trim($_POST['birth_place'] ?? '')));
             $birthdate = trim($_POST['birthdate'] ?? '');
-            $citizenship = trim($_POST['citizenship'] ?? '');
+            $citizenship = ucwords(strtolower(trim($_POST['citizenship'] ?? '')));
             $civil_status = trim($_POST['civil_status'] ?? '');
             $sex = trim($_POST['sex'] ?? '');
             $email = trim($_POST['email'] ?? '');
@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $province = trim($_POST['province'] ?? '');
             $municipality = trim($_POST['municipality'] ?? '');
             $barangay = trim($_POST['barangay'] ?? '');
-            $purok = trim($_POST['purok'] ?? '');
-            $street = trim($_POST['street'] ?? '');
+            $purok = ucwords(strtolower(trim($_POST['purok'] ?? '')));
+            $street = ucwords(strtolower(trim($_POST['street'] ?? '')));
             $password = $_POST['password'] ?? '';
             
             $is_solo_parent = isset($_POST['is_solo_parent']) ? 1 : 0;
@@ -256,6 +256,16 @@ require_once __DIR__ . '/header.php';
             icon.classList.replace('fa-eye-slash', 'fa-eye');
         }
     }
+
+    // Auto-capitalize text inputs on blur (Title Case)
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('input[type="text"]').forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.name === 'phone') return;
+                this.value = this.value.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());
+            });
+        });
+    });
 </script>
 
 <?php if ($info): ?><script>Swal.fire({ title: 'Success!', text: '<?php echo htmlspecialchars($info); ?>', icon: 'success' });</script><?php endif; ?>
