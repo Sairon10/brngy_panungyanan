@@ -726,12 +726,12 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
                                                 <span class="input-group-text bg-light border-end-0 small"><i
                                                         class="fas fa-id-card text-muted me-2"></i> BACK</span>
                                                 <input type="file" name="fm_id_back" id="fm_id_back"
-                                                    class="form-control rbi-input" accept="image/*" required>
+                                                    class="form-control rbi-input" accept="image/*">
                                             </div>
                                         </div>
                                     </div>
                                     <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle me-1"></i>
-                                        Upload front and back images of a valid government ID. Max size 2MB per
+                                        Upload front image of a valid government ID (back image is optional). Max size 2MB per
                                         image.</small>
                                 </div>
                             </div>
@@ -943,7 +943,7 @@ $id_type_options = ['National ID (Philsys)', "Driver's License", "Voter's ID", '
         document.getElementById('fm_id').value = '';
         document.getElementById('fm_barangay_id').value = 'Pending creation';
         document.getElementById('fm_id_front').required = true;
-        document.getElementById('fm_id_back').required = true;
+        document.getElementById('fm_id_back').required = false;
         // Hide migrant section on fresh add
         const migrantWrap = document.getElementById('fm_migrant_info_wrap');
         if (migrantWrap) migrantWrap.style.display = 'none';
