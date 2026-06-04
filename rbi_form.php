@@ -41,6 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Handle multiple classifications
             $classifications = isset($_POST['classifications']) ? $_POST['classifications'] : [];
+            if (empty($classifications)) {
+                throw new Exception('Please select at least one option under "Indicate if you are".');
+            }
             $class_json = json_encode($classifications);
 
             // Update Users table (names)
@@ -388,7 +391,7 @@ $resident = $stmt->fetch();
 
                             <!-- Indicated Section -->
                             <label class="form-label d-block mb-3">Indicate if you are (you may select
-                                multiple):</label>
+                                multiple) <span class="text-danger">*</span>:</label>
                             <div class="row g-2 mb-5">
                                 <?php
                                 $classes = [
@@ -428,6 +431,20 @@ $resident = $stmt->fetch();
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.getElementById('rbiForm').addEventListener('submit', function(e) {
+            const checked = this.querySelectorAll('input[name="classifications[]"]:checked');
+            if (checked.length === 0) {
+                e.preventDefault();
+                Swal.fire({
+                    title: 'Selection Required',
+                    text: 'Please select at least one option under "Indicate if you are".',
+                    icon: 'warning',
+                    confirmButtonColor: '#0f766e'
+                });
+            }
+        });
+    </script>
     <?php if ($success): ?>
         <script>
             Swal.fire({
