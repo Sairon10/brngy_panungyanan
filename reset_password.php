@@ -76,7 +76,7 @@ if ($valid && $_SERVER['REQUEST_METHOD'] === 'POST') {
 									class="mb-4 rounded-circle shadow-sm bg-white p-2"
 									style="width: 110px; height: 110px; object-fit: cover;">
 								<h2 class="h4 fw-bold mb-2">Barangay Panungyanan</h2>
-								<p class="text-muted small mb-3">Digital Information System</p>
+								<p class="text-muted small mb-3">Information System</p>
 								<ul class="list-unstyled text-start text-muted small mb-0">
 									<li class="mb-2"><i class="fas fa-lock text-success me-2"></i>Secure password reset</li>
 									<li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i>Create a new password</li>

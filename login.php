@@ -105,10 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 									class="mb-4 rounded-circle shadow-sm bg-white p-2"
 									style="width: 110px; height: 110px; object-fit: cover;">
 								<h2 class="h4 fw-bold mb-2">Barangay Panungyanan</h2>
-								<p class="text-muted small mb-3">Digital Information System</p>
+								<p class="text-muted small mb-3">Information System</p>
 								<ul class="list-unstyled text-start text-muted small mb-0">
-									<li class="mb-2"><i class="fas fa-check text-success me-2"></i>Fast, secure sign-in
-									</li>
 									<li class="mb-2"><i class="fas fa-check text-success me-2"></i>Access services
 										anytime</li>
 									<li><i class="fas fa-check text-success me-2"></i>Track your requests</li>

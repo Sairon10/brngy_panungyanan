@@ -518,19 +518,22 @@ if ($search !== '') {
 
 // Category Quick Filter
 $filter = isset($_GET['filter']) ? trim($_GET['filter']) : 'all';
-if ($filter !== 'all') {
-    $unified_records = array_filter($unified_records, function ($r) use ($filter) {
+$filters = ($filter !== 'all' && $filter !== '') ? explode(',', $filter) : [];
+if (!empty($filters)) {
+    $unified_records = array_filter($unified_records, function ($r) use ($filters) {
         $classes = json_decode($r['classification'] ?? '[]', true) ?: [];
-        if ($filter === 'senior') return !empty($r['is_senior']) || in_array('Senior Citizen', $classes);
-        if ($filter === 'pwd') return !empty($r['is_pwd']) || in_array('PWD', $classes);
-        if ($filter === 'solo_parent') return !empty($r['is_solo_parent']) || in_array('Solo Parent', $classes);
-        if ($filter === 'labor') return in_array('Labor/Employed', $classes);
-        if ($filter === 'unemployed') return in_array('Unemployed', $classes);
-        if ($filter === 'ofw') return in_array('OFW', $classes);
-        if ($filter === 'osy') return in_array('Out of School Youth (OSY)', $classes);
-        if ($filter === 'osc') return in_array('Out of School Children (OSC)', $classes);
-        if ($filter === 'indigenous') return in_array('Indigenous People', $classes);
-        return true;
+        foreach ($filters as $f) {
+            if ($f === 'senior' && (!empty($r['is_senior']) || in_array('Senior Citizen', $classes))) return true;
+            if ($f === 'pwd' && (!empty($r['is_pwd']) || in_array('PWD', $classes))) return true;
+            if ($f === 'solo_parent' && (!empty($r['is_solo_parent']) || in_array('Solo Parent', $classes))) return true;
+            if ($f === 'labor' && in_array('Labor/Employed', $classes)) return true;
+            if ($f === 'unemployed' && in_array('Unemployed', $classes)) return true;
+            if ($f === 'ofw' && in_array('OFW', $classes)) return true;
+            if ($f === 'osy' && in_array('Out of School Youth (OSY)', $classes)) return true;
+            if ($f === 'osc' && in_array('Out of School Children (OSC)', $classes)) return true;
+            if ($f === 'indigenous' && in_array('Indigenous People', $classes)) return true;
+        }
+        return false;
     });
 }
 
@@ -589,20 +592,47 @@ $display_records = array_slice($unified_records, $offset, $limit);
         <span class="text-muted small fw-semibold me-3 flex-shrink-0">
             <i class="fas fa-filter me-1" style="color: #14b8a6;"></i>Classification Filter:
         </span>
-        <select class="form-select form-select-sm rounded-pill shadow-sm border-light-subtle" 
-                style="max-width: 250px; cursor: pointer; font-size: 0.85rem;" 
-                onchange="window.location.href='?search=<?php echo urlencode($search); ?>&filter=' + this.value">
-            <option value="all" <?php echo $filter === 'all' ? 'selected' : ''; ?>>All Residents</option>
-            <option value="labor" <?php echo $filter === 'labor' ? 'selected' : ''; ?>>Labor/Employed</option>
-            <option value="unemployed" <?php echo $filter === 'unemployed' ? 'selected' : ''; ?>>Unemployed</option>
-            <option value="pwd" <?php echo $filter === 'pwd' ? 'selected' : ''; ?>>PWD</option>
-            <option value="ofw" <?php echo $filter === 'ofw' ? 'selected' : ''; ?>>OFW</option>
-            <option value="solo_parent" <?php echo $filter === 'solo_parent' ? 'selected' : ''; ?>>Solo Parent</option>
-            <option value="osy" <?php echo $filter === 'osy' ? 'selected' : ''; ?>>OSY (Out of School Youth)</option>
-            <option value="osc" <?php echo $filter === 'osc' ? 'selected' : ''; ?>>OSC (Out of School Children)</option>
-            <option value="indigenous" <?php echo $filter === 'indigenous' ? 'selected' : ''; ?>>Indigenous People</option>
-            <option value="senior" <?php echo $filter === 'senior' ? 'selected' : ''; ?>>Senior Citizen</option>
-        </select>
+        <div class="dropdown" id="classificationFilterDropdown">
+            <button class="btn btn-sm btn-white border-light-subtle rounded-pill shadow-sm dropdown-toggle px-3 text-start text-dark" 
+                    type="button" 
+                    id="filterDropdownButton" 
+                    data-bs-toggle="dropdown" 
+                    data-bs-auto-close="outside"
+                    aria-expanded="false" 
+                    style="min-width: 220px; font-size: 0.85rem; cursor: pointer; background: white;">
+                All Residents
+            </button>
+            <div class="dropdown-menu shadow border-0 p-3 mt-1" style="min-width: 280px; max-height: 350px; overflow-y: auto;">
+                <div class="form-check mb-2">
+                    <input class="form-check-input filter-checkbox-all" type="checkbox" id="class-all" value="all" <?php echo empty($filters) ? 'checked' : ''; ?>>
+                    <label class="form-check-label fw-bold small text-dark" for="class-all">All Residents</label>
+                </div>
+                <hr class="my-2">
+                <?php
+                $options = [
+                    'labor' => 'Labor/Employed',
+                    'unemployed' => 'Unemployed',
+                    'pwd' => 'PWD',
+                    'ofw' => 'OFW',
+                    'solo_parent' => 'Solo Parent',
+                    'osy' => 'OSY (Out of School Youth)',
+                    'osc' => 'OSC (Out of School Children)',
+                    'indigenous' => 'Indigenous People',
+                    'senior' => 'Senior Citizen'
+                ];
+                foreach ($options as $val => $label):
+                    $checked = in_array($val, $filters) ? 'checked' : '';
+                ?>
+                <div class="form-check mb-2">
+                    <input class="form-check-input filter-checkbox" type="checkbox" id="class-<?php echo $val; ?>" value="<?php echo $val; ?>" <?php echo $checked; ?>>
+                    <label class="form-check-label small" for="class-<?php echo $val; ?>"><?php echo htmlspecialchars($label); ?></label>
+                </div>
+                <?php endforeach; ?>
+                <div class="d-grid gap-2 mt-3">
+                    <button class="btn btn-primary btn-sm rounded-pill py-1 fw-semibold" type="button" onclick="applyClassificationFilter()">Apply Filter</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="table-card">
@@ -796,7 +826,74 @@ $display_records = array_slice($unified_records, $offset, $limit);
                 });
             });
         });
+
+        // Setup multi-select filter dropdown options
+        const allCheckbox = document.getElementById('class-all');
+        if (allCheckbox) {
+            const checkboxes = document.querySelectorAll('.filter-checkbox');
+            const button = document.getElementById('filterDropdownButton');
+            
+            function updateButtonText() {
+                if (allCheckbox.checked) {
+                    button.textContent = 'All Residents';
+                    return;
+                }
+                const checkedLabels = [];
+                checkboxes.forEach(cb => {
+                    if (cb.checked) {
+                        const label = document.querySelector(`label[for="${cb.id}"]`).textContent;
+                        checkedLabels.push(label);
+                    }
+                });
+                if (checkedLabels.length === 0) {
+                    button.textContent = 'All Residents';
+                } else if (checkedLabels.length <= 2) {
+                    button.textContent = checkedLabels.join(', ');
+                } else {
+                    button.textContent = checkedLabels.length + ' Selected';
+                }
+            }
+            
+            allCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    checkboxes.forEach(cb => cb.checked = false);
+                }
+                updateButtonText();
+            });
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', function() {
+                    if (this.checked) {
+                        allCheckbox.checked = false;
+                    } else {
+                        const anyChecked = Array.from(checkboxes).some(c => c.checked);
+                        if (!anyChecked) {
+                            allCheckbox.checked = true;
+                        }
+                    }
+                    updateButtonText();
+                });
+            });
+
+            updateButtonText();
+        }
     });
+
+    function applyClassificationFilter() {
+        const checkboxes = document.querySelectorAll('.filter-checkbox');
+        const selected = [];
+        checkboxes.forEach(cb => {
+            if (cb.checked) {
+                selected.push(cb.value);
+            }
+        });
+        
+        const filterVal = selected.length > 0 ? selected.join(',') : 'all';
+        const searchParam = new URLSearchParams(window.location.search);
+        searchParam.set('filter', filterVal);
+        searchParam.set('page', '1');
+        window.location.href = '?' + searchParam.toString();
+    }
 
     function bulkDeleteResidents() {
         const selected = Array.from(document.querySelectorAll('.resident-checkbox:checked')).map(cb => ({
