@@ -45,7 +45,7 @@ require_once __DIR__ . '/partials/header.php';
 				</div>
 				<h1 class="display-4 fw-extrabold mb-4 lh-tight text-dark">
 					Barangay <span class="text-primary">Panungyanan</span><br>
-					Digital Services
+					Information System
 				</h1>
 				<p class="lead mb-5 text-dark pe-lg-5">
 					Streamlined public services for a connected community. Request documents, report concerns, and stay
